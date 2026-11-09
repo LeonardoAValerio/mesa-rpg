@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/mesa-mvp/design.md`
-**Status**: Approved
+**Status**: Done
 **Approved**: 2026-11-08 - user: "aprovado"
 **Build**: `test ! -d mesa-rpg || (cd mesa-rpg && scripts/with-node npm run build)`; `test ! -d mesa-rpg || (cd mesa-rpg && scripts/with-node npm run typecheck)`; `test ! -d mesa-rpg || (cd mesa-rpg && scripts/with-node npm run lint)`
 **Run unit**: `cd mesa-rpg && scripts/with-node npx vitest run --reporter=verbose`

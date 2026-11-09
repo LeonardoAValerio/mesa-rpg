@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 6,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "ac_gap::a range bound min period min size needs a test on the far side of the bound not only inside it below the minimum detection must fail not return a multiple",
+      "text": "A range bound (min period, min size) needs a test on the far side of the bound, not only inside it: below the minimum, detection must fail, not return a multiple.",
+      "signal": "ac_gap",
+      "scope": "core",
+      "status": "candidate",
+      "features": [
+        "mesa-mvp"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "MAP-04 / src/core/grid-detect.ts (core)"
+      ],
+      "created": "2026-11-09T13:58:56Z",
+      "last_seen": "2026-11-09T13:58:56Z"
+    },
+    {
+      "id": "L-002",
+      "key": "weak_test::a criterion that names a screen element message plus button is proven by an e2e that drives the state and clicks the control not by asserting the client status",
+      "text": "A criterion that names a screen element (message plus button) is proven by an e2e that drives the state and clicks the control, not by asserting the client status.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "mesa-mvp"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C12 / NET-12 (e2e)"
+      ],
+      "created": "2026-11-09T13:58:56Z",
+      "last_seen": "2026-11-09T13:58:56Z"
+    },
+    {
+      "id": "L-003",
+      "key": "ac_gap::every input mode a criterion lists middle button and space gets its own test and modifier key gestures must be excluded from the other tools handlers",
+      "text": "Every input mode a criterion lists (middle button and Space) gets its own test, and modifier-key gestures must be excluded from the other tools' handlers.",
+      "signal": "ac_gap",
+      "scope": "renderer",
+      "status": "candidate",
+      "features": [
+        "mesa-mvp"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "MAP-08 / src/renderer/board/overlays.ts (renderer)"
+      ],
+      "created": "2026-11-09T13:58:56Z",
+      "last_seen": "2026-11-09T13:58:56Z"
+    },
+    {
+      "id": "L-004",
+      "key": "spec_precision_gap::state whether a numeric limit applies per item or to the total e g modifier sum of constants when writing the criterion",
+      "text": "State whether a numeric limit applies per item or to the total (e.g. modifier = sum of constants) when writing the criterion.",
+      "signal": "spec_precision_gap",
+      "scope": "spec",
+      "status": "candidate",
+      "features": [
+        "mesa-mvp"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "DICE-04 (spec)"
+      ],
+      "created": "2026-11-09T13:58:56Z",
+      "last_seen": "2026-11-09T13:58:56Z"
+    },
+    {
+      "id": "L-005",
+      "key": "ac_gap::text length limits count characters s length never utf 16 units and the tests include an emoji at the boundary",
+      "text": "Text length limits count characters ([...s].length), never UTF-16 units, and the tests include an emoji at the boundary.",
+      "signal": "ac_gap",
+      "scope": "core",
+      "status": "candidate",
+      "features": [
+        "mesa-mvp"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "NET-07 / CHAT-02 (core)"
+      ],
+      "created": "2026-11-09T13:58:56Z",
+      "last_seen": "2026-11-09T13:58:56Z"
+    }
+  ]
+}

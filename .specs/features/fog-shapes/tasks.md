@@ -158,12 +158,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] e2e with real mouse: a brush drag covers points within the radius of the path and not just past it, in both windows, only after release; a rectangle the same; Alt reveals; the modes appear only with a fog tool, "Cobrir" first; the cursor circle has the radius; the radius input clamps
-- [ ] Full gate passes
+- [x] e2e with real mouse: a brush drag covers points within the radius of the path and not just past it, in both windows, only after release; a rectangle the same; Alt reveals; the modes appear only with a fog tool, "Cobrir" first; the cursor circle has the radius; the radius input clamps
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(board): fog brush and rectangle with preview and modes in the toolbar`
+**Done**: yes
 
 ---
 
@@ -246,7 +247,7 @@ Proof: run unit | ✓ [C18] FOGS-11
 
 ## Handoff
 
-**Settled mid-build:** T1, T2 and T3 go in one commit: changing the `Fog` type breaks the reducer, view and `.mesa` until all three change, so none builds alone. The renderer and the e2e still use the cell fog in that commit (typecheck red there) until T4, the next commit. T4 gate: unit 127, e2e 59 of 60 - NET-02 failed only because the user's own `npm run dev` was hosting on port 47800; left running, rerun in the proofs.
+**Settled mid-build:** T1, T2 and T3 go in one commit: changing the `Fog` type breaks the reducer, view and `.mesa` until all three change, so none builds alone. The renderer and the e2e still use the cell fog in that commit (typecheck red there) until T4, the next commit. T4 gate: unit 127, e2e 59 of 60 - NET-02 failed only because the user's own `npm run dev` was hosting on port 47800; left running, rerun in the proofs. T5 gate: unit 127, e2e 66 of 67, the same NET-02 port clash.
 **Dispatched:** none
 **Walked:** none
 

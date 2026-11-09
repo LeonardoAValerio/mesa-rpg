@@ -50,7 +50,7 @@ export interface BoardSnapshot {
 
 const WHEEL_STEP = 1.1
 
-export type Tool = 'select' | 'ruler' | 'ping' | 'draw' | 'fog-brush' | 'fog-rect'
+export type Tool = 'select' | 'ruler' | 'ping' | 'draw' | 'fog-brush' | 'fog-rect' | 'fog-poly'
 
 /** The PixiJS table: map, grid and tokens, a camera per window, and token drag with grid snap. */
 export class Board {
@@ -199,9 +199,17 @@ export class Board {
     return this.space
   }
 
+  private toolListeners = new Set<(tool: Tool) => void>()
+
   setTool(tool: Tool): void {
     this.tool = tool
     this.app.canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair'
+    for (const fn of this.toolListeners) fn(tool)
+  }
+
+  onToolChange(fn: (tool: Tool) => void): () => void {
+    this.toolListeners.add(fn)
+    return () => this.toolListeners.delete(fn)
   }
 
   render(force = false): void {

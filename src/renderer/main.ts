@@ -4,7 +4,7 @@ import { isHosting, onSession, showHome } from './app'
 import { syncAssets } from './assets/sync'
 import { TextureStore } from './assets/textures'
 import { Board, type BoardSnapshot } from './board/board'
-import { fogTools } from './board/fog-layer'
+import { FogTools, type FogToolSnapshot } from './board/fog-tools'
 import { Overlays, type OverlaySnapshot } from './board/overlays'
 import type { ActionResult } from './net/table-client'
 import { gridPanel } from './ui/grid-panel'
@@ -20,6 +20,7 @@ declare global {
     __mesaTest?: {
       board(): BoardSnapshot | null
       fogSample(points: Array<[number, number]>): boolean[]
+      fogTool(): FogToolSnapshot | null
       overlays(): OverlaySnapshot
       send(action: Action): Promise<ActionResult>
     }
@@ -42,13 +43,13 @@ onSession(async ({ client, screen }) => {
   const stopSync = syncAssets(client, textures, screen.board)
   const overlays = new Overlays(board, client)
   const stopToolbar = toolbar(screen.toolbar, board, master ? [{ tool: 'fog-brush', label: 'Pincel de névoa' }, { tool: 'fog-rect', label: 'Retângulo de névoa' }] : [])
-  const fog = master ? fogTools(board, client) : null
-  if (fog) screen.sidebar.append(fog.root)
+  const fog = master ? new FogTools(board, client, screen.toolbar) : null
+  if (fog) screen.sidebar.append(fog.panel)
   const log = logPanel(client)
   screen.sidebar.append(log.root)
   const library = master ? libraryPanel(client, board, screen.board) : null
   if (library) screen.sidebar.append(library.root)
-  if (window.mesa.isTest) window.__mesaTest = { board: () => board.snapshot(), fogSample: (p) => board.fogSample(p), overlays: () => overlays.snapshot(), send: (a) => client.send(a) }
+  if (window.mesa.isTest) window.__mesaTest = { board: () => board.snapshot(), fogSample: (p) => board.fogSample(p), fogTool: () => fog?.snapshot() ?? null, overlays: () => overlays.snapshot(), send: (a) => client.send(a) }
   return () => {
     if (window.__mesaTest) window.__mesaTest = undefined
     stopSync()

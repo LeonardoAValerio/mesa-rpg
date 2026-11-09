@@ -54,10 +54,10 @@ test('the master reveals a rectangle and the player sees only that area and the 
 
 test('the brush reveals around the cursor and "Cobrir tudo" covers everything again (FOGS-01, FOGS-05)', async () => {
   const { master, player } = await table()
-  await master.page.getByTestId('fog-radius').fill('1')
-  await master.page.getByTestId('fog-radius').press('Enter')
   await master.page.getByTestId('tool-fog-brush').click()
   await master.page.getByTestId('fog-mode-reveal').click()
+  await master.page.getByTestId('fog-radius').fill('1')
+  await master.page.getByTestId('fog-radius').press('Enter')
   // (570, 470): within one cell (100 px) of the centres of (5,4), (6,4) and (5,5) only (82 px); the rest are over 100 px away
   const p = await screenOf(master.page, 570, 470)
   await master.page.mouse.click(p.x, p.y)

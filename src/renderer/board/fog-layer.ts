@@ -1,9 +1,5 @@
-import { Container, Graphics, RenderTexture, Sprite, type Application, type FederatedPointerEvent } from 'pixi.js'
-import { clampBrushCells, type FogMode } from '../../core/fog'
+import { Container, Graphics, RenderTexture, Sprite, type Application } from 'pixi.js'
 import type { Fog, FogShape, MapRef, View } from '../../core/types'
-import type { TableClient } from '../net/table-client'
-import { h } from '../ui/dom'
-import type { Board } from './board'
 
 export const MASTER_FOG_ALPHA = 0.5
 export const PLAYER_FOG_ALPHA = 1
@@ -89,86 +85,5 @@ export class FogRenderer {
 
   destroy(): void {
     this.texture?.destroy(true)
-  }
-}
-
-/** Master-only fog tools: brush and rectangle in Reveal/Cover mode, "Cobrir tudo" and "Revelar tudo" (FOGS-05). */
-export function fogTools(board: Board, client: TableClient): { root: HTMLElement; destroy(): void } {
-  let mode: FogMode = 'cover'
-  let radius = 1
-  let start: { x: number; y: number } | null = null
-  const preview = new Graphics()
-  board.overlayLayer.addChild(preview)
-
-  const world = (e: FederatedPointerEvent): { x: number; y: number } => board.toWorld(e.global.x, e.global.y)
-  const brushAt = (x: number, y: number): void => {
-    const g = client.view?.grid
-    if (!g) return
-    void client.send({ type: 'fog/shape', shape: { kind: 'stroke', mode, radius: radius * g.cell, points: [x, y] } })
-  }
-  const down = (e: FederatedPointerEvent): void => {
-    if (e.button !== 0 || board.spaceHeld) return
-    const p = world(e)
-    if (board.tool === 'fog-brush') {
-      start = p
-      brushAt(p.x, p.y)
-    } else if (board.tool === 'fog-rect') start = p
-  }
-  const move = (e: FederatedPointerEvent): void => {
-    if (!start) return
-    const p = world(e)
-    if (board.tool === 'fog-brush') brushAt(p.x, p.y)
-    else if (board.tool === 'fog-rect') {
-      preview.clear().rect(Math.min(start.x, p.x), Math.min(start.y, p.y), Math.abs(p.x - start.x), Math.abs(p.y - start.y))
-      preview.stroke({ width: 2 / board.camera.scale, color: mode === 'reveal' ? 0xfacc15 : 0x64748b })
-    }
-  }
-  const up = (e: FederatedPointerEvent): void => {
-    if (!start) return
-    const p = world(e)
-    if (board.tool === 'fog-rect') {
-      const shape: FogShape = { kind: 'rect', mode, x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), w: Math.abs(p.x - start.x), h: Math.abs(p.y - start.y) }
-      void client.send({ type: 'fog/shape', shape })
-    }
-    start = null
-    preview.clear()
-  }
-  const stage = board.app.stage
-  stage.on('pointerdown', down)
-  stage.on('pointermove', move)
-  stage.on('pointerup', up)
-  stage.on('pointerupoutside', up)
-
-  const modeBtn = (m: FogMode, label: string): HTMLButtonElement =>
-    h('button', { testid: `fog-mode-${m}`, class: 'secondary', 'aria-pressed': m === mode ? 'true' : 'false', onclick: () => setMode(m) }, label)
-  const reveal = modeBtn('reveal', 'Revelar')
-  const cover = modeBtn('cover', 'Cobrir')
-  const setMode = (m: FogMode): void => {
-    mode = m
-    reveal.setAttribute('aria-pressed', String(m === 'reveal'))
-    cover.setAttribute('aria-pressed', String(m === 'cover'))
-  }
-  const radiusInput = h('input', { type: 'number', testid: 'fog-radius', min: 0.5, max: 10, step: 0.5, value: String(radius) })
-  radiusInput.addEventListener('change', () => {
-    radius = clampBrushCells(Number(radiusInput.value))
-    radiusInput.value = String(radius)
-  })
-  const root = h('section', { class: 'panel', testid: 'fog-panel' },
-    h('h3', {}, 'Névoa'),
-    h('div', { class: 'row' }, cover, reveal),
-    h('label', {}, 'Raio do pincel (células)', radiusInput),
-    h('div', { class: 'row' },
-      h('button', { testid: 'fog-cover-all', class: 'secondary', onclick: () => void client.send({ type: 'fog/coverAll' }) }, 'Cobrir tudo'),
-      h('button', { testid: 'fog-reveal-all', class: 'secondary', onclick: () => void client.send({ type: 'fog/revealAll' }) }, 'Revelar tudo')
-    )
-  )
-  return {
-    root,
-    destroy: () => {
-      stage.off('pointerdown', down)
-      stage.off('pointermove', move)
-      stage.off('pointerup', up)
-      stage.off('pointerupoutside', up)
-    }
   }
 }

@@ -42,6 +42,7 @@ export interface Scene {
   grid: Grid
   tokens: Record<string, Token>
   fog: Fog | null
+  palette: FactionColors | null
 }
 
 export type Role = 'master' | 'player'
@@ -83,6 +84,7 @@ export interface View {
   grid: Grid
   tokens: Record<string, Token>
   fog: Fog | null
+  palette: FactionColors | null
   players: string[]
 }
 
@@ -100,11 +102,12 @@ export type PatchOp =
   | { op: 'grid'; grid: Grid }
   | { op: 'fog'; fog: Fog | null }
   | { op: 'players'; players: string[] }
+  | { op: 'palette'; palette: FactionColors | null }
 
 export const DEFAULT_GRID: Grid = { cell: 70, offsetX: 0, offsetY: 0, color: '#000000', opacity: 0.5 }
 
 export function emptyScene(): Scene {
-  return { map: null, grid: { ...DEFAULT_GRID }, tokens: {}, fog: null }
+  return { map: null, grid: { ...DEFAULT_GRID }, tokens: {}, fog: null, palette: null }
 }
 
 export type FactionColors = Record<Faction, string>

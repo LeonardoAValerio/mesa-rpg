@@ -11,6 +11,9 @@ export type ImportedImage =
   | { ok: false; error: string }
   | { ok: false; canceled: true }
 
+export type ImportTokensResult = { ok: true; count: number; skipped: string[] } | { ok: false; canceled: true }
+export type PaletteResult = { ok: true; palette: Record<'grupo' | 'inimigo' | 'npc' | 'neutro', string> } | { ok: false; canceled: true }
+
 export interface MesaApi {
   /** True only in automated tests (MESA_TEST=1): enables window.__mesaTest. */
   isTest: boolean
@@ -19,6 +22,8 @@ export interface MesaApi {
   addresses(): Promise<LanAddress[]>
   copy(text: string): Promise<void>
   importMap(): Promise<ImportedImage>
+  importTokens(): Promise<ImportTokensResult>
+  loadPalette(): Promise<PaletteResult>
   cacheGet(hash: string): Promise<Uint8Array | null>
   cachePut(hash: string, bytes: Uint8Array): Promise<boolean>
 }

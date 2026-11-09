@@ -38,6 +38,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('fog/brush'), x: num, y: num, radius: int, mode: fogMode }),
   z.object({ type: z.literal('fog/rect'), x0: num, y0: num, x1: num, y1: num, mode: fogMode }),
   z.object({ type: z.literal('fog/coverAll') }),
+  z.object({ type: z.literal('palette/set'), palette: z.record(faction, z.string().regex(/^#[0-9a-fA-F]{6}$/)) }),
   z.object({ type: z.literal('roll'), expr: z.string().max(200) }),
   z.object({ type: z.literal('chat'), text: z.string().max(2000) })
 ])

@@ -1,4 +1,5 @@
 import { clampGrid, insideMap } from './grid'
+import { parsePalette } from './palette'
 import type { Action } from './protocol'
 import type { Actor, LogEntry, Scene, Token } from './types'
 
@@ -27,7 +28,8 @@ const MASTER_ONLY = new Set<Action['type']>([
   'map/set',
   'fog/brush',
   'fog/rect',
-  'fog/coverAll'
+  'fog/coverAll',
+  'palette/set'
 ])
 
 const refuse = (reason: string): ApplyResult => ({ ok: false, reason })
@@ -42,6 +44,8 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
       const grid = clampGrid(action.grid ?? {}, scene.grid)
       return { ok: true, scene: { ...scene, map: { hash: action.hash, width: action.width, height: action.height }, grid } }
     }
+    case 'palette/set':
+      return { ok: true, scene: { ...scene, palette: parsePalette(JSON.stringify(action.palette)) } }
     case 'grid/set':
       return { ok: true, scene: { ...scene, grid: clampGrid(action.grid, scene.grid) } }
 

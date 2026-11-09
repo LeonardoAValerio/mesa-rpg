@@ -470,12 +470,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C29] TOK-04
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C29] TOK-04
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(ui): token library and drag to map`
+**Done**: yes
 
 ---
 

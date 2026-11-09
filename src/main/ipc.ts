@@ -1,10 +1,12 @@
 import { randomBytes } from 'node:crypto'
 import { app, clipboard, dialog, ipcMain } from 'electron'
-import type { HostResult, ImportedImage } from '../preload/api'
+import { readFile } from 'node:fs/promises'
+import { parsePalette } from '../core/palette'
+import type { HostResult, ImportedImage, ImportTokensResult, PaletteResult } from '../preload/api'
 import { join } from 'node:path'
 import { AssetCache } from './asset-cache'
 import { AssetStore } from './asset-store'
-import { readImageFile } from './import'
+import { importTokenFolder, readImageFile } from './import'
 import { validatePort } from '../core/session-rules'
 import { listAddresses } from './netinfo'
 import { startTableServer, type TableServer } from './table-server'
@@ -51,6 +53,24 @@ export function registerIpc(): void {
   ipcMain.handle('mesa:stopHost', () => stopHost())
   ipcMain.handle('mesa:addresses', () => listAddresses())
   ipcMain.handle('mesa:copy', (_e, text: string) => clipboard.writeText(String(text)))
+  ipcMain.handle('mesa:importTokens', async (): Promise<ImportTokensResult> => {
+    const pick = await dialog.showOpenDialog({ title: 'Importar pasta de tokens', properties: ['openDirectory'] })
+    if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
+    const { tokens, skipped } = await importTokenFolder(pick.filePaths[0])
+    const items = tokens.map((t) => ({ hash: store.put(t.bytes), name: t.name, faction: t.faction, size: t.size }))
+    server?.addLibrary(items)
+    return { ok: true, count: items.length, skipped }
+  })
+  ipcMain.handle('mesa:loadPalette', async (): Promise<PaletteResult> => {
+    const pick = await dialog.showOpenDialog({
+      title: 'Carregar paleta',
+      properties: ['openFile'],
+      filters: [{ name: 'Paleta', extensions: ['json'] }]
+    })
+    if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
+    const text = await readFile(pick.filePaths[0], 'utf8').catch(() => null)
+    return { ok: true, palette: parsePalette(text) }
+  })
   ipcMain.handle('mesa:importMap', async (): Promise<ImportedImage> => {
     const pick = await dialog.showOpenDialog({
       title: 'Importar mapa',

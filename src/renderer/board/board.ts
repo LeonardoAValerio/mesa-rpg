@@ -32,6 +32,7 @@ export interface TokenSnapshot {
   alpha: number
   owner: string | null
   hidden: boolean
+  textured: boolean
 }
 
 export interface BoardSnapshot {
@@ -70,7 +71,7 @@ export class Board {
 
   private constructor(private readonly host: HTMLElement, private readonly client: TableClient, private readonly opts: BoardOptions) {
     this.textures = opts.textures ?? noTextures
-    this.colors = opts.colors ?? (() => DEFAULT_FACTION_COLORS)
+    this.colors = opts.colors ?? (() => this.client.view?.palette ?? DEFAULT_FACTION_COLORS)
     this.emptyEl = h('div', { class: 'empty', testid: 'board-empty' })
   }
 
@@ -259,7 +260,7 @@ export class Board {
         const t = view.tokens[id]
         if (!t) continue
         const side = t.size * view.grid.cell
-        tokens.push({ id, name: t.name, label: s.label, x: s.root.x, y: s.root.y, w: side, h: side, ring: s.ring, alpha: s.root.alpha, owner: t.owner, hidden: t.hidden })
+        tokens.push({ id, name: t.name, label: s.label, x: s.root.x, y: s.root.y, w: side, h: side, ring: s.ring, alpha: s.root.alpha, owner: t.owner, hidden: t.hidden, textured: !!this.textures.get(t.hash) })
       }
     }
     return {

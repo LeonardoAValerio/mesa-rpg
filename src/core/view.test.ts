@@ -39,6 +39,7 @@ describe('viewFor', () => {
       grid: s.grid,
       tokens: {},
       fog: null,
+      palette: null,
       players: ['Mestre', 'Ana']
     })
   })

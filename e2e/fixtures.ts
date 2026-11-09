@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PNG } from 'pngjs'
@@ -31,5 +31,13 @@ export function gridMap(name: string, w: number, h: number, cols: number, rows: 
 export function textFile(name: string, content: string): string {
   const path = join(dir, name)
   writeFileSync(path, content)
+  return path
+}
+
+/** A folder as the Blender kit writes it: PNGs, and optional JSON manifests beside them. */
+export function tokenFolder(name: string, files: Record<string, Buffer | string>): string {
+  const path = join(dir, name)
+  mkdirSync(path, { recursive: true })
+  for (const [file, content] of Object.entries(files)) writeFileSync(join(path, file), content)
   return path
 }

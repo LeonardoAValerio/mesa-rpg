@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { BoardSnapshot } from '../src/renderer/board/board'
-import { act, closeAll, masterAndPlayer, putAsset, screenOf, snap, type AppHandle } from './helpers'
+import { act, closeAll, coveredCenters, masterAndPlayer, putAsset, screenOf, snap, type AppHandle } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -10,7 +10,7 @@ async function mapReady(masterApp: AppHandle, player: Page): Promise<void> {
   const master = masterApp.page
   H = await putAsset(masterApp.app)
   await act(master, { type: 'map/set', hash: H, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
-  await act(master, { type: 'fog/rect', x0: 0, y0: 0, x1: 800, y1: 600, mode: 'reveal' }) // a no-op since FOGD-01 (a new map has no fog); kept so the board is open either way
+  await act(master, { type: 'fog/revealAll' }) // a no-op since FOGD-01 (a new map has no fog); kept so the board is open either way
   await expect.poll(async () => (await snap(player)).map?.width).toBe(800)
 }
 
@@ -96,9 +96,9 @@ test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (pi
   const { master, player } = await masterAndPlayer()
   await mapReady(master, player.page)
   await act(master.page, { type: 'fog/coverAll' }) // so that a stray reveal would show
-  await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(48)
+  await expect.poll(() => coveredCenters(player.page)).toBe(48)
   const other = (await snap(player.page)).camera
-  const coveredBefore = (await snap(player.page)).fog.covered
+  const coveredBefore = await coveredCenters(player.page)
   const pings: number[] = []
   for (const tool of ['tool-ping', 'tool-fog-rect', 'tool-fog-brush']) {
     await master.page.getByTestId(tool).click()
@@ -117,6 +117,7 @@ test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (pi
   }
   await player.page.waitForTimeout(300)
   expect(pings).toEqual([0, 0, 0])
-  expect((await snap(player.page)).fog.covered).toBe(coveredBefore)
+  expect(await coveredCenters(player.page)).toBe(coveredBefore)
+  expect((await snap(player.page)).fog.shapes).toBe(0)
   expect((await snap(player.page)).camera).toEqual(other)
 })

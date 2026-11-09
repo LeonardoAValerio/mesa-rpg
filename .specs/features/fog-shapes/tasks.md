@@ -138,12 +138,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] e2e: after "Cobrir tudo" both windows sample covered everywhere (player alpha 1, master 0.5); after "Revelar tudo" nothing is covered
-- [ ] Full gate passes
+- [x] e2e: after "Cobrir tudo" both windows sample covered everywhere (player alpha 1, master 0.5); after "Revelar tudo" nothing is covered
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(board): fog drawn from shapes`
+**Done**: yes
 
 ---
 
@@ -245,7 +246,7 @@ Proof: run unit | ✓ [C18] FOGS-11
 
 ## Handoff
 
-**Settled mid-build:** T1, T2 and T3 go in one commit: changing the `Fog` type breaks the reducer, view and `.mesa` until all three change, so none builds alone. The renderer and the e2e still use the cell fog in that commit (typecheck red there) until T4, the next commit.
+**Settled mid-build:** T1, T2 and T3 go in one commit: changing the `Fog` type breaks the reducer, view and `.mesa` until all three change, so none builds alone. The renderer and the e2e still use the cell fog in that commit (typecheck red there) until T4, the next commit. T4 gate: unit 127, e2e 59 of 60 - NET-02 failed only because the user's own `npm run dev` was hosting on port 47800; left running, rerun in the proofs.
 **Dispatched:** none
 **Walked:** none
 

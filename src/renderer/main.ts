@@ -19,6 +19,7 @@ declare global {
   interface Window {
     __mesaTest?: {
       board(): BoardSnapshot | null
+      fogSample(points: Array<[number, number]>): boolean[]
       overlays(): OverlaySnapshot
       send(action: Action): Promise<ActionResult>
     }
@@ -47,7 +48,7 @@ onSession(async ({ client, screen }) => {
   screen.sidebar.append(log.root)
   const library = master ? libraryPanel(client, board, screen.board) : null
   if (library) screen.sidebar.append(library.root)
-  if (window.mesa.isTest) window.__mesaTest = { board: () => board.snapshot(), overlays: () => overlays.snapshot(), send: (a) => client.send(a) }
+  if (window.mesa.isTest) window.__mesaTest = { board: () => board.snapshot(), fogSample: (p) => board.fogSample(p), overlays: () => overlays.snapshot(), send: (a) => client.send(a) }
   return () => {
     if (window.__mesaTest) window.__mesaTest = undefined
     stopSync()

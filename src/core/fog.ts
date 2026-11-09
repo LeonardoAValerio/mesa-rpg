@@ -1,6 +1,6 @@
 import { fromBase64 } from './base64'
 import { cellOrigin } from './grid'
-import type { Fog, FogMode, FogShape, Grid, Token } from './types'
+import type { Fog, FogShape, Grid, Token } from './types'
 
 export type { FogMode } from './types'
 

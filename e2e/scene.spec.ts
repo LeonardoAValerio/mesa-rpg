@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { textFile } from './fixtures'
-import { act, closeAll, freePort, host, join as joinTable, launch, masterAndPlayer, nextOpenDialog, nextSaveDialog, putAsset, snap, solidPng, type AppHandle } from './helpers'
+import { act, closeAll, coveredCenters, freePort, host, join as joinTable, launch, masterAndPlayer, nextOpenDialog, nextSaveDialog, putAsset, snap, solidPng, type AppHandle } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -15,7 +15,7 @@ async function build(master: AppHandle): Promise<void> {
   const tok = await putAsset(master.app, solidPng(16, 16, [10, 10, 200]))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
   await act(master.page, { type: 'fog/coverAll' }) // a new map has no fog (FOGD-01)
-  await act(master.page, { type: 'fog/rect', x0: 0, y0: 0, x1: 299, y1: 199, mode: 'reveal' })
+  await act(master.page, { type: 'fog/shape', shape: { kind: 'rect', mode: 'reveal', x: 0, y: 0, w: 299, h: 199 } })
   await act(master.page, { type: 'token/place', hash: tok, name: 'Guerreira', faction: 'grupo', size: 1, col: 1, row: 1 })
   await act(master.page, { type: 'token/place', hash: tok, name: 'Ogro', faction: 'inimigo', size: 2, col: 5, row: 4 })
   const s = await snap(master.page)
@@ -26,7 +26,7 @@ const summary = async (m: AppHandle): Promise<unknown> => {
   const s = await snap(m.page)
   return {
     map: s.map && { width: s.map.width, height: s.map.height },
-    fog: s.fog,
+    fog: { ...s.fog, covered: await coveredCenters(m.page) },
     tokens: s.tokens.map((t) => ({ name: t.name, x: t.x, y: t.y, w: t.w, owner: t.owner, hidden: t.hidden })).sort((a, b) => a.name.localeCompare(b.name))
   }
 }
@@ -51,10 +51,11 @@ test('[C73] SAVE-02 loading a .mesa shows the loaded scene in both windows', asy
   await nextOpenDialog(master.app, [file])
   await master.page.getByTestId('load-scene').click()
   await expect.poll(() => summary(master)).toEqual(saved)
-  expect(saved).toMatchObject({ map: { width: 800, height: 600 }, fog: { covered: 42, alpha: 0.5 } })
+  expect(saved).toMatchObject({ map: { width: 800, height: 600 }, fog: { covered: 42, alpha: 0.5, base: 'covered', shapes: 1 } })
   // the player sees the same scene through the fog: their own Guerreira, not the hidden Ogro
   await expect.poll(async () => (await snap(player.page)).tokens.map((t) => t.name)).toEqual(['Guerreira'])
-  expect((await snap(player.page)).fog).toEqual({ covered: 42, alpha: 1 })
+  expect(await coveredCenters(player.page)).toBe(42)
+  expect((await snap(player.page)).fog).toEqual({ shapes: 1, base: 'covered', alpha: 1 })
   await expect.poll(async () => (await snap(player.page)).map?.textured, { timeout: 10000 }).toBe(true)
 })
 

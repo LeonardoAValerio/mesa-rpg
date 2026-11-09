@@ -79,6 +79,16 @@ export async function act(page: Page, action: Action): Promise<void> {
   const r = await page.evaluate((a) => window.__mesaTest!.send(a), action)
   expect(r, JSON.stringify(action)).toEqual({ ok: true })
 }
+/** Whether the fog drawn in this window hides each map point (read from the fog texture). */
+export async function fogSample(page: Page, points: Array<[number, number]>): Promise<boolean[]> {
+  return page.evaluate((p) => window.__mesaTest!.fogSample(p), points)
+}
+/** How many cell centres the drawn fog hides, on a `cols` x `rows` grid of `cell` px from (0, 0). */
+export async function coveredCenters(page: Page, cols = 8, rows = 6, cell = 100): Promise<number> {
+  const points: Array<[number, number]> = []
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) points.push([c * cell + cell / 2, r * cell + cell / 2])
+  return (await fogSample(page, points)).filter(Boolean).length
+}
 /** Page coordinates of a map pixel in this window. */
 export async function screenOf(page: Page, x: number, y: number): Promise<{ x: number; y: number }> {
   const s = await snap(page)

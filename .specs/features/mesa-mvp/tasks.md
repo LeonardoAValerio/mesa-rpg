@@ -242,12 +242,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C1] NET-01, [C2] NET-02, [C3] NET-03, [C6] NET-06, [C13] NET-13
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C1] NET-01, [C2] NET-02, [C3] NET-03, [C6] NET-06, [C13] NET-13
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(ui): home screen, host and join`
+**Done**: yes
 
 ---
 

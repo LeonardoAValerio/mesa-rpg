@@ -1,2 +1,4 @@
-const root = document.getElementById('app')
-if (root) root.textContent = ''
+import './style.css'
+import { showHome } from './app'
+
+showHome()

@@ -1,0 +1,37 @@
+:root {
+  --bg: #14161a;
+  --panel: #1e2127;
+  --line: #2f343d;
+  --text: #e6e8eb;
+  --muted: #9aa1ab;
+  --accent: #3b82f6;
+  --danger: #ef4444;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+#app { height: 100%; }
+button { background: var(--accent); color: white; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; font: inherit; }
+button:disabled { opacity: .5; cursor: default; }
+button.secondary { background: var(--line); }
+input, select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit; }
+label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
+.error { color: var(--danger); min-height: 1.4em; }
+.home { max-width: 420px; margin: 60px auto; display: flex; flex-direction: column; gap: 16px; }
+.home h1 { margin: 0 0 8px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.card h2 { margin: 0; font-size: 16px; }
+.table { display: grid; grid-template-columns: 1fr 300px; grid-template-rows: auto 1fr; height: 100%; }
+.topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.host-info { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.host-info .hint { color: var(--muted); }
+.address { display: flex; gap: 6px; align-items: center; }
+.address .label { color: var(--muted); }
+.toolbar { display: flex; gap: 6px; margin-left: auto; }
+.toolbar button[aria-pressed="true"] { outline: 2px solid white; }
+.board { position: relative; overflow: hidden; background: #0d0e11; }
+.board .empty { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; color: var(--muted); }
+.sidebar { background: var(--panel); border-left: 1px solid var(--line); padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.sidebar h3 { margin: 0; font-size: 13px; text-transform: uppercase; color: var(--muted); }
+.players { margin: 0; padding-left: 18px; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; font-size: 18px; z-index: 10; }

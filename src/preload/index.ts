@@ -1,3 +1,11 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
+import type { MesaApi } from './api'
 
-contextBridge.exposeInMainWorld('mesa', {})
+const api: MesaApi = {
+  host: (portText) => ipcRenderer.invoke('mesa:host', portText),
+  stopHost: () => ipcRenderer.invoke('mesa:stopHost'),
+  addresses: () => ipcRenderer.invoke('mesa:addresses'),
+  copy: (text) => ipcRenderer.invoke('mesa:copy', text)
+}
+
+contextBridge.exposeInMainWorld('mesa', api)

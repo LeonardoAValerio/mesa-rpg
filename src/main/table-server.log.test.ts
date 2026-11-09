@@ -40,7 +40,7 @@ describe('shared log', () => {
 
   it('[C54] DICE-04 `2d`, `101d6`, `1d1`, `1d6+2000` and `2d6kh3` give "Notação inválida: <expressão>" and nothing reaches the log', async () => {
     const { master, ana } = await start()
-    for (const expr of ['2d', '101d6', '1d1', '1d6+2000', '2d6kh3']) {
+    for (const expr of ['2d', '101d6', '1d1', '1d6+2000', '2d6kh3', '1d6+1000+1000']) {
       ana.act(expr, { type: 'roll', expr })
       expect((await ana.next('reject', (m) => m.id === expr)).reason).toBe(`Notação inválida: ${expr}`)
     }

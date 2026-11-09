@@ -34,9 +34,7 @@ export function parseDice(input: string): DiceExpr | { error: string } {
     const m = TERM.exec(part.replace(/^[+-]/, ''))
     if (!m) return fail
     if (m[5] !== undefined) {
-      const value = Number(m[5])
-      if (value > DICE_LIMITS.maxConst) return fail
-      terms.push({ kind: 'const', sign, value })
+      terms.push({ kind: 'const', sign, value: Number(m[5]) })
       continue
     }
     const count = m[1] === '' ? 1 : Number(m[1])
@@ -50,6 +48,9 @@ export function parseDice(input: string): DiceExpr | { error: string } {
     }
     terms.push(term)
   }
+  // the modifier is the sum of the constants, and it must stay within -1000..1000
+  const modifier = terms.reduce((sum, t) => sum + (t.kind === 'const' ? t.sign * t.value! : 0), 0)
+  if (Math.abs(modifier) > DICE_LIMITS.maxConst) return fail
   return { text: shown, terms }
 }
 

@@ -48,6 +48,12 @@ describe('parseDice', () => {
     for (const bad of ['2d', '101d6', '1d1', '1d6+2000', '2d6kh3', '2d6kh0', '', 'abc', '1d6++2', '1d1001', '1d6*2', '1+1+1+1+1+1+1+1+1+1+1']) {
       expect(parseDice(bad), bad).toEqual({ error: `Notação inválida: ${bad.trim()}` })
     }
+    // the modifier is the sum of all constants
+    for (const bad of ['1d6+1000+1000', '1d6-600-600', '1000+1000+1000+1000+1000+1000+1000+1000+1000+1000']) {
+      expect(parseDice(bad), bad).toEqual({ error: `Notação inválida: ${bad}` })
+    }
+    expect('error' in parseDice('1d6+1000+1000-1000')).toBe(false)
+    expect('error' in parseDice('1d6-1000')).toBe(false)
     expect('error' in parseDice('100d1000+1000')).toBe(false)
     expect('error' in parseDice('1+1+1+1+1+1+1+1+1+1')).toBe(false)
   })

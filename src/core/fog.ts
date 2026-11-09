@@ -23,7 +23,13 @@ export function fogDims(map: MapRef, grid: Grid): FogDims {
   return { colStart, rowStart, cols: colEnd - colStart, rows: rowEnd - rowStart }
 }
 
-/** FOG-01, FOG-05: every cell covered. */
+/** FOGD-01, FOGD-02: every cell revealed (no fog). */
+export function revealAll(d: FogDims): Fog {
+  const { colStart, rowStart, cols, rows } = d
+  return { colStart, rowStart, cols, rows, covered: toBase64(new Uint8Array(byteLength(d))) }
+}
+
+/** FOG-05: every cell covered. */
 export function coverAll(d: FogDims): Fog {
   const bits = new Uint8Array(byteLength(d))
   for (let i = 0; i < d.cols * d.rows; i++) bits[i >> 3] |= 1 << (i & 7)
@@ -41,6 +47,13 @@ const indexOf = (fog: FogDims, col: number, row: number): number | null => {
   const r = row - fog.rowStart
   if (c < 0 || r < 0 || c >= fog.cols || r >= fog.rows) return null
   return r * fog.cols + c
+}
+
+/** FOGD-04, FOGD-05: whether any cell of the fog is covered. */
+export function anyCovered(fog: Fog): boolean {
+  const bits = bitsOf(fog)
+  for (let i = 0; i < fog.cols * fog.rows; i++) if (bits[i >> 3] & (1 << (i & 7))) return true
+  return false
 }
 
 /** Cells outside the fog grid count as covered. */

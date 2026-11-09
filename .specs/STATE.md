@@ -33,3 +33,11 @@
 - **Scope**: repositório.
 - **Date**: 2026-11-09
 - **Status**: active
+
+### AD-005
+- **Decision**: Um mapa importado vem sem névoa; o painel de névoa ganha "Revelar tudo"; ajustar o grid só recobre tudo quando havia alguma célula coberta. Substitui FOG-01 e FOG-08 do MVP.
+- **Reason**: user: "quando eu importo um mapa ele fica meio escurecido (...) não estou conseguindo deixar ele totalmente claro"; "Mapa vem sem névoa (Recomendado)"; spec aprovada: "Aprovo sim".
+- **Trade-off**: Quem quer névoa precisa usar "Cobrir tudo" depois de importar; os checks C64 (FOG-01) e o de FOG-08 do MVP passam a provar a regra nova.
+- **Scope**: `src/core/reducer.ts`, `src/core/fog.ts`, painel de névoa.
+- **Date**: 2026-11-09
+- **Status**: active

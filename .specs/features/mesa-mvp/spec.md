@@ -225,14 +225,14 @@ O grupo quer jogar a campanha numa mesa virtual própria, com os mapas e tokens 
 
 **Acceptance Criteria**:
 
-1. WHEN um mapa é importado THEN the server SHALL cobrir todas as células com névoa.  <!-- FOG-01 -->
+1. WHEN um mapa é importado THEN the server SHALL cobrir todas as células com névoa.  <!-- FOG-01 --> (substituído por FOGD-01, AD-005: o mapa vem sem névoa)
 2. WHILE uma célula está coberta the app do jogador SHALL desenhá-la totalmente opaca e the app do mestre SHALL desenhá-la com 50% de opacidade.  <!-- FOG-02 -->
 3. WHEN o mestre pinta com o Pincel de névoa (raio de 1 a 10 células) no modo Revelar ou Cobrir THEN the server SHALL revelar ou cobrir as células cujo centro está dentro do raio e transmitir a mudança.  <!-- FOG-03 -->
 4. WHEN o mestre arrasta um retângulo de névoa no modo Revelar ou Cobrir THEN the server SHALL revelar ou cobrir as células cujo centro está dentro do retângulo.  <!-- FOG-04 -->
 5. WHEN o mestre usa "Cobrir tudo" THEN the server SHALL cobrir todas as células.  <!-- FOG-05 -->
 6. WHILE alguma célula ocupada por um token está coberta the server SHALL não enviar esse token aos jogadores que não são donos dele.  <!-- FOG-06 -->
 7. WHEN uma área é revelada e passa a mostrar um token THEN the server SHALL enviar esse token aos jogadores.  <!-- FOG-07 -->
-8. WHEN o mestre muda tamanho da célula ou deslocamento do grid THEN the server SHALL recobrir todas as células com névoa.  <!-- FOG-08 -->
+8. WHEN o mestre muda tamanho da célula ou deslocamento do grid THEN the server SHALL recobrir todas as células com névoa.  <!-- FOG-08 --> (substituído por FOGD-04 e FOGD-05, AD-005)
 
 **Independent Test**: O mestre revela um retângulo; Ana vê só aquela área e só os tokens dentro dela.
 

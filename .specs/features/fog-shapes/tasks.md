@@ -249,7 +249,7 @@ Proof: run unit | ✓ [C18] FOGS-11
 ## Handoff
 
 **Settled mid-build:** T1, T2 and T3 go in one commit: changing the `Fog` type breaks the reducer, view and `.mesa` until all three change, so none builds alone. The renderer and the e2e still use the cell fog in that commit (typecheck red there) until T4, the next commit. T4 gate: unit 127, e2e 59 of 60 - NET-02 failed only because the user's own `npm run dev` was hosting on port 47800; left running, rerun in the proofs. T5 gate: unit 127, e2e 66 of 67, the same NET-02 port clash. T6 gate: unit 127, e2e 68 of 69, the same NET-02 port clash.
-**Dispatched:** none
+**Dispatched:** Verifier (validate.md) at the proofs commit after 64b9906
 **Walked:** at b95687e with real mouse and keys in Electron (MESA_TEST=1, master + player "Ana"), map `Florestas Frias.jpg` imported through "Importar mapa" (grid detected 85.33 px): "Cobrir tudo" turns the player black and the master 50% dark; Pincel de névoa, Revelar, radius 1, dragged from the castle down and east: a smooth trail with round ends, no cells; Polígono de névoa: six clicks show a yellow outline following the cursor and a ring on the first point, Enter reveals the clearing; Retângulo de névoa over the village Tal reveals it. The player window shows exactly the trail, the clearing and the village; the toolbar shows Cobrir/Revelar right after the three fog tools; the side panel keeps only "Cobrir tudo" / "Revelar tudo".
 
 ---

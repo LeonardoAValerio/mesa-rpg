@@ -42,7 +42,7 @@ O grupo quer jogar a campanha numa mesa virtual própria, com os mapas e tokens 
 | Tokens sob névoa | Invisíveis para jogadores, exceto os próprios; servidor não os envia | user: "Ficam invisíveis (Recomendado)" | y |
 | Idioma da interface | Português | O grupo e o plano são em português | n |
 | "Vantagem" na notação | Sufixos genéricos `kh`/`kl` (manter maiores/menores): `2d20kh1` é vantagem, `2d20kl1` desvantagem | Regras próprias: sem amarrar a D&D, mas cobre o exemplo do plano | n |
-| Limites da notação de dados | 1–100 dados por termo, 2–1000 faces, até 10 termos, modificador -1000..1000 | Evita travar o servidor com `99999d6` | n |
+| Limites da notação de dados | 1–100 dados por termo, 2–1000 faces, até 10 termos; o modificador é a soma das constantes e fica em -1000..1000 (`1d6+1000+1000` é inválido) | Evita travar o servidor com `99999d6`; a soma foi escolhida após o Verifier apontar a ambiguidade | n |
 | Limite de conexões | Até 8 jogadores além do mestre | Folga sobre o grupo de 5 | n |
 | Nome do jogador | 1–24 caracteres; único entre conectados | Identifica o dono dos tokens | n |
 | Resolução da névoa | Por célula do grid; pincel com raio em células, retângulo em células | Torna "token sob névoa" exato e o estado pequeno | n |

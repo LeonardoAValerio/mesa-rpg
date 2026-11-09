@@ -5,8 +5,10 @@ import { WebSocketServer, WebSocket } from 'ws'
 import { parseClientMsg, type Action, type ClientMsg, type ServerMsg } from '../core/protocol'
 import { applyAction, type ReducerCtx } from '../core/reducer'
 import { normalizeName, validateJoin } from '../core/session-rules'
-import { emptyScene, type Actor, type LogEntry, type Role, type Scene, type View } from '../core/types'
+import { imageInfo } from '../core/image-info'
+import { emptyScene, type Actor, type LibraryItem, type LogEntry, type Role, type Scene, type View } from '../core/types'
 import { diffViews, viewFor } from '../core/view'
+import { AssetStore, HASH_RE } from './asset-store'
 
 export const MASTER_NAME = 'Mestre'
 
@@ -26,6 +28,7 @@ export interface TableServerOptions {
   host?: string
   hostToken: string
   heartbeatMs?: number
+  store?: AssetStore
 }
 
 export interface TableServer {
@@ -34,6 +37,9 @@ export interface TableServer {
   players(): string[]
   getScene(): Scene
   setScene(scene: Scene): void
+  readonly store: AssetStore
+  /** Adds token images to the master's library (sent to the master only). */
+  addLibrary(items: LibraryItem[]): void
   close(): Promise<void>
 }
 
@@ -45,8 +51,24 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
   const ctx: ReducerCtx = { rng: cryptoRng, now: () => Date.now(), newId: () => `${Date.now().toString(36)}-${++idSeq}` }
   const log: LogEntry[] = []
 
+  const store = opts.store ?? new AssetStore()
+  let library: LibraryItem[] = []
+
+  /** ASSET-06: only images the scene or the library use are served; nothing else on disk is reachable. */
+  const referenced = (hash: string): boolean =>
+    scene.map?.hash === hash || Object.values(scene.tokens).some((t) => t.hash === hash) || library.some((l) => l.hash === hash)
+
   const http: Server = createServer((req: IncomingMessage, res: ServerResponse) => {
-    res.writeHead(404).end()
+    const m = /^\/asset\/([^/?#]+)$/.exec(req.url ?? '')
+    const hash = m?.[1] ?? ''
+    const bytes = req.method === 'GET' && HASH_RE.test(hash) && referenced(hash) ? store.get(hash) : null
+    if (!bytes) {
+      res.writeHead(404).end()
+      return
+    }
+    const type = imageInfo(bytes)?.type ?? 'png'
+    res.writeHead(200, { 'Content-Type': `image/${type}`, 'Content-Length': bytes.length, 'Cache-Control': 'no-store' })
+    res.end(Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength))
   })
   const wss = new WebSocketServer({ server: http, maxPayload: 1024 * 1024 })
   wss.on('error', () => {}) // ws re-emits the http server's errors; listen() below reports them
@@ -70,6 +92,10 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
   }
 
   const handleAction = (s: Session, id: string, action: Action): void => {
+    if ((action.type === 'map/set' || action.type === 'token/place') && !store.has(action.hash)) {
+      send(s, { t: 'reject', id, reason: 'Arquivo desconhecido' })
+      return
+    }
     const r = applyAction(scene, actorOf(s), action, ctx)
     if (!r.ok) {
       send(s, { t: 'reject', id, reason: r.reason })
@@ -104,6 +130,7 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     const view = viewFor(scene, actorOf(session), names())
     session.last = view
     send(session, { t: 'welcome', you: { role: session.role, name }, view, log: log.slice(-200) })
+    if (session.role === 'master') send(session, { t: 'library', items: library })
     broadcastViews()
     return session
   }
@@ -159,6 +186,12 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     port: address.port,
     host: address.address,
     players: names,
+    store,
+    addLibrary: (items) => {
+      const known = new Set(library.map((l) => l.hash))
+      library = [...library, ...items.filter((i) => !known.has(i.hash) && known.add(i.hash))]
+      for (const s of sessions) if (s.role === 'master') send(s, { t: 'library', items: library })
+    },
     getScene: () => scene,
     setScene: (next) => {
       scene = next

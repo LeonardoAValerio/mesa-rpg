@@ -1,6 +1,7 @@
 import { _electron as electron, expect, type ElectronApplication, type Page } from '@playwright/test'
 import { mkdtempSync } from 'node:fs'
 import { createServer } from 'node:net'
+import { PNG } from 'pngjs'
 import { tmpdir } from 'node:os'
 import { join as pathJoin } from 'node:path'
 import type { Action } from '../src/core/protocol'
@@ -82,4 +83,19 @@ export async function nextOpenDialog(app: AppHandle['app'], paths: string[]): Pr
   await app.evaluate(({ dialog }, filePaths) => {
     dialog.showOpenDialog = (async () => ({ canceled: filePaths.length === 0, filePaths })) as typeof dialog.showOpenDialog
   }, paths)
+}
+
+/** A tiny valid PNG of w x h pixels in one colour. */
+export function solidPng(w = 4, h = 4, rgb: [number, number, number] = [200, 60, 60]): Buffer {
+  const p = new PNG({ width: w, height: h })
+  for (let i = 0; i < w * h; i++) p.data.set([...rgb, 255], i * 4)
+  return PNG.sync.write(p)
+}
+
+/** Puts an image in the hosting app's asset store, as an import would, and returns its hash. */
+export async function putAsset(app: AppHandle['app'], bytes: Buffer = solidPng()): Promise<string> {
+  return app.evaluate((_e, b64) => {
+    const store = (globalThis as unknown as { __mesaStore: { put(b: Uint8Array): string } }).__mesaStore
+    return store.put(new Uint8Array(Buffer.from(b64, 'base64')))
+  }, bytes.toString('base64'))
 }

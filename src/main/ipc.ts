@@ -1,12 +1,15 @@
-import { createHash, randomBytes } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
 import { app, clipboard, dialog, ipcMain } from 'electron'
 import type { HostResult, ImportedImage } from '../preload/api'
+import { AssetStore } from './asset-store'
 import { readImageFile } from './import'
 import { validatePort } from '../core/session-rules'
 import { listAddresses } from './netinfo'
 import { startTableServer, type TableServer } from './table-server'
 
 let server: TableServer | null = null
+/** Lives as long as the app, so re-hosting keeps the imported images. */
+const store = new AssetStore()
 
 async function stopHost(): Promise<void> {
   const s = server
@@ -16,10 +19,14 @@ async function stopHost(): Promise<void> {
 }
 
 function exposeForTests(): void {
-  if (process.env.MESA_TEST === '1') (globalThis as { __mesaServer?: TableServer | null }).__mesaServer = server
+  if (process.env.MESA_TEST !== '1') return
+  const g = globalThis as { __mesaServer?: TableServer | null; __mesaStore?: AssetStore }
+  g.__mesaServer = server
+  g.__mesaStore = store
 }
 
 export function registerIpc(): void {
+  exposeForTests()
   ipcMain.on('mesa:isTest', (e) => {
     e.returnValue = process.env.MESA_TEST === '1'
   })
@@ -29,7 +36,7 @@ export function registerIpc(): void {
     await stopHost()
     const hostToken = randomBytes(24).toString('hex')
     try {
-      server = await startTableServer({ port: check.port, host: '0.0.0.0', hostToken })
+      server = await startTableServer({ port: check.port, host: '0.0.0.0', hostToken, store })
     } catch (err) {
       return { ok: false, error: (err as Error).message }
     }
@@ -48,7 +55,7 @@ export function registerIpc(): void {
     if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
     const img = await readImageFile(pick.filePaths[0])
     if (!img.ok) return img
-    const hash = createHash('sha256').update(img.bytes).digest('hex')
+    const hash = store.put(img.bytes)
     return { ok: true, hash, width: img.info.width, height: img.info.height, bytes: img.bytes }
   })
 

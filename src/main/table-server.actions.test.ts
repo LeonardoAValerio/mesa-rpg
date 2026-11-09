@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { AssetStore } from './asset-store'
 import { startTableServer, type TableServer } from './table-server'
 import { joinAs, type TestClient } from './testing'
 
 const TOKEN = 'host-secret'
-const H = 'f'.repeat(64)
+const store = new AssetStore()
+const H = store.put(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]))
 let server: TableServer | null = null
 const clients: TestClient[] = []
 
@@ -21,7 +23,7 @@ async function join(name: string, token?: string): Promise<TestClient> {
 
 /** Master + Ana on an 800x600 map (100 px cells), with Guerreira (Ana's) at (1,1) and Goblin at (3,3). */
 async function table(): Promise<{ master: TestClient; ana: TestClient; guerreira: string; goblin: string }> {
-  server = await startTableServer({ port: 0, host: '127.0.0.1', hostToken: TOKEN })
+  server = await startTableServer({ port: 0, host: '127.0.0.1', hostToken: TOKEN, store })
   const master = await join('Mestre', TOKEN)
   const ana = await join('Ana')
   master.act('m', { type: 'map/set', hash: H, width: 800, height: 600, grid: { cell: 100 } })

@@ -413,12 +413,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C37] ASSET-01, [C42] ASSET-06
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C37] ASSET-01, [C42] ASSET-06
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(server): content-addressed asset store`
+**Done**: yes
 
 ---
 

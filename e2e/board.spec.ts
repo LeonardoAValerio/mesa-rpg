@@ -1,12 +1,14 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { BoardSnapshot } from '../src/renderer/board/board'
-import { act, closeAll, masterAndPlayer, screenOf, snap } from './helpers'
+import { act, closeAll, masterAndPlayer, putAsset, screenOf, snap, type AppHandle } from './helpers'
 
 test.afterEach(closeAll)
 
-const H = 'a1'.repeat(32)
+let H = ''
 
-async function mapReady(master: Page, player: Page): Promise<void> {
+async function mapReady(masterApp: AppHandle, player: Page): Promise<void> {
+  const master = masterApp.page
+  H = await putAsset(masterApp.app)
   await act(master, { type: 'map/set', hash: H, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
   await expect.poll(async () => (await snap(player)).map?.width).toBe(800)
 }
@@ -21,7 +23,7 @@ test('[C17] MAP-01 with no map the master sees "Nenhum mapa carregado" and "Impo
 
 test('[C23] MAP-07 the wheel zooms only that window, between 10% and 400%, keeping the point under the cursor', async () => {
   const { master, player } = await masterAndPlayer()
-  await mapReady(master.page, player.page)
+  await mapReady(master, player.page)
   const other = (await snap(player.page)).camera
   const before = await snap(master.page)
   const cursor = { x: Math.round(before.canvas.left + 300), y: Math.round(before.canvas.top + 200) }
@@ -44,7 +46,7 @@ test('[C23] MAP-07 the wheel zooms only that window, between 10% and 400%, keepi
 
 test('[C24] MAP-08 dragging with the middle button pans only that window', async () => {
   const { master, player } = await masterAndPlayer()
-  await mapReady(master.page, player.page)
+  await mapReady(master, player.page)
   const other = (await snap(player.page)).camera
   const before = await snap(master.page)
   const p = { x: before.canvas.left + 400, y: before.canvas.top + 300 }
@@ -61,7 +63,7 @@ test('[C24] MAP-08 dragging with the middle button pans only that window', async
 
 test('[C30] TOK-05 dropping a dragged token snaps its top-left corner to the cell under it, in both windows', async () => {
   const { master, player } = await masterAndPlayer()
-  await mapReady(master.page, player.page)
+  await mapReady(master, player.page)
   await act(master.page, { type: 'token/place', hash: H, name: 'Goblin', faction: 'inimigo', size: 1, col: 1, row: 1 })
   await expect.poll(async () => (await snap(player.page)).tokens.length).toBe(1)
   // grab the centre (150,150) and move by (+235,+120): the corner lands at (335,220), inside cell (3,2)
@@ -78,7 +80,7 @@ test('[C30] TOK-05 dropping a dragged token snaps its top-left corner to the cel
 
 test('[C31] TOK-06 a size-2 token covers 2x2 cells, shows its name and has a ring in its faction colour', async () => {
   const { master, player } = await masterAndPlayer()
-  await mapReady(master.page, player.page)
+  await mapReady(master, player.page)
   await act(master.page, { type: 'token/place', hash: H, name: 'Ogro', faction: 'inimigo', size: 2, col: 2, row: 2 })
   await act(master.page, { type: 'token/place', hash: H, name: 'Elfa', faction: 'grupo', size: 1, col: 5, row: 1 })
   for (const page of [master.page, player.page]) {

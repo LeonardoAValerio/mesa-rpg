@@ -186,12 +186,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C5] NET-05, [C7] NET-07, [C9] NET-09, [C15] NET-15
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C5] NET-05, [C7] NET-07, [C9] NET-09, [C15] NET-15
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(server): host table over ws with join rules`
+**Done**: yes
 
 ---
 

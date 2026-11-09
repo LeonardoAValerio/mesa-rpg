@@ -415,8 +415,8 @@ Proof: run unit | ✓ [C23] REL-04
 **C24** - `mesa-rpg` is the repository root with `.specs` inside it (REPO-01, AC 1)
 Proof: `cd "$([ -d mesa-rpg ] && echo mesa-rpg || echo .)" && test "$(git rev-parse --show-toplevel)" = "$(pwd -P)" && git ls-files --error-unmatch .specs/features/auto-update/spec.md package.json`
 
-**C25** - The old commits are in the new history with rewritten paths (REPO-02, AC 2)
-Proof: `cd "$([ -d mesa-rpg ] && echo mesa-rpg || echo .)" && git log --format=%s | grep -qx 'chore(mesa): scaffold electron-vite project' && git log --format=%s | grep -q '^docs(specs): mesa mvp verified' && git log --name-only --format= | grep -q '^src/core/dice.ts$' && ! git log --name-only --format= | grep -q '^mesa-rpg/'`
+**C25** - Every old commit that touched `mesa-rpg/` or `.specs/` (46, up to 42e2a2e in the backup `../.git-pre-split`) is in the new history with the same subject, author and time, and with rewritten paths (REPO-02, AC 2)
+Proof: `cd "$([ -d mesa-rpg ] && echo mesa-rpg || echo .)" && old=$(git --git-dir=../.git-pre-split log --format="%s%x09%an%x09%at" 42e2a2e -- mesa-rpg .specs | sort | cksum) && new=$(git log --format="%s%x09%an%x09%at" 648d405 | sort | cksum) && test "$old" = "$new" && test "$(git log --format=%s 648d405 | wc -l)" -eq 46 && git log --name-only --format= | grep -q "^src/core/dice.ts$" && ! git log --name-only --format= | grep -q "^mesa-rpg/"`
 
 **C26** - Neither the tree nor the history holds the plan, skill folders or build output (REPO-03, AC 3)
 Proof: `cd "$([ -d mesa-rpg ] && echo mesa-rpg || echo .)" && ! git log --all --name-only --format= | grep -E '^(\.claude|\.cursor|\.windsurf|\.agents|node_modules|out|dist|test-results)/|plano do app'`

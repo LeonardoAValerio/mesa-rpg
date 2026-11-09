@@ -247,11 +247,12 @@ T11 → T12
 
 **Done when**:
 
-- [ ] Unpackaged: `checkForUpdates` is never called; packaged: called once on start, with `autoDownload` and `autoInstallOnAppQuit` true
-- [ ] A full event sequence up to `downloaded` never calls `quitAndInstall`; `install()` calls it with `(false, true)` after stopping the server
-- [ ] A rejected `checkForUpdates` does not throw
-- [ ] Quick gate passes
+- [x] Unpackaged: `checkForUpdates` is never called; packaged: called once on start, with `autoDownload` and `autoInstallOnAppQuit` true
+- [x] A full event sequence up to `downloaded` never calls `quitAndInstall`; `install()` calls it with `(false, true)` after stopping the server
+- [x] A rejected `checkForUpdates` does not throw
+- [x] Quick gate passes
 
+**Done**: yes
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(main): auto-updater from github releases`

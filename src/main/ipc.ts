@@ -16,7 +16,8 @@ let server: TableServer | null = null
 /** Lives as long as the app, so re-hosting keeps the imported images. */
 const store = new AssetStore()
 
-async function stopHost(): Promise<void> {
+/** Ends the hosted table; players see "O mestre encerrou a mesa" (NET-13). */
+export async function stopHost(): Promise<void> {
   const s = server
   server = null
   exposeForTests()

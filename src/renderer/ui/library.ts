@@ -32,13 +32,13 @@ export function libraryPanel(client: TableClient, board: Board, dropZone: HTMLEl
   }
   const onDrop = async (e: DragEvent): Promise<void> => {
     const raw = e.dataTransfer?.getData(DRAG_TYPE)
-    const grid = client.view?.grid
-    if (!raw || !grid) return
+    if (!raw || !client.view?.map) return
     e.preventDefault()
     const item = JSON.parse(raw) as LibraryItem
     const r = board.app.canvas.getBoundingClientRect()
     const w = board.toWorld(e.clientX - r.left, e.clientY - r.top)
-    const res = await client.send({ type: 'token/place', hash: item.hash, name: item.name, kind: item.kind, width: item.width, ring: item.ring, x: w.x, y: w.y })
+    const at = board.dropAt(item.kind, item.hash, item.width, w.x, w.y, e.shiftKey) // ITEM-10: centred under the cursor
+    const res = await client.send({ type: 'token/place', hash: item.hash, name: item.name, kind: item.kind, width: item.width, ring: item.ring, ...at })
     message.textContent = res.ok ? '' : res.reason
   }
   const dropListener = (e: DragEvent): void => void onDrop(e)

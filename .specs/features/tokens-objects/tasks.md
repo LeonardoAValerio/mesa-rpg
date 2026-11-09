@@ -163,12 +163,13 @@ T4 → T5 → T6 → T7
 
 **Done when**:
 
-- [ ] e2e: a character dropped between cells snaps, an object stays, Shift inverts both; a library drop centres under the cursor; a player moves a Livre item; a player's move of a "Só mestre" item comes back; nobody drags a Travado item
-- [ ] Task e2e gate passes
+- [x] e2e: a character dropped between cells snaps, an object stays, Shift inverts both; a library drop centres under the cursor; a player moves a Livre item; a player's move of a "Só mestre" item comes back; nobody drags a Travado item
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(board): characters snap, objects drop free, Shift inverts`
+**Done**: yes
 
 ---
 

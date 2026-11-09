@@ -1,5 +1,6 @@
 import 'pixi.js/unsafe-eval' // keeps the CSP free of 'unsafe-eval'
 import { Application, Container, Graphics, Sprite, type FederatedPointerEvent, type Texture } from 'pixi.js'
+import { canMove, dropPosition } from '../../core/items'
 import { DEFAULT_FACTION_COLORS, type FactionColors, type Token, type View } from '../../core/types'
 import type { TableClient } from '../net/table-client'
 import { h } from '../ui/dom'
@@ -127,9 +128,23 @@ export class Board {
     this.world.position.set(this.camera.x, this.camera.y)
   }
 
-  private canDrag(t: Token): boolean {
+  /** ITEM-14..16: anyone moves a Livre item, only the master a "Só mestre" one, nobody a Travado one. */
+  canDrag(t: Token): boolean {
     const you = this.client.you
-    return !!you && (you.role === 'master' || t.owner === you.name)
+    return !!you && canMove(t, you).ok
+  }
+
+  /** The image's height / width, or 1 while it loads. */
+  aspect(hash: string): number {
+    const tex = this.textures.get(hash)
+    return tex && tex.width > 0 ? tex.height / tex.width : 1
+  }
+
+  /** ITEM-08, ITEM-09, ITEM-10: where an item dropped at (x, y) lands; Shift inverts the snap. */
+  dropAt(kind: Token['kind'], hash: string, width: number, x: number, y: number, shift: boolean): { x: number; y: number } {
+    const grid = this.client.view?.grid
+    if (!grid) return { x, y }
+    return dropPosition(kind, shift, grid, x, y, width, width * this.aspect(hash))
   }
 
   private bindInput(): void {
@@ -176,8 +191,8 @@ export class Board {
       const w = this.toWorld(e.global.x, e.global.y)
       this.drag.container.position.set(w.x - this.drag.dx, w.y - this.drag.dy)
     })
-    stage.on('pointerup', () => void this.endDrag())
-    stage.on('pointerupoutside', () => void this.endDrag())
+    stage.on('pointerup', (e: FederatedPointerEvent) => void this.endDrag(e.shiftKey))
+    stage.on('pointerupoutside', (e: FederatedPointerEvent) => void this.endDrag(e.shiftKey))
   }
 
   private startDrag(t: Token, sprite: TokenSprite, e: FederatedPointerEvent): void {
@@ -189,18 +204,18 @@ export class Board {
     sprite.root.parent?.addChild(sprite.root) // on top of its layer while dragging
   }
 
-  /** TOK-05: the token's top-left corner snaps to the cell under it; a refused move goes back (PERM-03, TOK-10). */
-  private async endDrag(): Promise<void> {
+  /** ITEM-08, ITEM-09, ITEM-17: the drop rule decides where it lands; a refusal puts it back. */
+  private async endDrag(shift: boolean): Promise<void> {
     const d = this.drag
     if (!d) return
     this.drag = null
     const view = this.client.view
     if (!view || !view.tokens[d.id]) return this.render(true)
     const t = view.tokens[d.id]
-    const x = d.container.x
-    const y = d.container.y
-    if (t.x === x && t.y === y) return
-    const r = await this.client.send({ type: 'token/move', id: d.id, x, y })
+    const p = this.dropAt(t.kind, t.hash, t.width, d.container.x, d.container.y, shift)
+    d.container.position.set(p.x, p.y)
+    if (t.x === p.x && t.y === p.y) return
+    const r = await this.client.send({ type: 'token/move', id: d.id, x: p.x, y: p.y })
     if (!r.ok) this.render(true)
   }
 

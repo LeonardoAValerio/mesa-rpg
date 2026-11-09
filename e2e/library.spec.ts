@@ -14,28 +14,36 @@ async function importKit(master: AppHandle): Promise<void> {
   const dir = tokenFolder(`kit-${Date.now()}`, {
     'goblin.png': solidPng(64, 64, [200, 30, 30]),
     'goblin.json': JSON.stringify({ faccao: 'inimigo', tamanho: 1 }),
-    'elfa.png': solidPng(64, 64, [30, 30, 200])
+    'elfa.png': solidPng(64, 64, [30, 30, 200]),
+    'bau.png': solidPng(64, 32, [120, 80, 20]),
+    'bau.json': JSON.stringify({ tipo: 'objeto', tamanho: 1 })
   })
   await nextOpenDialog(master.app, [dir])
   await master.page.getByTestId('import-tokens').click()
-  await expect(master.page.getByTestId('library-name')).toHaveText(['elfa', 'goblin'])
+  await expect(master.page.getByTestId('library-name')).toHaveText(['bau', 'elfa', 'goblin'])
 }
 
-test('[C29] TOK-04 dragging a library token onto the map places it in the cell under the cursor in both windows', async () => {
+test('[C10] ITEM-10 a library drop puts the item\'s centre under the cursor, snapping a character, in both windows', async () => {
   const { master, player } = await masterAndPlayer()
   await withMap(master)
   await importKit(master)
   const s = await snap(master.page)
-  // map pixel (250, 350) is inside cell (2, 3), whose origin is (200, 300)
-  const target = { x: 250 * s.camera.scale + s.camera.x, y: 350 * s.camera.scale + s.camera.y }
-  await master.page.getByTestId('library-item').filter({ hasText: 'goblin' }).dragTo(master.page.getByTestId('board-canvas'), { targetPosition: target })
+  const at = (x: number, y: number) => ({ x: x * s.camera.scale + s.camera.x, y: y * s.camera.scale + s.camera.y })
+  // goblin (1 cell) dropped at (240, 360): its edges snap to the lines at 200 and 300, so its centre is (250, 350)
+  await master.page.getByTestId('library-item').filter({ hasText: 'goblin' }).dragTo(master.page.getByTestId('board-canvas'), { targetPosition: at(240, 360) })
+  // the chest (an object) dropped at (433, 211) stays there
+  await master.page.getByTestId('library-item').filter({ hasText: 'bau' }).dragTo(master.page.getByTestId('board-canvas'), { targetPosition: at(433, 211) })
   for (const page of [master.page, player.page]) {
-    await expect.poll(async () => (await snap(page)).tokens.map((t) => ({ name: t.name, x: t.x, y: t.y, ring: t.ring }))).toEqual([
-      { name: 'goblin', x: 200, y: 300, ring: '#ef4444' }
-    ])
+    await expect.poll(async () => (await snap(page)).tokens.length).toBe(2)
+    const items = Object.fromEntries((await snap(page)).tokens.map((t) => [t.name, t]))
+    expect([items.goblin.x, items.goblin.y]).toEqual([250, 350])
+    expect(items.goblin.ring).toBe('#ef4444')
+    expect(Math.abs(items.bau.x - 433)).toBeLessThan(1.5)
+    expect(Math.abs(items.bau.y - 211)).toBeLessThan(1.5)
+    expect(items.bau.kind).toBe('object')
   }
-  // the player downloads the token image from the master (ASSET-02)
-  await expect.poll(async () => (await player.page.evaluate(() => window.__mesaTest!.board()!.tokens[0]?.textured))).toBe(true)
+  // the player downloads the images from the master (ASSET-02)
+  await expect.poll(async () => (await player.page.evaluate(() => window.__mesaTest!.board()!.tokens.every((t) => t.textured)))).toBe(true)
 })
 
 test('a loaded palette changes the ring colours in every window (TOK-09)', async () => {

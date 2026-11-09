@@ -209,7 +209,7 @@ export class TableClient {
       reject?.(new Error(message))
       return
     }
-    if (Date.now() - this.lostAt + RETRY_EVERY_MS > RETRY_FOR_MS) {
+    if (Date.now() - this.lostAt >= RETRY_FOR_MS) { // NET-12: only once 60 s have really passed
       this.stopped = true
       this.setStatus({ kind: 'lost', message: MSG_LOST })
       return

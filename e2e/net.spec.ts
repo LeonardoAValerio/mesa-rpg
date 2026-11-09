@@ -106,3 +106,20 @@ test('"Encerrar mesa" also tells the player "O mestre encerrou a mesa" (NET-13)'
   await expect(master.page.getByTestId('host')).toBeVisible()
   await expect(player.page.getByTestId('status-message')).toHaveText('O mestre encerrou a mesa')
 })
+
+test('[C12] NET-12 after 60 s without reconnecting the player sees "Conexão perdida" and "Voltar ao início", which goes home', async () => {
+  test.setTimeout(150_000)
+  const { master, player } = await masterAndPlayer('Ana')
+  master.app.process().kill('SIGKILL') // the link dies with no goodbye, as when the VPN drops
+  const t0 = Date.now()
+  // NET-10: the screen while it retries
+  await expect(player.page.getByTestId('status-message')).toHaveText('Conexão com o mestre perdida — tentando reconectar', { timeout: 15_000 })
+  await expect(player.page.getByTestId('back-home')).toHaveCount(0)
+  await expect(player.page.getByTestId('status-message')).toHaveText('Conexão perdida', { timeout: 90_000 })
+  const elapsed = Date.now() - t0
+  expect(elapsed).toBeGreaterThanOrEqual(59_000) // never before the 60 s of the spec (kill-to-detection takes under 1 s)
+  expect(elapsed).toBeLessThan(75_000)
+  await player.page.getByTestId('back-home').click()
+  await expect(player.page.getByTestId('host')).toBeVisible()
+  await expect(player.page.getByTestId('join')).toBeVisible()
+})

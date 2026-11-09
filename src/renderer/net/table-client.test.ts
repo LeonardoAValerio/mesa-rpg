@@ -140,7 +140,7 @@ describe('TableClient', () => {
     expect(table!.players()).toEqual(['Ana'])
   })
 
-  it('[C12] NET-12 turns into "Conexão perdida" after 60 s of failed retries and stops trying', async () => {
+  it('turns into "Conexão perdida" after 60 s of failed retries and stops trying (NET-12)', async () => {
     const c = await connectedThroughProxy()
     proxy!.cut()
     await until(() => c.status.kind === 'reconnecting', 'reconnecting')

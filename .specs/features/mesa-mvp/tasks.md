@@ -743,8 +743,8 @@ Proof: run unit | ✓ [C10] NET-10
 **C11** - Reconectar como "Ana" mantém Ana como dona dos tokens dela (NET-11, AC 11)
 Proof: run unit | ✓ [C11] NET-11
 
-**C12** - Depois de 60 s sem reconectar, o status passa a "Conexão perdida" (NET-12, AC 12)
-Proof: run unit | ✓ [C12] NET-12
+**C12** - Depois de 60 s sem reconectar (e nunca antes), a janela do jogador mostra "Conexão perdida" e "Voltar ao início", que volta à tela inicial (NET-12, AC 12)
+Proof: run e2e | ✓ [C12] NET-12
 
 **C13** - Quando o mestre fecha a mesa, a janela do jogador mostra "O mestre encerrou a mesa" e "Voltar ao início" (NET-13, AC 13)
 Proof: run e2e | ✓ [C13] NET-13

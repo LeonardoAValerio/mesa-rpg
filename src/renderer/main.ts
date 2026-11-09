@@ -1,6 +1,6 @@
 import './style.css'
 import type { Action } from '../core/protocol'
-import { onSession, showHome } from './app'
+import { isHosting, onSession, showHome } from './app'
 import { syncAssets } from './assets/sync'
 import { TextureStore } from './assets/textures'
 import { Board, type BoardSnapshot } from './board/board'
@@ -13,6 +13,7 @@ import { logPanel } from './ui/log-panel'
 import { sceneMenu } from './ui/scene-menu'
 import { tokenEditor } from './ui/token-editor'
 import { toolbar } from './ui/toolbar'
+import { mountUpdateBar } from './ui/update-bar'
 
 declare global {
   interface Window {
@@ -61,4 +62,5 @@ onSession(async ({ client, screen }) => {
   }
 })
 
+mountUpdateBar(document.body, { isHosting, install: () => void window.mesa.installUpdate() })
 showHome()

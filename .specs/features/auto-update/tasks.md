@@ -269,10 +269,11 @@ T11 → T12
 
 **Done when**:
 
-- [ ] e2e: the bar shows the download text, then the ready text and button, on the start screen and on the table; nothing for `not-available` or `error`
-- [ ] e2e: a player's click runs install; the master's click asks, "não" keeps the table, "sim" runs install and the player sees "O mestre encerrou a mesa"
-- [ ] Full gate passes
+- [x] e2e: the bar shows the download text, then the ready text and button, on the start screen and on the table; nothing for `not-available` or `error`
+- [x] e2e: a player's click runs install; the master's click asks, "não" keeps the table, "sim" runs install and the player sees "O mestre encerrou a mesa"
+- [x] Full gate passes
 
+**Done**: yes
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(ui): update bar with restart and the master's confirm`

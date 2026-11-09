@@ -24,6 +24,11 @@ export function onSession(fn: SessionHook): void {
 
 let current: { client: TableClient; screen: TableScreen; cleanups: Array<Promise<Cleanup | void>> } | null = null
 
+/** True while this window hosts the table (UPD-07: the master confirms before restarting). */
+export function isHosting(): boolean {
+  return current?.client.you?.role === 'master'
+}
+
 function leave(values?: HomeValues): void {
   const c = current
   current = null

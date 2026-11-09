@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { UpdateState } from '../core/update-state'
 import type { MesaApi } from './api'
 
 const api: MesaApi = {
@@ -14,7 +15,14 @@ const api: MesaApi = {
   saveScene: () => ipcRenderer.invoke('mesa:saveScene'),
   loadScene: () => ipcRenderer.invoke('mesa:loadScene'),
   cacheGet: (hash) => ipcRenderer.invoke('mesa:cacheGet', hash),
-  cachePut: (hash, bytes) => ipcRenderer.invoke('mesa:cachePut', hash, bytes)
+  cachePut: (hash, bytes) => ipcRenderer.invoke('mesa:cachePut', hash, bytes),
+  updateState: () => ipcRenderer.invoke('mesa:update-state'),
+  onUpdateState: (fn) => {
+    const listener = (_e: unknown, state: UpdateState): void => fn(state)
+    ipcRenderer.on('mesa:update-state', listener)
+    return () => void ipcRenderer.off('mesa:update-state', listener)
+  },
+  installUpdate: () => ipcRenderer.invoke('mesa:update-install')
 }
 
 contextBridge.exposeInMainWorld('mesa', api)

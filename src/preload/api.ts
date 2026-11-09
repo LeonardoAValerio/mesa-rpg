@@ -1,4 +1,6 @@
 // Types shared by preload and renderer; no runtime code.
+import type { UpdateState } from '../core/update-state'
+
 export interface LanAddress {
   ip: string
   label: 'Hamachi' | 'Radmin' | 'Rede'
@@ -32,4 +34,10 @@ export interface MesaApi {
   loadScene(): Promise<SceneFileResult>
   cacheGet(hash: string): Promise<Uint8Array | null>
   cachePut(hash: string, bytes: Uint8Array): Promise<boolean>
+  /** The update's current state, for a window that loads after the updater spoke (UPD-04, UPD-05). */
+  updateState(): Promise<UpdateState>
+  /** Calls `fn` on every later update state; returns the unsubscribe. */
+  onUpdateState(fn: (state: UpdateState) => void): () => void
+  /** UPD-06: ends the hosted table, if any, then quits, installs and reopens. */
+  installUpdate(): Promise<void>
 }

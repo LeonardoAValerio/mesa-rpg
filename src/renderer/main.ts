@@ -42,7 +42,7 @@ onSession(async ({ client, screen }) => {
   })
   const stopSync = syncAssets(client, textures, screen.board)
   const overlays = new Overlays(board, client)
-  const stopToolbar = toolbar(screen.toolbar, board, master ? [{ tool: 'fog-brush', label: 'Pincel de névoa' }, { tool: 'fog-rect', label: 'Retângulo de névoa' }] : [])
+  const stopToolbar = toolbar(screen.toolbar, board, master ? [{ tool: 'fog-brush', label: 'Pincel de névoa' }, { tool: 'fog-rect', label: 'Retângulo de névoa' }, { tool: 'fog-poly', label: 'Polígono de névoa' }] : [])
   const fog = master ? new FogTools(board, client, screen.toolbar) : null
   if (fog) screen.sidebar.append(fog.panel)
   const log = logPanel(client)

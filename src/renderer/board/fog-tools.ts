@@ -9,6 +9,8 @@ import { drawShape } from './fog-layer'
 type Pt = { x: number; y: number }
 const FOG_TOOLS: Tool[] = ['fog-brush', 'fog-rect', 'fog-poly']
 const PREVIEW = { cover: 0x0f172a, reveal: 0xfacc15 }
+/** A click this close (in screen px) to the first point closes the polygon. */
+const CLOSE_PX = 12
 
 export interface FogToolSnapshot {
   mode: FogMode
@@ -30,7 +32,7 @@ export class FogTools {
   private mode: FogMode = 'cover'
   private radiusCells = 1
   private cursor: Pt | null = null
-  private drawing: { kind: 'stroke' | 'rect'; mode: FogMode; points: Pt[] } | null = null
+  private drawing: { kind: 'stroke' | 'rect' | 'poly'; mode: FogMode; points: Pt[] } | null = null
   private readonly preview = new Graphics()
   private readonly ring = new Graphics()
   private readonly coverBtn: HTMLButtonElement
@@ -68,6 +70,10 @@ export class FogTools {
       () => stage.off('pointerupoutside', this.up),
       board.onToolChange((tool) => this.toolChanged(tool))
     )
+    const canvas = board.app.canvas
+    canvas.addEventListener('dblclick', this.dblclick)
+    window.addEventListener('keydown', this.key)
+    this.offs.push(() => canvas.removeEventListener('dblclick', this.dblclick), () => window.removeEventListener('keydown', this.key))
     this.toolChanged(board.tool)
   }
 
@@ -115,6 +121,7 @@ export class FogTools {
     const p = this.world(e)
     if (this.board.tool === 'fog-brush') this.drawing = { kind: 'stroke', mode: this.modeFor(e), points: [p] }
     else if (this.board.tool === 'fog-rect') this.drawing = { kind: 'rect', mode: this.modeFor(e), points: [p, p] }
+    else if (this.board.tool === 'fog-poly') return this.polyClick(p, e)
     this.draw()
   }
 
@@ -130,9 +137,49 @@ export class FogTools {
     this.draw()
   }
 
+  /** FOGS-03: each click adds a point; a click on the first point closes it. */
+  private polyClick(p: Pt, e: FederatedPointerEvent): void {
+    const d = this.drawing
+    if (d?.kind !== 'poly') {
+      this.drawing = { kind: 'poly', mode: this.modeFor(e), points: [p] }
+      return this.draw()
+    }
+    const first = d.points[0]
+    const near = Math.hypot(p.x - first.x, p.y - first.y) * this.board.camera.scale <= CLOSE_PX
+    if (near && d.points.length >= 3) return this.closePoly()
+    const last = d.points[d.points.length - 1]
+    if (last.x !== p.x || last.y !== p.y) d.points.push(p)
+    this.draw()
+  }
+
+  /** Double click, Enter or the first point: the polygon is sent if it has 3 distinct points. */
+  private closePoly(): void {
+    const d = this.drawing
+    if (d?.kind !== 'poly') return
+    this.drawing = null
+    this.draw()
+    const distinct = new Set(d.points.map((q) => `${q.x},${q.y}`)).size
+    if (distinct < 3) return
+    void this.client.send({ type: 'fog/shape', shape: { kind: 'poly', mode: d.mode, points: d.points.flatMap((q) => [q.x, q.y]) } })
+  }
+
+  private dblclick = (): void => {
+    if (this.board.tool === 'fog-poly') this.closePoly()
+  }
+
+  /** Enter closes the polygon; Esc drops it and sends nothing (FOGT-05). */
+  private key = (e: KeyboardEvent): void => {
+    if (this.drawing?.kind !== 'poly' || e.target instanceof HTMLInputElement) return
+    if (e.key === 'Enter') this.closePoly()
+    else if (e.key === 'Escape') {
+      this.drawing = null
+      this.draw()
+    }
+  }
+
   private up = (e: FederatedPointerEvent): void => {
     const d = this.drawing
-    if (!d) return
+    if (!d || d.kind === 'poly') return
     this.drawing = null
     const p = this.world(e)
     let shape: FogShape
@@ -153,6 +200,10 @@ export class FogTools {
     const d = this.drawing
     if (!d) return null
     if (d.kind === 'stroke') return { kind: 'stroke', mode: d.mode, radius: this.radiusPx, points: d.points.flatMap((q) => [q.x, q.y]) }
+    if (d.kind === 'poly') {
+      const pts = this.cursor ? [...d.points, this.cursor] : d.points // the edge follows the cursor
+      return { kind: 'poly', mode: d.mode, points: pts.flatMap((q) => [q.x, q.y]) }
+    }
     const [a, b] = d.points
     return { kind: 'rect', mode: d.mode, x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) }
   }
@@ -162,7 +213,15 @@ export class FogTools {
     this.preview.clear()
     this.ring.clear()
     const shape = this.current()
-    if (shape) {
+    if (shape?.kind === 'poly') {
+      const p = shape.points
+      this.preview.alpha = 0.8
+      this.preview.tint = 0xffffff
+      this.preview.moveTo(p[0], p[1])
+      for (let i = 2; i + 1 < p.length; i += 2) this.preview.lineTo(p[i], p[i + 1])
+      this.preview.stroke({ width: 2 / this.board.camera.scale, color: PREVIEW[shape.mode] === PREVIEW.cover ? 0xffffff : PREVIEW.reveal })
+      this.preview.circle(p[0], p[1], CLOSE_PX / this.board.camera.scale).stroke({ width: 2 / this.board.camera.scale, color: 0xffffff })
+    } else if (shape) {
       this.preview.alpha = 0.45
       drawShape(this.preview, shape, 1)
       this.preview.tint = PREVIEW[shape.mode]
@@ -178,7 +237,7 @@ export class FogTools {
       mode: this.mode,
       radiusCells: this.radiusCells,
       cursor: this.board.tool === 'fog-brush' && this.cursor ? { ...this.cursor, r: this.radiusPx } : null,
-      preview: shape ? { kind: shape.kind, mode: shape.mode, points: 'points' in shape ? shape.points.length / 2 : 4 } : null
+      preview: shape ? { kind: shape.kind, mode: shape.mode, points: this.drawing?.kind === 'poly' ? this.drawing.points.length : 'points' in shape ? shape.points.length / 2 : 4 } : null
     }
   }
 

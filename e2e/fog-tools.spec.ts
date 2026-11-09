@@ -133,3 +133,57 @@ test('[C13] FOGT-04 while drawing only the master sees a preview; the fog change
   await master.page.mouse.up()
   await expect.poll(() => fogSample(player.page, [[200, 500]])).toEqual([true])
 })
+
+/** An L-shaped polygon: the notch at (400, 400) is outside it. */
+const L: Array<[number, number]> = [[100, 100], [500, 100], [500, 200], [250, 200], [250, 500], [100, 500]]
+const L_IN: Array<[number, number]> = [[150, 450], [450, 150], [180, 180]]
+const L_OUT: Array<[number, number]> = [[400, 400], [550, 150], [180, 550], [50, 300]]
+async function clickAt(page: Page, x: number, y: number, clickCount = 1): Promise<void> {
+  const p = await screenOf(page, x, y)
+  await page.mouse.click(p.x, p.y, { clickCount })
+}
+
+test('[C3] FOGS-03 a polygon closed on its first point, by a double click or by Enter covers its inside only, in every window', async () => {
+  const { master, player } = await table('tool-fog-poly')
+  const closings: Array<[string, (page: Page) => Promise<void>]> = [
+    ['first point', async (page) => {
+      for (const [x, y] of L) await clickAt(page, x, y)
+      await clickAt(page, L[0][0] + 2, L[0][1] + 2) // a few pixels off still closes
+    }],
+    ['double click', async (page) => {
+      for (const [x, y] of L.slice(0, -1)) await clickAt(page, x, y)
+      await clickAt(page, L[5][0], L[5][1], 2)
+    }],
+    ['Enter', async (page) => {
+      for (const [x, y] of L) await clickAt(page, x, y)
+      await page.keyboard.press('Enter')
+    }]
+  ]
+  for (const [how, close] of closings) {
+    await master.page.getByTestId('fog-reveal-all').click()
+    await expect.poll(() => fogSample(player.page, L_IN)).toEqual(L_IN.map(() => false))
+    await close(master.page)
+    for (const page of both(master, player)) {
+      await expect.poll(() => fogSample(page, L_IN), how).toEqual(L_IN.map(() => true))
+      expect(await fogSample(page, L_OUT), how).toEqual(L_OUT.map(() => false))
+    }
+    expect((await fogTool(master.page))!.preview, how).toBeNull()
+  }
+})
+
+test('[C14] FOGT-05 Esc while drawing a polygon discards it and sends nothing', async () => {
+  const { master, player } = await table('tool-fog-poly')
+  for (const [x, y] of L.slice(0, 4)) await clickAt(master.page, x, y)
+  await expect.poll(async () => (await fogTool(master.page))!.preview).toMatchObject({ kind: 'poly', points: 4 })
+  await master.page.keyboard.press('Escape')
+  expect((await fogTool(master.page))!.preview).toBeNull()
+  // more clicks start a new polygon, and Enter with two points sends nothing either
+  await clickAt(master.page, 600, 400)
+  await clickAt(master.page, 700, 450)
+  await master.page.keyboard.press('Enter')
+  await master.page.waitForTimeout(400)
+  for (const page of both(master, player)) {
+    expect(await fogSample(page, [...L_IN, [650, 420]])).toEqual([false, false, false, false])
+    expect((await page.evaluate(() => window.__mesaTest!.board()!.fog)).shapes).toBe(0)
+  }
+})

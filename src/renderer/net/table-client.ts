@@ -1,5 +1,6 @@
 import type { Action, Ephemeral, ServerMsg } from '../../core/protocol'
 import type { LibraryItem, LogEntry, PatchOp, Role, View } from '../../core/types'
+import { versionError } from '../../core/version'
 
 export const JOIN_TIMEOUT_MS = 5000
 export const RETRY_EVERY_MS = 3000
@@ -22,6 +23,11 @@ export interface ConnectOptions {
   port: number
   name: string
   hostToken?: string
+  /**
+   * VER-03: this app's version, sent in `join`; a welcome from a master on another version (or none) is left.
+   * Left out only by tests of other rules, where no version is checked.
+   */
+  version?: string
   /** Defaults to the runtime's WebSocket; tests pass the `ws` package's browser-compatible client. */
   WebSocketImpl?: new (url: string) => WebSocket
 }
@@ -128,7 +134,7 @@ export class TableClient {
 
   private attempt(resolve?: () => void, reject?: (err: Error) => void): void {
     if (this.stopped) return
-    const { ip, port, name, hostToken } = this.opts
+    const { ip, port, name, hostToken, version } = this.opts
     let settled = false
     let ws: WebSocket
     try {
@@ -145,13 +151,21 @@ export class TableClient {
       this.failAttempt(reject)
     }, JOIN_TIMEOUT_MS)
 
-    ws.onopen = () => ws.send(JSON.stringify({ t: 'join', name, hostToken }))
+    ws.onopen = () => ws.send(JSON.stringify({ t: 'join', name, hostToken, version }))
     ws.onmessage = (ev) => {
       const msg = JSON.parse(String(ev.data)) as ServerMsg
       if (msg.t === 'welcome') {
         settled = true
         clearTimeout(timeout)
         this.timers.delete(timeout)
+        const versionReason = version === undefined ? null : versionError(msg.version, version)
+        if (versionReason) {
+          this.stopped = true
+          ws.close()
+          this.setStatus({ kind: 'error', message: versionReason })
+          reject?.(new Error(versionReason))
+          return
+        }
         this.everJoined = true
         this.you = msg.you
         this.view = msg.view

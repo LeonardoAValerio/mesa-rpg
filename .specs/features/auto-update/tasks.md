@@ -186,9 +186,10 @@ T11 → T12
 
 **Done when**:
 
-- [ ] Against a server built with another version (or a fake welcome with none), `connect` rejects with the message
-- [ ] Quick gate passes; integration tests grow
+- [x] Against a server built with another version (or a fake welcome with none), `connect` rejects with the message
+- [x] Quick gate passes; integration tests grow
 
+**Done**: yes
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(client): leave a table whose master runs another version`

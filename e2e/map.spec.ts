@@ -14,6 +14,8 @@ test('[C18] MAP-02 the master imports a PNG and both windows show the map at the
     await expect(page.getByTestId('board-empty')).toBeHidden()
   }
   expect((await snap(master.page)).map?.textured).toBe(true)
+  // the player downloads the image from the master by hash (ASSET-02) and draws it
+  await expect.poll(async () => (await snap(player.page)).map?.textured, { timeout: 15000 }).toBe(true)
   // the grid was detected on import (MAP-03): ~83 px
   const cell = (await snap(player.page)).grid!.cell
   expect(cell).toBeGreaterThanOrEqual(82)

@@ -69,6 +69,11 @@ export class TableClient {
 
   constructor(private readonly opts: ConnectOptions) {}
 
+  /** http://ip:port of the master, where images are served. */
+  get httpBase(): string {
+    return `http://${this.opts.ip}:${this.opts.port}`
+  }
+
   on<K extends keyof TableClient['listeners']>(
     kind: K,
     fn: TableClient['listeners'][K] extends Set<infer L> ? L : never

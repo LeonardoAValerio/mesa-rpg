@@ -1,6 +1,7 @@
 import './style.css'
 import type { Action } from '../core/protocol'
 import { onSession, showHome } from './app'
+import { syncAssets } from './assets/sync'
 import { TextureStore } from './assets/textures'
 import { Board, type BoardSnapshot } from './board/board'
 import type { ActionResult } from './net/table-client'
@@ -21,9 +22,11 @@ onSession(async ({ client, screen }) => {
   const panel = master ? gridPanel(client, textures) : null
   if (panel) screen.sidebar.append(panel.root)
   const board = await Board.create(screen.board, client, { textures, onImportMap: () => void panel?.importMap() })
+  const stopSync = syncAssets(client, textures, screen.board)
   if (window.mesa.isTest) window.__mesaTest = { board: () => board.snapshot(), send: (a) => client.send(a) }
   return () => {
     if (window.__mesaTest) window.__mesaTest = undefined
+    stopSync()
     panel?.destroy()
     board.destroy()
   }

@@ -432,12 +432,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C38] ASSET-02, [C39] ASSET-03, [C40] ASSET-04, [C41] ASSET-05
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C38] ASSET-02, [C39] ASSET-03, [C40] ASSET-04, [C41] ASSET-05
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(client): cached asset download by hash`
+**Done**: yes
 
 ---
 

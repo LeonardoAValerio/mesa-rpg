@@ -19,4 +19,6 @@ export interface MesaApi {
   addresses(): Promise<LanAddress[]>
   copy(text: string): Promise<void>
   importMap(): Promise<ImportedImage>
+  cacheGet(hash: string): Promise<Uint8Array | null>
+  cachePut(hash: string, bytes: Uint8Array): Promise<boolean>
 }

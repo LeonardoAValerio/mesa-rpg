@@ -40,3 +40,5 @@ label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
 .panel .row { display: flex; gap: 8px; }
 .panel .row label { flex: 1; }
 .panel input[type="number"] { width: 100%; }
+.asset-status { position: absolute; left: 12px; bottom: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+.asset-status[hidden] { display: none; }

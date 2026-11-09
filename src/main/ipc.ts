@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto'
 import { app, clipboard, dialog, ipcMain } from 'electron'
 import type { HostResult, ImportedImage } from '../preload/api'
+import { join } from 'node:path'
+import { AssetCache } from './asset-cache'
 import { AssetStore } from './asset-store'
 import { readImageFile } from './import'
 import { validatePort } from '../core/session-rules'
@@ -27,6 +29,9 @@ function exposeForTests(): void {
 
 export function registerIpc(): void {
   exposeForTests()
+  const cache = new AssetCache(join(app.getPath('userData'), 'cache'))
+  ipcMain.handle('mesa:cacheGet', (_e, hash: string) => cache.get(String(hash)))
+  ipcMain.handle('mesa:cachePut', (_e, hash: string, bytes: Uint8Array) => cache.put(String(hash), new Uint8Array(bytes)))
   ipcMain.on('mesa:isTest', (e) => {
     e.returnValue = process.env.MESA_TEST === '1'
   })

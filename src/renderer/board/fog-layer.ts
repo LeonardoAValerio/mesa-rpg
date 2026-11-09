@@ -24,7 +24,7 @@ export function drawFog(g: Graphics, view: View): { covered: number; alpha: numb
   return { covered: cells.length, alpha }
 }
 
-/** Master-only fog tools: brush and rectangle in Reveal/Cover mode, and "Cobrir tudo" (FOG-03..05). */
+/** Master-only fog tools: brush and rectangle in Reveal/Cover mode, "Cobrir tudo" and "Revelar tudo" (FOG-03..05, FOGD-02). */
 export function fogTools(board: Board, client: TableClient): { root: HTMLElement; destroy(): void } {
   let mode: FogMode = 'reveal'
   let radius = 2
@@ -91,7 +91,10 @@ export function fogTools(board: Board, client: TableClient): { root: HTMLElement
     h('h3', {}, 'Névoa'),
     h('div', { class: 'row' }, reveal, cover),
     h('label', {}, 'Raio do pincel (células)', radiusInput),
-    h('button', { testid: 'fog-cover-all', class: 'secondary', onclick: () => void client.send({ type: 'fog/coverAll' }) }, 'Cobrir tudo')
+    h('div', { class: 'row' },
+      h('button', { testid: 'fog-cover-all', class: 'secondary', onclick: () => void client.send({ type: 'fog/coverAll' }) }, 'Cobrir tudo'),
+      h('button', { testid: 'fog-reveal-all', class: 'secondary', onclick: () => void client.send({ type: 'fog/revealAll' }) }, 'Revelar tudo')
+    )
   )
   return {
     root,

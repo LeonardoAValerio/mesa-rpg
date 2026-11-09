@@ -14,6 +14,7 @@ async function build(master: AppHandle): Promise<void> {
   const map = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
   const tok = await putAsset(master.app, solidPng(16, 16, [10, 10, 200]))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  await act(master.page, { type: 'fog/coverAll' }) // a new map has no fog (FOGD-01)
   await act(master.page, { type: 'fog/rect', x0: 0, y0: 0, x1: 299, y1: 199, mode: 'reveal' })
   await act(master.page, { type: 'token/place', hash: tok, name: 'Guerreira', faction: 'grupo', size: 1, col: 1, row: 1 })
   await act(master.page, { type: 'token/place', hash: tok, name: 'Ogro', faction: 'inimigo', size: 2, col: 5, row: 4 })

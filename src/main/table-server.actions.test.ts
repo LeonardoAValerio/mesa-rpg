@@ -28,7 +28,7 @@ async function table(): Promise<{ master: TestClient; ana: TestClient; guerreira
   const ana = await join('Ana')
   master.act('m', { type: 'map/set', hash: H, width: 800, height: 600, grid: { cell: 100 } })
   await master.next('ack', (m) => m.id === 'm')
-  master.act('fog', { type: 'fog/rect', x0: 0, y0: 0, x1: 800, y1: 600, mode: 'reveal' }) // the map starts covered (FOG-01)
+  master.act('fog', { type: 'fog/rect', x0: 0, y0: 0, x1: 800, y1: 600, mode: 'reveal' }) // a no-op since FOGD-01 (a new map has no fog); kept so the board is open either way
   await master.next('ack', (m) => m.id === 'fog')
   master.act('p1', { type: 'token/place', hash: H, name: 'Guerreira', faction: 'grupo', size: 1, col: 1, row: 1 })
   await master.next('ack', (m) => m.id === 'p1')

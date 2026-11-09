@@ -7,7 +7,7 @@ test.afterEach(closeAll)
 async function withMap(master: AppHandle): Promise<void> {
   const hash = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
   await act(master.page, { type: 'map/set', hash, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
-  await act(master.page, { type: 'fog/rect', x0: 0, y0: 0, x1: 800, y1: 600, mode: 'reveal' }) // the map starts covered (FOG-01)
+  await act(master.page, { type: 'fog/rect', x0: 0, y0: 0, x1: 800, y1: 600, mode: 'reveal' }) // a no-op since FOGD-01 (a new map has no fog); kept so the board is open either way
 }
 
 async function importKit(master: AppHandle): Promise<void> {

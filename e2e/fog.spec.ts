@@ -9,6 +9,7 @@ async function table(): Promise<{ master: AppHandle; player: AppHandle }> {
   const map = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
   const tok = await putAsset(master.app, solidPng(16, 16))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  await act(master.page, { type: 'fog/coverAll' }) // a new map has no fog (FOGD-01)
   await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', faction: 'inimigo', size: 1, col: 1, row: 1 })
   await act(master.page, { type: 'token/place', hash: tok, name: 'Ogro', faction: 'inimigo', size: 1, col: 5, row: 4 })
   await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(48)
@@ -59,4 +60,21 @@ test('the brush reveals around the cursor and "Cobrir tudo" covers everything ag
   await master.page.getByTestId('fog-cover-all').click()
   await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(48)
   await expect.poll(() => names(player.page)).toEqual([])
+})
+
+test('[C2] FOGD-02 "Revelar tudo" clears the fog in the master\'s and the player\'s windows', async () => {
+  const { master, player } = await masterAndPlayer('Ana')
+  const map = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
+  await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  // FOGD-01 on screen: the imported map shows with no fog in both windows
+  await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(0)
+  expect((await snap(master.page)).fog.covered).toBe(0)
+  await master.page.getByTestId('fog-cover-all').click()
+  await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(48)
+  await expect.poll(async () => (await snap(master.page)).fog.covered).toBe(48)
+  await expect(master.page.getByTestId('fog-reveal-all')).toHaveText('Revelar tudo')
+  await master.page.getByTestId('fog-reveal-all').click()
+  await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(0)
+  await expect.poll(async () => (await snap(master.page)).fog.covered).toBe(0)
+  await expect(player.page.getByTestId('fog-reveal-all')).toHaveCount(0) // master-only control
 })

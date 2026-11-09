@@ -6,6 +6,11 @@ export interface LanAddress {
 
 export type HostResult = { ok: true; port: number; hostToken: string } | { ok: false; error: string }
 
+export type ImportedImage =
+  | { ok: true; hash: string; width: number; height: number; bytes: Uint8Array }
+  | { ok: false; error: string }
+  | { ok: false; canceled: true }
+
 export interface MesaApi {
   /** True only in automated tests (MESA_TEST=1): enables window.__mesaTest. */
   isTest: boolean
@@ -13,4 +18,5 @@ export interface MesaApi {
   stopHost(): Promise<void>
   addresses(): Promise<LanAddress[]>
   copy(text: string): Promise<void>
+  importMap(): Promise<ImportedImage>
 }

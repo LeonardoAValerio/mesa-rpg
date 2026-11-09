@@ -394,12 +394,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C18] MAP-02, [C21] MAP-05
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C18] MAP-02, [C21] MAP-05
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(ui): import map and grid panel`
+**Done**: yes
 
 ---
 

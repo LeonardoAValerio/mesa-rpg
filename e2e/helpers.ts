@@ -76,3 +76,10 @@ export async function screenOf(page: Page, x: number, y: number): Promise<{ x: n
   const s = await snap(page)
   return { x: s.canvas.left + x * s.camera.scale + s.camera.x, y: s.canvas.top + y * s.camera.scale + s.camera.y }
 }
+
+/** Makes the next native "open" dialog of this app return `paths` (or cancel when empty). */
+export async function nextOpenDialog(app: AppHandle['app'], paths: string[]): Promise<void> {
+  await app.evaluate(({ dialog }, filePaths) => {
+    dialog.showOpenDialog = (async () => ({ canceled: filePaths.length === 0, filePaths })) as typeof dialog.showOpenDialog
+  }, paths)
+}

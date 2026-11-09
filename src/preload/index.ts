@@ -6,7 +6,8 @@ const api: MesaApi = {
   host: (portText) => ipcRenderer.invoke('mesa:host', portText),
   stopHost: () => ipcRenderer.invoke('mesa:stopHost'),
   addresses: () => ipcRenderer.invoke('mesa:addresses'),
-  copy: (text) => ipcRenderer.invoke('mesa:copy', text)
+  copy: (text) => ipcRenderer.invoke('mesa:copy', text),
+  importMap: () => ipcRenderer.invoke('mesa:importMap')
 }
 
 contextBridge.exposeInMainWorld('mesa', api)

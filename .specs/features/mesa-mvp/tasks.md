@@ -148,12 +148,13 @@ T32
 
 **Done when**:
 
-- [ ] `parseClientMsg` returns null for invalid JSON, an unknown type and missing fields; tests for C15 (protocol part)
-- [ ] Quick gate passes
+- [x] `parseClientMsg` returns null for invalid JSON, an unknown type and missing fields; tests for C15 (protocol part)
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): message protocol and validation`
+**Done**: yes
 
 ---
 

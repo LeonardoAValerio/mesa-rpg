@@ -167,12 +167,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C4] NET-04
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C4] NET-04
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): port and join validation`
+**Done**: yes
 
 ---
 

@@ -337,12 +337,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit tests for view and diff (hide/show produce remove/upsert for the player)
-- [ ] Quick gate passes
+- [x] Unit tests for view and diff (hide/show produce remove/upsert for the player)
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): per-viewer view and diff`
+**Done**: yes
 
 ---
 

@@ -527,12 +527,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C51] DICE-01, [C54] DICE-04, [C56] CHAT-02, [C57] CHAT-03
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C51] DICE-01, [C54] DICE-04, [C56] CHAT-02, [C57] CHAT-03
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(server): shared roll and chat log`
+**Done**: yes
 
 ---
 

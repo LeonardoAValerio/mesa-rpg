@@ -1,3 +1,5 @@
+import { validChat } from './chat'
+import { parseDice, rollDice } from './dice'
 import { clampGrid, insideMap } from './grid'
 import { parsePalette } from './palette'
 import type { Action } from './protocol'
@@ -101,6 +103,16 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
       if (!t) return refuse(NO_TOKEN)
       const owner = action.owner === null ? null : action.owner.trim() || null
       return { ok: true, scene: withToken(scene, { ...t, owner }) }
+    }
+    case 'roll': {
+      const expr = parseDice(action.expr)
+      if ('error' in expr) return refuse(expr.error) // DICE-04: nothing reaches the log
+      const roll = rollDice(expr, ctx.rng)
+      return { ok: true, scene, log: { id: ctx.newId(), at: ctx.now(), author: actor.name, kind: 'roll', text: expr.text, roll } }
+    }
+    case 'chat': {
+      if (!validChat(action.text)) return refuse('Mensagem inválida')
+      return { ok: true, scene, log: { id: ctx.newId(), at: ctx.now(), author: actor.name, kind: 'chat', text: action.text.trim() } }
     }
     default:
       return refuse('Ação não suportada')

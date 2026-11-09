@@ -2,7 +2,8 @@ import { randomInt } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { WebSocketServer, WebSocket } from 'ws'
-import { parseClientMsg, type Action, type ClientMsg, type ServerMsg } from '../core/protocol'
+import { parseClientMsg, type Action, type ClientMsg, type Ephemeral, type ServerMsg } from '../core/protocol'
+import { createLimiter } from '../core/ratelimit'
 import { applyAction, type ReducerCtx } from '../core/reducer'
 import { normalizeName, validateJoin } from '../core/session-rules'
 import { imageInfo } from '../core/image-info'
@@ -18,6 +19,8 @@ interface Session {
   role: Role
   alive: boolean
   last: View | null
+  limiter: ReturnType<typeof createLimiter>
+  strokes: Set<string>
 }
 
 /** DICE-02: each die is drawn uniformly from 1..max with the OS CSPRNG. */
@@ -91,6 +94,18 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     }
   }
 
+  /** TOOL-01..05: ruler, ping and strokes go to everyone else; pings and new strokes count against the limit. */
+  const handleEphemeral = (s: Session, e: Ephemeral): void => {
+    if (e.type === 'ping' || (e.type === 'stroke' && !s.strokes.has(e.strokeId))) {
+      if (!s.limiter.allow(Date.now())) return
+      if (e.type === 'stroke') {
+        s.strokes.add(e.strokeId)
+        if (s.strokes.size > 200) s.strokes.delete(s.strokes.values().next().value as string)
+      }
+    }
+    for (const x of sessions) if (x !== s) send(x, { t: 'ephemeral', from: s.name, e })
+  }
+
   const handleAction = (s: Session, id: string, action: Action): void => {
     if ((action.type === 'map/set' || action.type === 'token/place') && !store.has(action.hash)) {
       send(s, { t: 'reject', id, reason: 'Arquivo desconhecido' })
@@ -125,7 +140,15 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
       ws.close(4000, reason)
       return null
     }
-    const session: Session = { ws, name, role: isMaster ? 'master' : 'player', alive: true, last: null }
+    const session: Session = {
+      ws,
+      name,
+      role: isMaster ? 'master' : 'player',
+      alive: true,
+      last: null,
+      limiter: createLimiter(),
+      strokes: new Set()
+    }
     sessions.add(session)
     const view = viewFor(scene, actorOf(session), names())
     session.last = view
@@ -149,6 +172,7 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
         return
       }
       if (msg.t === 'action') handleAction(session, msg.id, msg.action)
+      else if (msg.t === 'ephemeral') handleEphemeral(session, msg.e)
     })
     ws.on('close', () => {
       if (session && sessions.delete(session)) broadcastViews()

@@ -565,12 +565,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C63] TOOL-05, [C50] PERM-08 (moved from T23: it needs the ephemeral relay)
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C63] TOOL-05, [C50] PERM-08 (moved from T23: it needs the ephemeral relay)
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(server): rate-limited ephemeral relay`
+**Done**: yes
 
 ---
 

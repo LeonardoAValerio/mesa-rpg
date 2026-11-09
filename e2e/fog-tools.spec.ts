@@ -187,3 +187,47 @@ test('[C14] FOGT-05 Esc while drawing a polygon discards it and sends nothing', 
     expect((await page.evaluate(() => window.__mesaTest!.board()!.fog)).shapes).toBe(0)
   }
 })
+
+test('the master sees "Névoa com formas demais: use Cobrir tudo ou Revelar tudo" past 2000 shapes, and "Cobrir tudo" clears it (FOGS-08)', async () => {
+  const { master, player } = await table('tool-fog-rect')
+  await master.page.evaluate(async () => {
+    for (let i = 0; i < 2000; i++) await window.__mesaTest!.send({ type: 'fog/shape', shape: { kind: 'rect', mode: 'cover', x: i % 800, y: 0, w: 1, h: 1 } })
+  })
+  await expect(master.page.getByTestId('fog-error')).toHaveText('')
+  await press(master.page, 200, 200, [400, 400])
+  await master.page.mouse.up()
+  await expect(master.page.getByTestId('fog-error')).toHaveText('Névoa com formas demais: use Cobrir tudo ou Revelar tudo')
+  expect(await fogSample(player.page, [[300, 300]])).toEqual([false])
+  await master.page.getByTestId('fog-cover-all').click()
+  await expect(master.page.getByTestId('fog-error')).toHaveText('')
+  await expect.poll(() => fogSample(player.page, [[300, 300]])).toEqual([true])
+})
+
+test('a self-crossing polygon is drawn as the fog rule decides: a covering star leaves its centre revealed, with a token there visible (FOGS-03, FOGS-06)', async () => {
+  const { master, player } = await table('tool-fog-poly')
+  const tok = await putAsset(master.app, solidPng(16, 16))
+  await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', faction: 'inimigo', size: 1, col: 3, row: 2 }) // centre (350, 250)
+  const star: Array<[number, number]> = [[350, 50], [470, 420], [160, 190], [540, 190], [230, 420]]
+  for (const [x, y] of star) await clickAt(master.page, x, y)
+  await master.page.keyboard.press('Enter')
+  const tips: Array<[number, number]> = [[350, 100], [200, 192], [500, 192]]
+  for (const page of both(master, player)) {
+    await expect.poll(() => fogSample(page, tips)).toEqual(tips.map(() => true))
+    expect(await fogSample(page, [[350, 250]]), 'the centre is revealed on screen').toEqual([false])
+  }
+  // the model agrees: the Goblin in the centre reaches the player
+  await expect.poll(async () => (await player.page.evaluate(() => window.__mesaTest!.board()!.tokens.map((t) => t.name)))).toEqual(['Goblin'])
+})
+
+test('on a 4096x3072 map the drawn fog sits where the shapes are, in every window (texture scaled to 2048 px)', async () => {
+  const { master, player } = await masterAndPlayer('Ana')
+  const map = await putAsset(master.app, solidPng(4096, 3072, [40, 90, 40]))
+  await act(master.page, { type: 'map/set', hash: map, width: 4096, height: 3072, grid: { cell: 128, offsetX: 0, offsetY: 0 } })
+  await act(master.page, { type: 'fog/shape', shape: { kind: 'rect', mode: 'cover', x: 3000, y: 2000, w: 500, h: 400 } })
+  const inside: Array<[number, number]> = [[3010, 2010], [3490, 2390], [3250, 2200]]
+  const outside: Array<[number, number]> = [[2980, 2200], [3520, 2200], [3250, 1980], [3250, 2420], [1500, 1000]]
+  for (const page of [master.page, player.page]) {
+    await expect.poll(() => fogSample(page, inside)).toEqual(inside.map(() => true))
+    expect(await fogSample(page, outside)).toEqual(outside.map(() => false))
+  }
+})

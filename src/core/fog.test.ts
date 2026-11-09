@@ -79,6 +79,13 @@ describe('fog shapes', () => {
     expect(shapeContains(l, 250, 50)).toBe(false)
   })
 
+  it('a self-crossing polygon (a five-point star) holds its tips and not its centre, even-odd', () => {
+    const star: FogShape = { kind: 'poly', mode: 'cover', points: [400, 100, 520, 470, 210, 240, 590, 240, 280, 470] }
+    expect(shapeContains(star, 400, 300)).toBe(false) // the pentagon in the middle
+    expect(shapeContains(star, 400, 150)).toBe(true) // the top tip
+    expect(shapeContains(star, 250, 245)).toBe(true) // the left tip
+  })
+
   it('degenerate shapes change nothing: a flat rectangle, a polygon of under 3 distinct points', () => {
     const base = revealAll()
     for (const s of [

@@ -89,7 +89,7 @@ export class Board {
     b.app.canvas.dataset.testid = 'board-canvas'
     host.append(b.app.canvas, b.emptyEl)
     b.world.addChild(b.mapLayer, b.gridLayer, b.fogLayer, b.tokenLayer, b.overlayLayer) // tokens a player may see are drawn above the fog
-    b.fog = new FogRenderer(b.app, b.fogLayer)
+    b.fog = new FogRenderer(b.world, b.fogLayer)
     b.app.stage.addChild(b.world)
     b.bindInput()
     // the board area changes size with the layout, not only with the window

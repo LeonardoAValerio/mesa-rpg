@@ -8,8 +8,11 @@ const faction = z.enum(['grupo', 'inimigo', 'npc', 'neutro'])
 const size = z.union([z.literal(1), z.literal(2), z.literal(3)])
 const fogMode = z.enum(['reveal', 'cover'])
 const point = z.object({ x: num, y: num })
-/** At most 2000 points (4000 numbers); the server checks the 2000 with its own message (FOGS-08). */
-const coords = z.array(num).max(4002)
+/**
+ * Room for far more than the 2000-point limit, so a longer stroke reaches the reducer and gets the limit message
+ * (FOGS-08) instead of being dropped as malformed; the client never sends more than 2001 points.
+ */
+const coords = z.array(num).max(20000)
 export const fogShapeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('stroke'), mode: fogMode, radius: num.positive(), points: coords }),
   z.object({ kind: z.literal('rect'), mode: fogMode, x: num, y: num, w: num, h: num }),

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fogAt, MAX_SHAPES, TOO_MANY_SHAPES } from './fog'
-import type { Action } from './protocol'
+import { parseClientMsg, type Action } from './protocol'
 import { applyAction, type ReducerCtx } from './reducer'
 import { emptyScene, type Actor, type FogShape, type Scene } from './types'
 import { diffViews, viewFor } from './view'
@@ -66,8 +66,20 @@ describe('fog in the scene', () => {
     expect(s.fog!.shapes).toHaveLength(2000)
     expect(applyAction(s, master, rect('cover', 0, 0, 10, 10), ctx())).toEqual({ ok: false, reason: TOO_MANY_SHAPES })
     expect(TOO_MANY_SHAPES).toBe('Névoa com formas demais: use Cobrir tudo ou Revelar tudo')
-    const long = Array.from({ length: 4002 }, (_, i) => i % 800)
-    expect(applyAction(withMap(), master, shape({ kind: 'stroke', mode: 'cover', radius: 5, points: long }), ctx())).toEqual({ ok: false, reason: TOO_MANY_SHAPES })
+    // what a client sends over the wire: a 2001- and a 3000-point stroke and polygon parse, and are refused with the message
+    for (const n of [2001, 3000]) {
+      for (const kind of ['stroke', 'poly'] as const) {
+        const points = Array.from({ length: n * 2 }, (_, i) => (i * 7) % 800)
+        const sent: FogShape = kind === 'stroke' ? { kind, mode: 'cover', radius: 5, points } : { kind, mode: 'cover', points }
+        const msg = parseClientMsg(JSON.stringify({ t: 'action', id: 'a', action: shape(sent) }))
+        expect(msg, `${kind} of ${n} points parses`).not.toBeNull()
+        if (msg?.t !== 'action') throw new Error('not an action')
+        expect(applyAction(withMap(), master, msg.action, ctx()), `${kind} of ${n}`).toEqual({ ok: false, reason: TOO_MANY_SHAPES })
+      }
+    }
+    // 2000 points is fine
+    const ok = parseClientMsg(JSON.stringify({ t: 'action', id: 'a', action: shape({ kind: 'stroke', mode: 'cover', radius: 5, points: Array.from({ length: 4000 }, (_, i) => i % 800) }) }))
+    expect(ok?.t === 'action' && applyAction(withMap(), master, ok.action, ctx()).ok).toBe(true)
     // "Cobrir tudo" starts over, so drawing works again
     const again = run(s, { type: 'fog/coverAll' }, rect('reveal', 0, 0, 10, 10))
     expect(again.fog!.shapes).toHaveLength(1)

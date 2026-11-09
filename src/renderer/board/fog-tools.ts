@@ -1,5 +1,5 @@
 import { Graphics, type FederatedPointerEvent } from 'pixi.js'
-import { clampBrushCells, type FogMode } from '../../core/fog'
+import { clampBrushCells, MAX_POINTS, type FogMode } from '../../core/fog'
 import type { FogShape } from '../../core/types'
 import type { TableClient } from '../net/table-client'
 import { h } from '../ui/dom'
@@ -38,6 +38,7 @@ export class FogTools {
   private readonly coverBtn: HTMLButtonElement
   private readonly revealBtn: HTMLButtonElement
   private readonly radiusInput: HTMLInputElement
+  private readonly error: HTMLElement
   private readonly offs: Array<() => void> = []
 
   constructor(private readonly board: Board, private readonly client: TableClient, toolbar: HTMLElement) {
@@ -51,12 +52,14 @@ export class FogTools {
     const radius = h('label', { class: 'fog-radius', testid: 'fog-radius-label' }, 'Raio', this.radiusInput)
     this.modes = h('div', { class: 'fog-modes', testid: 'fog-modes', hidden: true }, this.coverBtn, this.revealBtn, radius)
     toolbar.append(this.modes)
+    this.error = h('p', { class: 'error', testid: 'fog-error', role: 'alert' })
     this.panel = h('section', { class: 'panel', testid: 'fog-panel' },
       h('h3', {}, 'Névoa'),
       h('div', { class: 'row' },
-        h('button', { testid: 'fog-cover-all', class: 'secondary', onclick: () => void client.send({ type: 'fog/coverAll' }) }, 'Cobrir tudo'),
-        h('button', { testid: 'fog-reveal-all', class: 'secondary', onclick: () => void client.send({ type: 'fog/revealAll' }) }, 'Revelar tudo')
-      )
+        h('button', { testid: 'fog-cover-all', class: 'secondary', onclick: () => void this.send({ type: 'fog/coverAll' }) }, 'Cobrir tudo'),
+        h('button', { testid: 'fog-reveal-all', class: 'secondary', onclick: () => void this.send({ type: 'fog/revealAll' }) }, 'Revelar tudo')
+      ),
+      this.error
     )
     const stage = board.app.stage
     stage.on('pointerdown', this.down)
@@ -75,6 +78,12 @@ export class FogTools {
     window.addEventListener('keydown', this.key)
     this.offs.push(() => canvas.removeEventListener('dblclick', this.dblclick), () => window.removeEventListener('keydown', this.key))
     this.toolChanged(board.tool)
+  }
+
+  /** FOGS-08: a refusal (the limit message) shows in the fog panel; the next accepted action clears it. */
+  private async send(action: Parameters<TableClient['send']>[0]): Promise<void> {
+    const r = await this.client.send(action)
+    this.error.textContent = r.ok ? '' : r.reason
   }
 
   private get active(): boolean {
@@ -132,7 +141,8 @@ export class FogTools {
     const d = this.drawing
     if (d?.kind === 'stroke') {
       const last = d.points[d.points.length - 1]
-      if (Math.hypot(p.x - last.x, p.y - last.y) >= this.radiusPx / 4) d.points.push(p) // keeps a stroke small
+      // keeps a stroke small; past the limit one extra point is enough for the server's refusal (FOGS-08)
+      if (d.points.length <= MAX_POINTS && Math.hypot(p.x - last.x, p.y - last.y) >= this.radiusPx / 4) d.points.push(p)
     } else if (d?.kind === 'rect') d.points[1] = p
     this.draw()
   }
@@ -148,7 +158,7 @@ export class FogTools {
     const near = Math.hypot(p.x - first.x, p.y - first.y) * this.board.camera.scale <= CLOSE_PX
     if (near && d.points.length >= 3) return this.closePoly()
     const last = d.points[d.points.length - 1]
-    if (last.x !== p.x || last.y !== p.y) d.points.push(p)
+    if ((last.x !== p.x || last.y !== p.y) && d.points.length <= MAX_POINTS) d.points.push(p)
     this.draw()
   }
 
@@ -160,7 +170,7 @@ export class FogTools {
     this.draw()
     const distinct = new Set(d.points.map((q) => `${q.x},${q.y}`)).size
     if (distinct < 3) return
-    void this.client.send({ type: 'fog/shape', shape: { kind: 'poly', mode: d.mode, points: d.points.flatMap((q) => [q.x, q.y]) } })
+    void this.send({ type: 'fog/shape', shape: { kind: 'poly', mode: d.mode, points: d.points.flatMap((q) => [q.x, q.y]) } })
   }
 
   private dblclick = (): void => {
@@ -185,7 +195,7 @@ export class FogTools {
     let shape: FogShape
     if (d.kind === 'stroke') {
       const last = d.points[d.points.length - 1]
-      if (last.x !== p.x || last.y !== p.y) d.points.push(p)
+      if ((last.x !== p.x || last.y !== p.y) && d.points.length <= MAX_POINTS) d.points.push(p)
       shape = { kind: 'stroke', mode: d.mode, radius: this.radiusPx, points: d.points.flatMap((q) => [q.x, q.y]) }
     } else {
       const [a] = d.points
@@ -193,7 +203,7 @@ export class FogTools {
       if (shape.w === 0 || shape.h === 0) return this.draw() // a click is not a rectangle
     }
     this.draw()
-    void this.client.send({ type: 'fog/shape', shape })
+    void this.send({ type: 'fog/shape', shape })
   }
 
   private current(): FogShape | null {

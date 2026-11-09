@@ -1,4 +1,4 @@
-import { Container, Graphics, RenderTexture, Sprite, type Application } from 'pixi.js'
+import { Container, Graphics, Sprite, Texture } from 'pixi.js'
 import type { Fog, FogShape, MapRef, View } from '../../core/types'
 
 export const MASTER_FOG_ALPHA = 0.5
@@ -17,18 +17,53 @@ export function drawShape(g: Graphics, s: FogShape, k: number): Graphics {
   return g.stroke({ width: 2 * s.radius * k, color: 0x000000, cap: 'round', join: 'round' })
 }
 
+/** Traces one shape on a 2D canvas in texture pixels; polygons fill even-odd, as `fogAt` decides (FOGS-03, FOGS-04). */
+export function paintShape(ctx: CanvasRenderingContext2D, s: FogShape, k: number): void {
+  ctx.globalCompositeOperation = s.mode === 'reveal' ? 'destination-out' : 'source-over'
+  ctx.fillStyle = '#000'
+  ctx.strokeStyle = '#000'
+  if (s.kind === 'rect') {
+    ctx.fillRect(s.x * k, s.y * k, s.w * k, s.h * k)
+    return
+  }
+  const p = s.points
+  ctx.beginPath()
+  if (s.kind === 'poly') {
+    ctx.moveTo(p[0] * k, p[1] * k)
+    for (let i = 2; i + 1 < p.length; i += 2) ctx.lineTo(p[i] * k, p[i + 1] * k)
+    ctx.closePath()
+    ctx.fill('evenodd')
+    return
+  }
+  if (p.length === 2) {
+    ctx.arc(p[0] * k, p[1] * k, s.radius * k, 0, Math.PI * 2)
+    ctx.fill()
+    return
+  }
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = 2 * s.radius * k
+  ctx.moveTo(p[0] * k, p[1] * k)
+  for (let i = 2; i + 1 < p.length; i += 2) ctx.lineTo(p[i] * k, p[i + 1] * k)
+  ctx.stroke()
+}
+
 /**
- * FOG-02, FOGS-01..05: the fog as a texture the size of the map. A covered base fills it black, each
- * Cobrir shape paints black and each Revelar shape erases, in order; players see it opaque, the master at 50%.
+ * FOG-02, FOGS-01..05: the fog painted on a canvas the size of the map (at most 2048 px on its long side) and shown
+ * as a sprite stretched over the map. A covered base fills it black, Cobrir shapes paint black and Revelar shapes
+ * erase, in order. When the new fog only adds shapes to the last one, only those are painted; players see it opaque,
+ * the master at 50%.
  */
 export class FogRenderer {
   readonly sprite = new Sprite()
-  private texture: RenderTexture | null = null
-  private key = ''
+  private readonly canvas = document.createElement('canvas')
+  private readonly ctx = this.canvas.getContext('2d', { willReadFrequently: true })!
+  private texture: Texture | null = null
+  private drawn: { map: string; base: Fog['base']; shapes: FogShape[] } | null = null
   private k = 1
   private info = { shapes: 0, base: 'revealed' as Fog['base'], alpha: 1 }
 
-  constructor(private readonly app: Application, layer: Container) {
+  constructor(private readonly world: Container, layer: Container) {
     layer.addChild(this.sprite)
   }
 
@@ -40,29 +75,36 @@ export class FogRenderer {
     this.info = { shapes: fog?.shapes.length ?? 0, base: fog?.base ?? 'revealed', alpha }
     this.sprite.visible = !!map && !!fog
     if (!map || !fog) return
-    const key = JSON.stringify([map.width, map.height, fog])
-    if (key === this.key) return
-    this.key = key
-    this.draw(map, fog)
+    this.paint(map, fog)
   }
 
-  private draw(map: MapRef, fog: Fog): void {
-    this.k = Math.min(1, MAX_TEXTURE / Math.max(map.width, map.height))
-    const w = Math.max(1, Math.round(map.width * this.k))
-    const hgt = Math.max(1, Math.round(map.height * this.k))
-    if (!this.texture || this.texture.width !== w || this.texture.height !== hgt) {
-      this.texture?.destroy(true)
-      this.texture = RenderTexture.create({ width: w, height: hgt })
+  private paint(map: MapRef, fog: Fog): void {
+    const mapKey = `${map.hash}:${map.width}x${map.height}`
+    const d = this.drawn
+    const same = (a: FogShape, b: FogShape): boolean => a === b || JSON.stringify(a) === JSON.stringify(b)
+    const appended = !!d && d.map === mapKey && d.base === fog.base && d.shapes.length <= fog.shapes.length && d.shapes.every((s, i) => same(s, fog.shapes[i]))
+    if (appended && d!.shapes.length === fog.shapes.length) return
+    if (!appended) {
+      this.k = Math.min(1, MAX_TEXTURE / Math.max(map.width, map.height))
+      const w = Math.max(1, Math.round(map.width * this.k))
+      const hgt = Math.max(1, Math.round(map.height * this.k))
+      if (this.canvas.width !== w || this.canvas.height !== hgt) {
+        this.canvas.width = w
+        this.canvas.height = hgt
+        this.texture?.destroy(true)
+        this.texture = null
+      }
+      this.ctx.globalCompositeOperation = 'source-over'
+      this.ctx.clearRect(0, 0, w, hgt)
+      if (fog.base === 'covered') {
+        this.ctx.fillStyle = '#000'
+        this.ctx.fillRect(0, 0, w, hgt)
+      }
     }
-    const scene = new Container()
-    if (fog.base === 'covered') scene.addChild(new Graphics().rect(0, 0, w, hgt).fill(0x000000))
-    for (const s of fog.shapes) {
-      const g = drawShape(new Graphics(), s, this.k)
-      if (s.mode === 'reveal') g.blendMode = 'erase'
-      scene.addChild(g)
-    }
-    this.app.renderer.render({ container: scene, target: this.texture, clear: true })
-    scene.destroy({ children: true })
+    for (const s of fog.shapes.slice(appended ? d!.shapes.length : 0)) paintShape(this.ctx, s, this.k)
+    this.drawn = { map: mapKey, base: fog.base, shapes: fog.shapes }
+    if (!this.texture) this.texture = Texture.from(this.canvas)
+    else this.texture.source.update()
     this.sprite.texture = this.texture
     this.sprite.width = map.width
     this.sprite.height = map.height
@@ -72,14 +114,20 @@ export class FogRenderer {
     return { ...this.info }
   }
 
-  /** Test hook: whether the drawn fog is opaque at each map point (alpha of the texture over 0.5). */
+  /**
+   * Test hook: whether the fog on screen hides each map point. The point goes through the sprite's own transform
+   * (its place and scale over the map), then the painted pixel's alpha is read.
+   */
   sample(points: Array<[number, number]>): boolean[] {
     if (!this.texture || !this.sprite.visible) return points.map(() => false)
-    const { pixels, width, height } = this.app.renderer.extract.pixels(this.texture)
+    const { width, height } = this.canvas
+    const data = this.ctx.getImageData(0, 0, width, height).data
     return points.map(([x, y]) => {
-      const px = Math.min(width - 1, Math.max(0, Math.floor(x * this.k)))
-      const py = Math.min(height - 1, Math.max(0, Math.floor(y * this.k)))
-      return pixels[(py * width + px) * 4 + 3] > 127
+      const local = this.sprite.toLocal({ x, y }, this.world)
+      const px = Math.floor(local.x)
+      const py = Math.floor(local.y)
+      if (px < 0 || py < 0 || px >= width || py >= height) return false
+      return data[(py * width + px) * 4 + 3] > 127
     })
   }
 

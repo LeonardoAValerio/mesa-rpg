@@ -276,6 +276,7 @@ O grupo quer jogar a campanha numa mesa virtual própria, com os mapas e tokens 
 - IF dois usuários movem o mesmo token ao mesmo tempo THEN the server SHALL aplicar as ações na ordem em que chegam e todas as janelas SHALL terminar na mesma posição.  <!-- NET-16 -->
 - IF o mestre remove um token que um jogador está arrastando THEN the app do jogador SHALL cancelar o arraste.  <!-- TOK-11 -->
 - WHEN um jogador sem tokens entra THEN the app SHALL deixá-lo ver a mesa, rolar dados, conversar e usar régua, ping e desenho.  <!-- PERM-08 -->
+- WHEN o mestre clica num token logo depois de uma atualização da cena THEN the app SHALL selecionar esse token no editor.  <!-- TOK-12 --> (achado na caminhada: um clique logo após uma atualização errava o token)
 
 ---
 
@@ -335,6 +336,7 @@ O grupo quer jogar a campanha numa mesa virtual própria, com os mapas e tokens 
 | TOK-09 | P1: Tokens | Design | Pending |
 | TOK-10 | P1: Tokens | Design | Pending |
 | TOK-11 | Edge cases | Design | Pending |
+| TOK-12 | Edge cases | Design | Pending |
 | ASSET-01 | P1: Assets por hash | Design | Pending |
 | ASSET-02 | P1: Assets por hash | Design | Pending |
 | ASSET-03 | P1: Assets por hash | Design | Pending |
@@ -378,7 +380,7 @@ O grupo quer jogar a campanha numa mesa virtual própria, com os mapas e tokens 
 | PKG-01 | P1: Executável portátil | Design | Pending |
 | PKG-02 | P1: Executável portátil | Design | Pending |
 
-**Coverage:** 78 total, 0 mapped to tasks, 78 unmapped ⚠️ (mapped in Tasks)
+**Coverage:** 79 total, 0 mapped to tasks, 79 unmapped ⚠️ (mapped in Tasks)
 
 ---
 

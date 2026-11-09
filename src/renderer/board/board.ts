@@ -65,6 +65,7 @@ export class Board {
   tool: Tool = 'select'
 
   private sprites = new Map<string, TokenSprite>()
+  private spriteKeys = new Map<string, string>()
   private drag: { id: string; dx: number; dy: number; container: Container } | null = null
   private panning: { x: number; y: number } | null = null
   private space = false
@@ -202,6 +203,7 @@ export class Board {
     this.fogInfo = drawFog(this.fogLayer, view)
     this.renderTokens(view, force)
     this.applyCamera()
+    this.app.render() // lay out new sprites now: hit tests use the transforms of the last render
   }
 
   private renderEmpty(view: View): void {
@@ -246,23 +248,31 @@ export class Board {
     g.stroke({ width: 1, color, alpha: opacity, pixelLine: true })
   }
 
+  /** Rebuilds only the tokens whose look changed, so a click never lands on a sprite that has not been laid out yet. */
   private renderTokens(view: View, force: boolean): void {
     if (this.drag && !view.tokens[this.drag.id]) this.drag = null // TOK-11: the token is gone, so is the drag
+    if (force) this.drag = null
     const colors = this.colors()
+    const g = view.grid
+    const keyOf = (t: Token): string =>
+      JSON.stringify([t, g.cell, g.offsetX, g.offsetY, colors[t.faction], !!this.textures.get(t.hash), view.role, this.canDrag(t)])
     for (const [id, s] of this.sprites) {
-      if (this.drag?.id === id && !force) continue
+      const t = view.tokens[id]
+      if (this.drag?.id === id) continue
+      if (!force && t && this.spriteKeys.get(id) === keyOf(t)) continue
       s.root.destroy({ children: true })
       this.sprites.delete(id)
+      this.spriteKeys.delete(id)
     }
-    if (force) this.drag = null
     for (const t of Object.values(view.tokens)) {
       if (this.sprites.has(t.id)) continue
-      const s = drawToken(t, view.grid, colors[t.faction], this.textures.get(t.hash), view.role === 'master' ? t.owner : null)
+      const s = drawToken(t, g, colors[t.faction], this.textures.get(t.hash), view.role === 'master' ? t.owner : null)
       s.root.eventMode = 'static'
       s.root.cursor = this.canDrag(t) ? 'grab' : 'default'
       s.root.on('pointerdown', (e: FederatedPointerEvent) => this.startDrag(t, s, e))
       this.tokenLayer.addChild(s.root)
       this.sprites.set(t.id, s)
+      this.spriteKeys.set(t.id, keyOf(t))
     }
   }
 

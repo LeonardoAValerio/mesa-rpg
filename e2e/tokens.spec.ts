@@ -112,3 +112,16 @@ test('[C36] TOK-11 when the master removes a token while the player is dragging 
   await player.page.waitForTimeout(200)
   expect(await names(master.page)).toEqual(['Goblin'])
 })
+
+test('[C79] TOK-12 a master click on a token right after a scene update selects it, 10 times out of 10', async () => {
+  const { master } = await table()
+  const tok = await putAsset(master.app, solidPng(32, 32, [90, 90, 90]))
+  for (let i = 0; i < 10; i++) {
+    const col = i % 8
+    const row = 5
+    await act(master.page, { type: 'token/place', hash: tok, name: `T${i}`, faction: 'npc', size: 1, col, row })
+    await click(master.page, col * 100 + 50, row * 100 + 50) // no wait: the update and the click race
+    await expect(master.page.getByTestId('token-editor').locator('h3')).toHaveText(`Token: T${i}`)
+    await act(master.page, { type: 'token/remove', id: (await snap(master.page)).tokens.find((t) => t.name === `T${i}`)!.id })
+  }
+})

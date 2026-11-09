@@ -944,6 +944,9 @@ Proof: `cd mesa-rpg && scripts/with-node npm run dist && test "$(ls dist/MesaRPG
 **C78** - O build não referencia nenhuma URL `http(s)://` externa e a CSP só permite `'self'`, `ws:` e `http:` (PKG-02, AC 2)
 Proof: run e2e | ✓ [C78] PKG-02
 
+**C79** - Um clique do mestre num token logo após uma atualização da cena seleciona o token, 10 de 10 vezes (TOK-12, edge case; found in the walk)
+Proof: run e2e | ✓ [C79] TOK-12
+
 ---
 
 ## Handoff
@@ -952,7 +955,7 @@ The feature's live state, written as it happens - a compaction gives no warning.
 
 **Settled mid-build:** user: "aprovado" (2026-11-08) without picking sub-agents; batches run inline in the main session. Git defaults accepted: git init at the repo root, `.specs/` tracked, skill folders ignored.
 **Dispatched:** none
-**Walked:** none
+**Walked:** in progress (2026-11-09): walk found TOK-12 (a click right after a scene update missed the token); fixed in `board.ts` with C79
 
 ---
 

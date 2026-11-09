@@ -112,7 +112,7 @@ sequenceDiagram
   - `clampGrid(g: Partial<Grid>): Grid` - MAP-06
   - `cellAt(grid, x, y): {col, row}`, `cellOrigin(grid, col, row): {x, y}` - TOK-04/05
   - `rulerDistance(a, b): number` = `max(|dc|, |dr|)` - TOOL-01
-  - `detectGrid(rgba: Uint8ClampedArray, width, height): {cell, offsetX, offsetY} | null` - mean luminance per column and per row, de-meaned, FFT (radix-2, zero-padded) → strongest period in 20..400 px; offset from the phase - MAP-03/04
+  - `detectGrid(rgba: Uint8ClampedArray, width, height): {cell, offsetX, offsetY} | null` - mean luminance per column and per row, high-passed (15 px window), autocorrelation computed by FFT (radix-2, zero-padded) → first strong peak in 20..400 px (a comb of lines correlates at p, 2p… and never at p/2), refined on the farthest multiple; offset from the phase - MAP-03/04
 
 ### core/dice
 

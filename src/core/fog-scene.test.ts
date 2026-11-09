@@ -87,15 +87,21 @@ describe('fog in the scene', () => {
     }
   })
 
-  it('[C5] FOGD-05 with one covered cell, changing the cell size or the offset covers every cell', () => {
-    const one = run(withMap(), { type: 'fog/rect', x0: 0, y0: 0, x1: 99, y1: 99, mode: 'cover' })
-    expect(coveredCells(one.fog!)).toEqual([[0, 0]])
-    for (const grid of [{ cell: 80 }, { offsetX: 20 }, { offsetY: 30 }]) {
-      const s = run(one, { type: 'grid/set', grid })
-      expect(coveredCells(s.fog!)).toHaveLength(s.fog!.cols * s.fog!.rows)
+  it('[C5] FOGD-05 with one covered cell, wherever it is, changing the cell size or the offset covers every cell', () => {
+    // one covered cell at a time: the first, one in the middle and the last
+    for (const [col, row] of [[0, 0], [3, 2], [7, 5]]) {
+      const x = col * 100 + 50
+      const y = row * 100 + 50
+      const one = run(withMap(), { type: 'fog/rect', x0: x - 10, y0: y - 10, x1: x + 10, y1: y + 10, mode: 'cover' })
+      expect(coveredCells(one.fog!)).toEqual([[col, row]])
+      for (const grid of [{ cell: 80 }, { offsetX: 20 }, { offsetY: 30 }]) {
+        const s = run(one, { type: 'grid/set', grid })
+        expect(coveredCells(s.fog!), `cell ${col},${row} then ${JSON.stringify(grid)}`).toHaveLength(s.fog!.cols * s.fog!.rows)
+      }
+      const s = run(one, { type: 'grid/set', grid: { color: '#ffffff', opacity: 0.2 } })
+      expect(coveredCells(s.fog!)).toEqual([[col, row]]) // colour and opacity do not touch the fog
     }
-    const s = run(one, { type: 'grid/set', grid: { color: '#ffffff', opacity: 0.2 } })
-    expect(coveredCells(s.fog!)).toEqual([[0, 0]]) // colour and opacity do not touch the fog
   })
+
 
 })

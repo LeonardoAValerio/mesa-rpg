@@ -68,6 +68,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C20 / v0.2.0 release (ci)
 - last seen: 2026-11-09T17:20:00Z
 
+### L-010 - A rule about 'any' element is tested with the hit at the first, a middle and the last position, so a check of only one position fails.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `core` · harmful: 0
+- features: fog-default
+- evidence: C5 / F1 (core)
+- last seen: 2026-11-09T18:10:56Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

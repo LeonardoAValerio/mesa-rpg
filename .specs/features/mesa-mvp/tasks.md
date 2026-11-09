@@ -622,12 +622,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C64] FOG-01, [C69] FOG-06, [C70] FOG-07, [C71] FOG-08
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C64] FOG-01, [C69] FOG-06, [C70] FOG-07, [C71] FOG-08
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): fog hides tokens per viewer`
+**Done**: yes
 
 ---
 

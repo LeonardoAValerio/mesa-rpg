@@ -10,6 +10,7 @@ async function mapReady(masterApp: AppHandle, player: Page): Promise<void> {
   const master = masterApp.page
   H = await putAsset(masterApp.app)
   await act(master, { type: 'map/set', hash: H, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  await act(master, { type: 'fog/rect', x0: 0, y0: 0, x1: 800, y1: 600, mode: 'reveal' }) // the map starts covered (FOG-01)
   await expect.poll(async () => (await snap(player)).map?.width).toBe(800)
 }
 

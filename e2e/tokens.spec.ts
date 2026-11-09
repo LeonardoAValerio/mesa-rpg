@@ -9,6 +9,7 @@ async function table(): Promise<{ master: AppHandle; player: AppHandle; id: (nam
   const map = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
   const tok = await putAsset(master.app, solidPng(32, 32, [200, 200, 200]))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  await act(master.page, { type: 'fog/rect', x0: 0, y0: 0, x1: 800, y1: 600, mode: 'reveal' }) // the map starts covered (FOG-01)
   await act(master.page, { type: 'token/place', hash: tok, name: 'Guerreira', faction: 'grupo', size: 1, col: 1, row: 1 })
   await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', faction: 'inimigo', size: 1, col: 3, row: 3 })
   await expect.poll(async () => (await snap(player.page)).tokens.length).toBe(2)

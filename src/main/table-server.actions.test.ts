@@ -21,13 +21,15 @@ async function join(name: string, token?: string): Promise<TestClient> {
   return c
 }
 
-/** Master + Ana on an 800x600 map (100 px cells), with Guerreira (Ana's) at (1,1) and Goblin at (3,3). */
+/** Master + Ana on an 800x600 map (100 px cells), fog revealed, with Guerreira (Ana's) at (1,1) and Goblin at (3,3). */
 async function table(): Promise<{ master: TestClient; ana: TestClient; guerreira: string; goblin: string }> {
   server = await startTableServer({ port: 0, host: '127.0.0.1', hostToken: TOKEN, store })
   const master = await join('Mestre', TOKEN)
   const ana = await join('Ana')
   master.act('m', { type: 'map/set', hash: H, width: 800, height: 600, grid: { cell: 100 } })
   await master.next('ack', (m) => m.id === 'm')
+  master.act('fog', { type: 'fog/rect', x0: 0, y0: 0, x1: 800, y1: 600, mode: 'reveal' }) // the map starts covered (FOG-01)
+  await master.next('ack', (m) => m.id === 'fog')
   master.act('p1', { type: 'token/place', hash: H, name: 'Guerreira', faction: 'grupo', size: 1, col: 1, row: 1 })
   await master.next('ack', (m) => m.id === 'p1')
   master.act('p2', { type: 'token/place', hash: H, name: 'Goblin', faction: 'inimigo', size: 1, col: 3, row: 3 })

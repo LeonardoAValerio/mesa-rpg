@@ -1,9 +1,12 @@
+import { tokenCovered } from './fog'
 import type { Actor, PatchOp, Scene, Token, View } from './types'
 
-/** Whether a viewer may see a token. Players never see hidden tokens (PERM-05). */
+/** Whether a viewer may see a token: players never see hidden tokens (PERM-05) nor others' tokens under the fog (FOG-06). */
 export function canSee(scene: Scene, viewer: Actor, token: Token): boolean {
   if (viewer.role === 'master') return true
-  return !token.hidden
+  if (token.hidden) return false
+  if (scene.fog && token.owner !== viewer.name && tokenCovered(scene.fog, token)) return false
+  return true
 }
 
 /** The part of the scene one viewer is allowed to see. Anything left out never leaves the server. */

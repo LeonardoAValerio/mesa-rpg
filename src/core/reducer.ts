@@ -1,5 +1,6 @@
 import { validChat } from './chat'
 import { parseDice, rollDice } from './dice'
+import { brush, coverAll, fogDims, rect } from './fog'
 import { clampGrid, insideMap } from './grid'
 import { parsePalette } from './palette'
 import type { Action } from './protocol'
@@ -44,12 +45,29 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
   switch (action.type) {
     case 'map/set': {
       const grid = clampGrid(action.grid ?? {}, scene.grid)
-      return { ok: true, scene: { ...scene, map: { hash: action.hash, width: action.width, height: action.height }, grid } }
+      const map = { hash: action.hash, width: action.width, height: action.height }
+      return { ok: true, scene: { ...scene, map, grid, fog: coverAll(fogDims(map, grid)) } } // FOG-01
     }
     case 'palette/set':
       return { ok: true, scene: { ...scene, palette: parsePalette(JSON.stringify(action.palette)) } }
-    case 'grid/set':
-      return { ok: true, scene: { ...scene, grid: clampGrid(action.grid, scene.grid) } }
+    case 'grid/set': {
+      const grid = clampGrid(action.grid, scene.grid)
+      const moved = grid.cell !== scene.grid.cell || grid.offsetX !== scene.grid.offsetX || grid.offsetY !== scene.grid.offsetY
+      const fog = moved && scene.map ? coverAll(fogDims(scene.map, grid)) : scene.fog // FOG-08
+      return { ok: true, scene: { ...scene, grid, fog } }
+    }
+    case 'fog/brush':
+    case 'fog/rect':
+    case 'fog/coverAll': {
+      if (!scene.map || !scene.fog) return refuse(NO_MAP)
+      const fog =
+        action.type === 'fog/coverAll'
+          ? coverAll(scene.fog)
+          : action.type === 'fog/brush'
+            ? brush(scene.fog, scene.grid, action.x, action.y, action.radius, action.mode)
+            : rect(scene.fog, scene.grid, action.x0, action.y0, action.x1, action.y1, action.mode)
+      return { ok: true, scene: { ...scene, fog } }
+    }
 
     case 'token/place': {
       if (!scene.map) return refuse(NO_MAP)

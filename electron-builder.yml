@@ -7,9 +7,18 @@ files:
   - package.json
 win:
   target:
-    - target: portable
+    - target: nsis
       arch:
         - x64
   signAndEditExecutable: false
-portable:
-  artifactName: MesaRPG-${version}-portable.exe
+nsis:
+  oneClick: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: MesaRPG-Setup-${version}.${ext}
+publish:
+  provider: github
+  owner: LeonardoAValerio
+  repo: mesa-rpg
+  releaseType: release

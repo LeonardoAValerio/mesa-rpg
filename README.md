@@ -65,3 +65,5 @@ scripts/with-node npm run build && scripts/with-node npx playwright test   # tes
 ```
 
 Em modo de desenvolvimento o app não procura atualizações.
+
+Para gerar o instalador localmente (sem publicar), rode `scripts/with-node npm run dist`. No Linux o NSIS precisa do Wine, então o empacotamento roda na imagem Docker `electronuserland/builder:22-wine-10.26`: é preciso ter o Docker instalado e utilizável sem `sudo`. O instalador, o `.blockmap` e o `latest.yml` ficam em `dist/`.

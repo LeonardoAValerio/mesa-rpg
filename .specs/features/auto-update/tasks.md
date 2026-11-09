@@ -282,7 +282,7 @@ T11 → T12
 
 ### T10: Instalador NSIS
 
-**What**: `electron-builder.yml` as in the Design section, `dist`/`release` scripts, the `yaml` dev dependency, `scripts/build-config.test.ts`; confirm `npm run dist` builds the NSIS installer on Linux (if it needs Wine and fails, stop and ask the user).
+**What**: `electron-builder.yml` as in the Design section, `dist`/`release` scripts, the `yaml` dev dependency, `scripts/build-config.test.ts`; `npm run dist` runs `scripts/dist-docker.sh`, which packages in the pinned `electronuserland/builder` Wine image (NSIS needs Wine on Linux); `release` stays plain electron-builder for the Windows runner.
 **Where**: `electron-builder.yml`
 **Depends on**: T9
 **Reuses**: the MVP's `signAndEditExecutable: false`
@@ -290,10 +290,11 @@ T11 → T12
 
 **Done when**:
 
-- [ ] `npm run dist` writes `dist/MesaRPG-Setup-0.1.0.exe`, its `.blockmap` and `dist/latest.yml`, and no portable `.exe`
-- [ ] The config test: `nsis` the only Windows target, `perMachine: false`, `oneClick: true`, publish `github` `LeonardoAValerio/mesa-rpg` `releaseType: release`
-- [ ] Build gate passes
+- [x] `npm run dist` writes `dist/MesaRPG-Setup-0.1.0.exe`, its `.blockmap` and `dist/latest.yml`, and no portable `.exe`
+- [x] The config test: `nsis` the only Windows target, `perMachine: false`, `oneClick: true`, publish `github` `LeonardoAValerio/mesa-rpg` `releaseType: release`
+- [x] Build gate passes
 
+**Done**: yes
 **Tests**: unit
 **Gate**: build
 **Commit**: `build: nsis installer published to github releases`
@@ -427,8 +428,8 @@ Proof: `cd "$([ -d mesa-rpg ] && echo mesa-rpg || echo .)" && grep -qx '## Insta
 
 The feature's live state, written as it happens - a compaction gives no warning.
 
-**Settled mid-build:** execution with 2 batch sub-agents - user: "Aprovo. Pode fazer com 2 agentes"
-**Dispatched:** batch 1 (Phases 1-2, T1-T6) at 3b1bf34+spec docs commit, in the old basement-tabletop repo; returned at 479f370 (T1-T6 done, unit 101, e2e 50); batch 2 (Phases 3-4, T7-T12) at 479f370
+**Settled mid-build:** execution with 2 batch sub-agents - user: "Aprovo. Pode fazer com 2 agentes"; T10 NSIS needs Wine, absent on Linux: `npm run dist` builds the installer inside the electronuserland/builder wine Docker image - user: "Build via Docker (Recomendado)"
+**Dispatched:** batch 1 (Phases 1-2, T1-T6) at 3b1bf34+spec docs commit, in the old basement-tabletop repo; returned at 479f370 (T1-T6 done, unit 101, e2e 50); batch 2 (Phases 3-4, T7-T12) at 479f370; batch 2 returned stopped at T10 (T7 c1f3def, T8 7d91620, T9 876ed35 done; T10 uncommitted: NSIS on Linux needs Wine, absent) - waiting for the user; batch 2 resumed for T10 (Docker build), T11, T12
 **Walked:** none
 
 ---

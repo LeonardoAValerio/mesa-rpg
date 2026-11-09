@@ -125,9 +125,10 @@ T11 → T12
 
 **Done when**:
 
-- [ ] The three sections exist
-- [ ] Build gate passes
+- [x] The three sections exist
+- [x] Build gate passes
 
+**Done**: yes
 **Tests**: none
 **Gate**: build
 **Commit**: `docs: readme in portuguese`

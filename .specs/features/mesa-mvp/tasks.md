@@ -299,12 +299,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C25] MAP-09
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C25] MAP-09
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(main): validate imported images`
+**Done**: yes
 
 ---
 

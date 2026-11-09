@@ -74,6 +74,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C5 / F1 (core)
 - last seen: 2026-11-09T18:10:56Z
 
+### L-011 - A wire schema's size cap sits above the domain limit, so the domain's refusal message is reachable; test the limit through the parser, not only the reducer.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `protocol` · harmful: 0
+- features: fog-shapes
+- evidence: F1 / FOGS-08 (protocol)
+- last seen: 2026-11-09T21:16:27Z
+
+### L-012 - Exercise a renderer at the spec's upper bound (here 2000 fog shapes): redrawing everything per change crashed the window; draw only what was added.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `renderer` · harmful: 0
+- features: fog-shapes
+- evidence: F2 test / renderer crash (renderer)
+- last seen: 2026-11-09T21:16:27Z
+
+### L-013 - When the model and the drawing implement the same geometry, test the case where common implementations differ (a self-crossing polygon: even-odd vs nonzero).
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `renderer` · harmful: 0
+- features: fog-shapes
+- evidence: F3 / FOGS-03 (renderer)
+- last seen: 2026-11-09T21:16:27Z
+
+### L-014 - A test hook for something drawn measures the drawn geometry or pixels through the real transform, never the tool's own state.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: fog-shapes
+- evidence: F4, F5, F6 (e2e)
+- last seen: 2026-11-09T21:16:27Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

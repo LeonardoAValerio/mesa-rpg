@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 11,
+  "next_id": 15,
   "lessons": [
     {
       "id": "L-001",
@@ -184,6 +184,78 @@
       ],
       "created": "2026-11-09T18:10:56Z",
       "last_seen": "2026-11-09T18:10:56Z"
+    },
+    {
+      "id": "L-011",
+      "key": "ac_gap::a wire schema s size cap sits above the domain limit so the domain s refusal message is reachable test the limit through the parser not only the reducer",
+      "text": "A wire schema's size cap sits above the domain limit, so the domain's refusal message is reachable; test the limit through the parser, not only the reducer.",
+      "signal": "ac_gap",
+      "scope": "protocol",
+      "status": "candidate",
+      "features": [
+        "fog-shapes"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F1 / FOGS-08 (protocol)"
+      ],
+      "created": "2026-11-09T21:16:27Z",
+      "last_seen": "2026-11-09T21:16:27Z"
+    },
+    {
+      "id": "L-012",
+      "key": "gate_fail::exercise a renderer at the spec s upper bound here 2000 fog shapes redrawing everything per change crashed the window draw only what was added",
+      "text": "Exercise a renderer at the spec's upper bound (here 2000 fog shapes): redrawing everything per change crashed the window; draw only what was added.",
+      "signal": "gate_fail",
+      "scope": "renderer",
+      "status": "candidate",
+      "features": [
+        "fog-shapes"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F2 test / renderer crash (renderer)"
+      ],
+      "created": "2026-11-09T21:16:27Z",
+      "last_seen": "2026-11-09T21:16:27Z"
+    },
+    {
+      "id": "L-013",
+      "key": "weak_test::when the model and the drawing implement the same geometry test the case where common implementations differ a self crossing polygon even odd vs nonzero",
+      "text": "When the model and the drawing implement the same geometry, test the case where common implementations differ (a self-crossing polygon: even-odd vs nonzero).",
+      "signal": "weak_test",
+      "scope": "renderer",
+      "status": "candidate",
+      "features": [
+        "fog-shapes"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F3 / FOGS-03 (renderer)"
+      ],
+      "created": "2026-11-09T21:16:27Z",
+      "last_seen": "2026-11-09T21:16:27Z"
+    },
+    {
+      "id": "L-014",
+      "key": "weak_test::a test hook for something drawn measures the drawn geometry or pixels through the real transform never the tool s own state",
+      "text": "A test hook for something drawn measures the drawn geometry or pixels through the real transform, never the tool's own state.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "fog-shapes"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F4, F5, F6 (e2e)"
+      ],
+      "created": "2026-11-09T21:16:27Z",
+      "last_seen": "2026-11-09T21:16:27Z"
     }
   ]
 }

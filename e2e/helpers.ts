@@ -3,6 +3,8 @@ import { mkdtempSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join as pathJoin } from 'node:path'
+import type { Action } from '../src/core/protocol'
+import type { BoardSnapshot } from '../src/renderer/board/board'
 
 export interface AppHandle {
   app: ElectronApplication
@@ -60,4 +62,17 @@ export async function masterAndPlayer(name = 'Ana'): Promise<{ master: AppHandle
   const player = await launch()
   await join(player.page, port, name)
   return { master, player, port }
+}
+
+export async function snap(page: Page): Promise<BoardSnapshot> {
+  return page.evaluate(() => window.__mesaTest!.board()!)
+}
+export async function act(page: Page, action: Action): Promise<void> {
+  const r = await page.evaluate((a) => window.__mesaTest!.send(a), action)
+  expect(r, JSON.stringify(action)).toEqual({ ok: true })
+}
+/** Page coordinates of a map pixel in this window. */
+export async function screenOf(page: Page, x: number, y: number): Promise<{ x: number; y: number }> {
+  const s = await snap(page)
+  return { x: s.canvas.left + x * s.camera.scale + s.camera.x, y: s.canvas.top + y * s.camera.scale + s.camera.y }
 }

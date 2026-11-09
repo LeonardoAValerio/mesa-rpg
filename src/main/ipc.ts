@@ -19,6 +19,9 @@ function exposeForTests(): void {
 }
 
 export function registerIpc(): void {
+  ipcMain.on('mesa:isTest', (e) => {
+    e.returnValue = process.env.MESA_TEST === '1'
+  })
   ipcMain.handle('mesa:host', async (_e, portText: string): Promise<HostResult> => {
     const check = validatePort(String(portText))
     if (!check.ok) return { ok: false, error: check.error }

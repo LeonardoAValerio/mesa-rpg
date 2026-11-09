@@ -14,26 +14,28 @@ export interface Session {
   screen: TableScreen
 }
 
-type SessionHook = (s: Session) => void
+type Cleanup = () => void
+type SessionHook = (s: Session) => Cleanup | void | Promise<Cleanup | void>
 const hooks: SessionHook[] = []
 /** Later features (board, panels) attach to a table session here. */
 export function onSession(fn: SessionHook): void {
   hooks.push(fn)
 }
 
-let current: { client: TableClient; screen: TableScreen } | null = null
+let current: { client: TableClient; screen: TableScreen; cleanups: Array<Promise<Cleanup | void>> } | null = null
 
 function leave(values?: HomeValues): void {
-  current?.screen.destroy()
-  current?.client.close()
+  const c = current
   current = null
+  c?.screen.destroy()
+  c?.client.close()
+  for (const p of c?.cleanups ?? []) void p.then((fn) => fn?.())
   showHome(values)
 }
 
 function enter(root: HTMLElement, client: TableClient, host: Parameters<typeof renderTableScreen>[2]): void {
   const screen = renderTableScreen(root, client, host, () => leave())
-  current = { client, screen }
-  for (const fn of hooks) fn(current)
+  current = { client, screen, cleanups: hooks.map((fn) => Promise.resolve(fn({ client, screen }))) }
 }
 
 export function showHome(values: HomeValues = {}): void {

@@ -106,3 +106,7 @@ export const DEFAULT_GRID: Grid = { cell: 70, offsetX: 0, offsetY: 0, color: '#0
 export function emptyScene(): Scene {
   return { map: null, grid: { ...DEFAULT_GRID }, tokens: {}, fog: null }
 }
+
+export type FactionColors = Record<Faction, string>
+/** TOK-09: ring colours when the master has not loaded a palette. */
+export const DEFAULT_FACTION_COLORS: FactionColors = { grupo: '#3b82f6', inimigo: '#ef4444', npc: '#eab308', neutro: '#9ca3af' }

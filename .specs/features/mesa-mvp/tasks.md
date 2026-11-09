@@ -375,12 +375,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C17] MAP-01, [C23] MAP-07, [C24] MAP-08, [C30] TOK-05, [C31] TOK-06
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C17] MAP-01, [C23] MAP-07, [C24] MAP-08, [C30] TOK-05, [C31] TOK-06
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(board): pixi board with camera and tokens`
+**Done**: yes
 
 ---
 

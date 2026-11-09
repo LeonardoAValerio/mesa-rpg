@@ -19,6 +19,7 @@ label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
 .error { color: var(--danger); min-height: 1.4em; }
 .home { max-width: 420px; margin: 60px auto; display: flex; flex-direction: column; gap: 16px; }
 .home h1 { margin: 0 0 8px; }
+.home .app-version { margin: 0; color: var(--muted); font-size: 12px; text-align: center; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .card h2 { margin: 0; font-size: 16px; }
 .table { display: grid; grid-template-columns: 1fr 300px; grid-template-rows: auto 1fr; height: 100%; }

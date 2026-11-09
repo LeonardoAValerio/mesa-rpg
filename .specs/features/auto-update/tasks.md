@@ -206,10 +206,11 @@ T11 → T12
 
 **Done when**:
 
-- [ ] A 0.0.9 player joining a master on the app version sees the message with fields kept, and the master's list stays `Mestre`
-- [ ] The start screen shows `Versão 0.1.0` (the `package.json` version)
-- [ ] Full gate passes
+- [x] A 0.0.9 player joining a master on the app version sees the message with fields kept, and the master's list stays `Mestre`
+- [x] The start screen shows `Versão 0.1.0` (the `package.json` version)
+- [x] Full gate passes
 
+**Done**: yes
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(app): version shown on the start screen and checked on join`

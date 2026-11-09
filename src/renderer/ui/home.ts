@@ -2,6 +2,8 @@ import { DEFAULT_PORT, validatePort } from '../../core/session-rules'
 import { h } from './dom'
 
 export interface HomeHandlers {
+  /** UPD-14: shown as "Versão <versão>" at the foot of the start screen. */
+  version: string
   host(portText: string): Promise<string | null> // error message or null
   join(ip: string, port: number, name: string): Promise<string | null>
 }
@@ -68,7 +70,8 @@ export function renderHome(root: HTMLElement, handlers: HomeHandlers, values: Ho
         h('label', {}, 'Seu nome', name),
         joinBtn
       ),
-      error
+      error,
+      h('p', { class: 'app-version', testid: 'app-version' }, `Versão ${handlers.version}`)
     )
   )
 }

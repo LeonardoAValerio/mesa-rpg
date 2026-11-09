@@ -41,10 +41,11 @@ function enter(root: HTMLElement, client: TableClient, host: Parameters<typeof r
 export function showHome(values: HomeValues = {}): void {
   const root = document.getElementById('app')!
   renderHome(root, {
+    version: window.mesa.version,
     host: async (portText) => {
       const res = await window.mesa.host(portText)
       if (!res.ok) return res.error
-      const client = new TableClient({ ip: '127.0.0.1', port: res.port, name: 'Mestre', hostToken: res.hostToken })
+      const client = new TableClient({ ip: '127.0.0.1', port: res.port, name: 'Mestre', hostToken: res.hostToken, version: window.mesa.version })
       try {
         await client.connect()
       } catch (err) {
@@ -64,7 +65,7 @@ export function showHome(values: HomeValues = {}): void {
       return null
     },
     join: async (ip, port, name) => {
-      const client = new TableClient({ ip, port, name })
+      const client = new TableClient({ ip, port, name, version: window.mesa.version })
       try {
         await client.connect()
       } catch (err) {

@@ -30,7 +30,7 @@ function exposeForTests(): void {
   g.__mesaStore = store
 }
 
-export function registerIpc(): void {
+export function registerIpc(version: string): void {
   exposeForTests()
   const cache = new AssetCache(join(app.getPath('userData'), 'cache'))
   ipcMain.handle('mesa:cacheGet', (_e, hash: string) => cache.get(String(hash)))
@@ -38,13 +38,16 @@ export function registerIpc(): void {
   ipcMain.on('mesa:isTest', (e) => {
     e.returnValue = process.env.MESA_TEST === '1'
   })
+  ipcMain.on('mesa:version', (e) => {
+    e.returnValue = version
+  })
   ipcMain.handle('mesa:host', async (_e, portText: string): Promise<HostResult> => {
     const check = validatePort(String(portText))
     if (!check.ok) return { ok: false, error: check.error }
     await stopHost()
     const hostToken = randomBytes(24).toString('hex')
     try {
-      server = await startTableServer({ port: check.port, host: '0.0.0.0', hostToken, store })
+      server = await startTableServer({ port: check.port, host: '0.0.0.0', hostToken, store, version })
     } catch (err) {
       return { ok: false, error: (err as Error).message }
     }

@@ -24,8 +24,11 @@ function createWindow(): void {
   else void win.loadFile(join(__dirname, '../renderer/index.html'))
 }
 
+/** VER-01: the app version; under MESA_TEST, MESA_VERSION stands in so tests can run two versions side by side. */
+const version = process.env.MESA_TEST === '1' && process.env.MESA_VERSION ? process.env.MESA_VERSION : app.getVersion()
+
 void app.whenReady().then(() => {
-  registerIpc()
+  registerIpc(version)
   createWindow()
 })
 app.on('window-all-closed', () => app.quit())

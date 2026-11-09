@@ -3,6 +3,7 @@ import type { MesaApi } from './api'
 
 const api: MesaApi = {
   isTest: ipcRenderer.sendSync('mesa:isTest') === true,
+  version: String(ipcRenderer.sendSync('mesa:version')),
   host: (portText) => ipcRenderer.invoke('mesa:host', portText),
   stopHost: () => ipcRenderer.invoke('mesa:stopHost'),
   addresses: () => ipcRenderer.invoke('mesa:addresses'),

@@ -19,6 +19,8 @@ export type SceneFileResult = { ok: true } | { ok: false; canceled: true } | { o
 export interface MesaApi {
   /** True only in automated tests (MESA_TEST=1): enables window.__mesaTest. */
   isTest: boolean
+  /** The app version, sent on join and shown on the start screen (VER-01, UPD-14). */
+  version: string
   host(portText: string): Promise<HostResult>
   stopHost(): Promise<void>
   addresses(): Promise<LanAddress[]>

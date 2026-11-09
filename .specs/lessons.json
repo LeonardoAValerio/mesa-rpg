@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 6,
+  "next_id": 9,
   "lessons": [
     {
       "id": "L-001",
@@ -94,6 +94,60 @@
       ],
       "created": "2026-11-09T13:58:56Z",
       "last_seen": "2026-11-09T13:58:56Z"
+    },
+    {
+      "id": "L-006",
+      "key": "weak_test::a value a third party tool fills in release name artifact name is asserted from the tool s own output or parser not from our config because the tool s default may differ from the spec",
+      "text": "A value a third-party tool fills in (release name, artifact name) is asserted from the tool's own output or parser, not from our config, because the tool's default may differ from the spec.",
+      "signal": "weak_test",
+      "scope": "build",
+      "status": "candidate",
+      "features": [
+        "auto-update"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C20 / F1 (build)"
+      ],
+      "created": "2026-11-09T16:59:39Z",
+      "last_seen": "2026-11-09T16:59:39Z"
+    },
+    {
+      "id": "L-007",
+      "key": "weak_test::when test mode swaps a dependency the line that chooses between real and fake gets its own test through the real wiring or a wrong choice stays green in every test",
+      "text": "When test mode swaps a dependency, the line that chooses between real and fake gets its own test through the real wiring, or a wrong choice stays green in every test.",
+      "signal": "weak_test",
+      "scope": "main",
+      "status": "candidate",
+      "features": [
+        "auto-update"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C13 / F2 (main)"
+      ],
+      "created": "2026-11-09T16:59:39Z",
+      "last_seen": "2026-11-09T16:59:39Z"
+    },
+    {
+      "id": "L-008",
+      "key": "weak_test::a claim about every item all commits all rows is proven against the full source list never by sampling two members",
+      "text": "A claim about 'every' item (all commits, all rows) is proven against the full source list, never by sampling two members.",
+      "signal": "weak_test",
+      "scope": "repo",
+      "status": "candidate",
+      "features": [
+        "auto-update"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C25 / F3 (repo)"
+      ],
+      "created": "2026-11-09T16:59:39Z",
+      "last_seen": "2026-11-09T16:59:39Z"
     }
   ]
 }

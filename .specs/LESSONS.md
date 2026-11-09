@@ -44,6 +44,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: NET-07 / CHAT-02 (core)
 - last seen: 2026-11-09T13:58:56Z
 
+### L-006 - A value a third-party tool fills in (release name, artifact name) is asserted from the tool's own output or parser, not from our config, because the tool's default may differ from the spec.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `build` · harmful: 0
+- features: auto-update
+- evidence: C20 / F1 (build)
+- last seen: 2026-11-09T16:59:39Z
+
+### L-007 - When test mode swaps a dependency, the line that chooses between real and fake gets its own test through the real wiring, or a wrong choice stays green in every test.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `main` · harmful: 0
+- features: auto-update
+- evidence: C13 / F2 (main)
+- last seen: 2026-11-09T16:59:39Z
+
+### L-008 - A claim about 'every' item (all commits, all rows) is proven against the full source list, never by sampling two members.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `repo` · harmful: 0
+- features: auto-update
+- evidence: C25 / F3 (repo)
+- last seen: 2026-11-09T16:59:39Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

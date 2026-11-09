@@ -98,6 +98,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: F4, F5, F6 (e2e)
 - last seen: 2026-11-09T21:16:27Z
 
+### L-015 - Position and draw order in a test hook come from the drawn objects (bounds, real child order), not from the container fields the code sets.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: tokens-objects
+- evidence: F1, F2 (e2e)
+- last seen: 2026-11-09T23:14:22Z
+
+### L-016 - Every new pointer or key gesture states which tool and state it works in (select tool, no Space) and how it ends (empty click, Esc, tool change).
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `renderer` · harmful: 0
+- features: tokens-objects
+- evidence: F4, F5 (renderer)
+- last seen: 2026-11-09T23:14:22Z
+
+### L-017 - When an item can rotate, every geometric rule on it (snap, bounds, hit) uses the rotated box.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `core` · harmful: 0
+- features: tokens-objects
+- evidence: F6 (core)
+- last seen: 2026-11-09T23:14:22Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

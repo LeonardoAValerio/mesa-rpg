@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 15,
+  "next_id": 18,
   "lessons": [
     {
       "id": "L-001",
@@ -256,6 +256,60 @@
       ],
       "created": "2026-11-09T21:16:27Z",
       "last_seen": "2026-11-09T21:16:27Z"
+    },
+    {
+      "id": "L-015",
+      "key": "weak_test::position and draw order in a test hook come from the drawn objects bounds real child order not from the container fields the code sets",
+      "text": "Position and draw order in a test hook come from the drawn objects (bounds, real child order), not from the container fields the code sets.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "tokens-objects"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F1, F2 (e2e)"
+      ],
+      "created": "2026-11-09T23:14:22Z",
+      "last_seen": "2026-11-09T23:14:22Z"
+    },
+    {
+      "id": "L-016",
+      "key": "ac_gap::every new pointer or key gesture states which tool and state it works in select tool no space and how it ends empty click esc tool change",
+      "text": "Every new pointer or key gesture states which tool and state it works in (select tool, no Space) and how it ends (empty click, Esc, tool change).",
+      "signal": "ac_gap",
+      "scope": "renderer",
+      "status": "candidate",
+      "features": [
+        "tokens-objects"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F4, F5 (renderer)"
+      ],
+      "created": "2026-11-09T23:14:22Z",
+      "last_seen": "2026-11-09T23:14:22Z"
+    },
+    {
+      "id": "L-017",
+      "key": "ac_gap::when an item can rotate every geometric rule on it snap bounds hit uses the rotated box",
+      "text": "When an item can rotate, every geometric rule on it (snap, bounds, hit) uses the rotated box.",
+      "signal": "ac_gap",
+      "scope": "core",
+      "status": "candidate",
+      "features": [
+        "tokens-objects"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F6 (core)"
+      ],
+      "created": "2026-11-09T23:14:22Z",
+      "last_seen": "2026-11-09T23:14:22Z"
     }
   ]
 }

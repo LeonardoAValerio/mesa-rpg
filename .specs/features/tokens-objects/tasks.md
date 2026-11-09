@@ -283,8 +283,8 @@ Proof: run unit | ✓ [C21] ITEM-21
 ## Handoff
 
 **Settled mid-build:** faster gates and e2e with 3 workers - user asked "precisamos testar tanto para cada implementação? (...) Sinto que está demorando muito para fazer os testes", approved with the tasks: "Aprovo"; author mutation checks only on core rules, the Verifier does the rest. T2 and T3 go in one commit: switching `Token` to the item shape breaks the reducer, `.mesa` and tests together. Their gate was unit (140) + build + src lint; the e2e (12 type errors in token specs) are rewritten in T4-T7, so the full phase gate moves to the end of Phase 2. Found in T6: a click to select a character off the grid moved it (the drop snapped it); a press now becomes a drag only after 4 px of movement, with a test. Phase 2 gate at T7: build, typecheck, lint, unit 140, e2e 86 (3 workers, 2.1 min); the MVP token e2e (TOK-05, TOK-06, TOK-07, TOK-12, PERM-07, TOOL-01) were rewritten for items.
-**Dispatched:** none
-**Walked:** none
+**Dispatched:** Verifier (validate.md) at the proofs commit after the walk
+**Walked:** at 887ceb7 in Electron (MESA_TEST=1, master + player "Ana"), `Florestas Frias.jpg` imported through "Importar mapa": a 256x384 transparent figure placed as a 1.5-cell character with ring grupo shows whole at 128x192 (no crop, no square) with a blue ring hugging it and its name below; a 96x64 chest placed as a 0.75-cell object shows 64x43 with no name and no ring; a 200x40 door object clicked shows a white outline and the corner handle, E three times turns it 45° in both windows, "Movimento: Travado" in the editor (title "Objeto: Porta") locks it. The player window shows the same three items, same sizes and rotation.
 
 ---
 

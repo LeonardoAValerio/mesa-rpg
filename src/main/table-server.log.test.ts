@@ -58,8 +58,12 @@ describe('shared log', () => {
     await ana.next('reject', (m) => m.id === 'l')
     ana.act('ok', { type: 'chat', text: 'y'.repeat(500) })
     await ana.next('ack', (m) => m.id === 'ok')
+    ana.act('emoji', { type: 'chat', text: 'z'.repeat(499) + '🐉' }) // 500 characters
+    await ana.next('ack', (m) => m.id === 'emoji')
+    ana.act('emoji2', { type: 'chat', text: 'z'.repeat(500) + '🐉' }) // 501 characters
+    await ana.next('reject', (m) => m.id === 'emoji2')
     const logs = ana.msgs.filter((m) => m.t === 'log')
-    expect(logs).toHaveLength(1)
+    expect(logs).toHaveLength(2)
     expect(logs[0]).toMatchObject({ entry: { kind: 'chat', author: 'Ana', text: 'y'.repeat(500) } })
   })
 

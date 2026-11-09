@@ -20,7 +20,7 @@ export function renderHome(root: HTMLElement, handlers: HomeHandlers, values: Ho
   const hostPort = h('input', { testid: 'host-port', value: values.hostPort ?? String(DEFAULT_PORT), inputmode: 'numeric' })
   const ip = h('input', { testid: 'join-ip', value: values.ip ?? '', placeholder: '25.x.x.x' })
   const joinPort = h('input', { testid: 'join-port', value: values.joinPort ?? String(DEFAULT_PORT), inputmode: 'numeric' })
-  const name = h('input', { testid: 'join-name', value: values.name ?? '', maxlength: 24 })
+  const name = h('input', { testid: 'join-name', value: values.name ?? '' })
 
   const busy = (on: boolean): void => {
     for (const b of root.querySelectorAll('button')) b.disabled = on

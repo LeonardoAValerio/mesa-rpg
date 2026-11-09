@@ -22,7 +22,8 @@ export function normalizeName(name: string): string {
 /** NET-07, NET-09: the reason a player cannot join, or null when they can. */
 export function validateJoin(name: string, connectedNames: readonly string[], playerCount: number): JoinError | null {
   const n = normalizeName(name)
-  if (n.length < 1 || n.length > MAX_NAME) return 'Nome inválido'
+  const chars = [...n].length // characters, not UTF-16 units: an emoji counts as one
+  if (chars < 1 || chars > MAX_NAME) return 'Nome inválido'
   if (connectedNames.some((c) => c.toLocaleLowerCase() === n.toLocaleLowerCase())) return 'Nome já em uso'
   if (playerCount >= MAX_PLAYERS) return 'Mesa cheia'
   return null

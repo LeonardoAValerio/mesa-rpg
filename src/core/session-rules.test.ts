@@ -18,6 +18,8 @@ describe('validateJoin', () => {
     expect(validateJoin('   ', [], 0)).toBe('Nome inválido')
     expect(validateJoin('a'.repeat(25), [], 0)).toBe('Nome inválido')
     expect(validateJoin('a'.repeat(24), [], 0)).toBeNull()
+    expect(validateJoin('a'.repeat(23) + '🐉', [], 0)).toBeNull() // 24 characters, one of them an emoji
+    expect(validateJoin('a'.repeat(24) + '🐉', [], 0)).toBe('Nome inválido')
   })
 
   it('rejects a name already connected with "Nome já em uso"', () => {

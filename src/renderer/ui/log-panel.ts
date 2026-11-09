@@ -34,7 +34,7 @@ export function logPanel(client: TableClient): { root: HTMLElement; destroy(): v
   const list = h('ul', { class: 'log', testid: 'log' })
   const error = h('p', { class: 'error', testid: 'dice-error' })
   const dice = h('input', { testid: 'dice-input', placeholder: '2d6+3, 2d20kh1' })
-  const chat = h('input', { testid: 'chat-input', placeholder: 'Mensagem', maxlength: 500 })
+  const chat = h('input', { testid: 'chat-input', placeholder: 'Mensagem' })
 
   const add = (e: LogEntry): void => {
     list.append(entryEl(e))

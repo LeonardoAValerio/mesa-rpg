@@ -111,3 +111,11 @@ Proof: run unit | ✓ [C4] FOGD-04
 
 **C5** - Changing the grid with one covered cell covers everything (FOGD-05, AC 5)
 Proof: run unit | ✓ [C5] FOGD-05
+
+---
+
+## Handoff
+
+**Settled mid-build:** none
+**Dispatched:** Verifier (validate.md) at the proofs commit after c05e7ed
+**Walked:** at c05e7ed with real clicks in Electron (MESA_TEST=1, master + player "Ana" on 127.0.0.1): the master's map/set of an 800x600 map with 100 px cells shows the map fully clear with the grid in the master's window, and the player's window shows it too; "Cobrir tudo" in the Névoa panel darkens the master's view 50% (player black); "Revelar tudo", next to it, clears both again.

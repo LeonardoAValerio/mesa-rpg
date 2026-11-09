@@ -111,6 +111,14 @@ export function detectPeriod(raw: Float64Array): number | null {
     if (v < 0.6 * best || v < acf(lag - 1) || v < acf(lag + 1)) continue
     const first = peakNear(lag, 1)
     if (first === null) return null
+    // MAP-04: a strong peak at a fraction of this lag below PERIOD_MIN means the real period is under 20 px.
+    for (let k = 2; first / k >= 3; k++) {
+      const sub = first / k
+      if (sub >= PERIOD_MIN) continue
+      const l = Math.round(sub)
+      const peak = Math.max(acf(l - 1), acf(l), acf(l + 1))
+      if (peak >= 0.6 * best) return null
+    }
     // Refine on the farthest multiple that still fits: the error divides by the multiple.
     const m = Math.max(1, Math.floor((n / 2) / first))
     const far = peakNear(first * m, Math.max(2, m))

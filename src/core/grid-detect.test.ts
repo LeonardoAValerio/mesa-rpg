@@ -78,6 +78,17 @@ describe('detectGrid', () => {
     const { grid, warning } = gridFromDetection(det)
     expect(grid.cell).toBe(70)
     expect(warning).toBe('Grid não detectado — ajuste manualmente')
+    // a grid finer than 20 px is outside the range, so it is not detected either (no multiple of it is reported)
+    for (const period of [12, 15]) {
+      const w = 1200
+      const h = 900
+      const img = mapImage(w, h, w / period, h / period, true, 11)
+      const fine = detectGrid(img, w, h)
+      expect(fine, `${period} px`).toBeNull()
+      expect(gridFromDetection(fine)).toMatchObject({ grid: { cell: 70 }, warning: 'Grid não detectado — ajuste manualmente' })
+    }
+    // the far end of the range: a 450 px grid falls back as well
+    expect(detectGrid(mapImage(1800, 1350, 4, 3, true, 12), 1800, 1350)).toBeNull()
   })
 
   it('a detected grid produces no warning', () => {

@@ -92,7 +92,7 @@ test('[C31] TOK-06 a size-2 token covers 2x2 cells, shows its name and has a rin
   }
 })
 
-test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (ping, fog)', async () => {
+test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (ping, fog brush, rectangle, polygon)', async () => {
   const { master, player } = await masterAndPlayer()
   await mapReady(master, player.page)
   await act(master.page, { type: 'fog/coverAll' }) // so that a stray reveal would show
@@ -100,7 +100,8 @@ test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (pi
   const other = (await snap(player.page)).camera
   const coveredBefore = await coveredCenters(player.page)
   const pings: number[] = []
-  for (const tool of ['tool-ping', 'tool-fog-rect', 'tool-fog-brush']) {
+  const polyStarted: boolean[] = []
+  for (const tool of ['tool-ping', 'tool-fog-rect', 'tool-fog-brush', 'tool-fog-poly']) {
     await master.page.getByTestId(tool).click()
     const before = await snap(master.page)
     const p = { x: before.canvas.left + 400, y: before.canvas.top + 300 }
@@ -114,9 +115,11 @@ test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (pi
     expect(after.camera.x - before.camera.x, tool).toBeCloseTo(80, 0)
     expect(after.camera.y - before.camera.y, tool).toBeCloseTo(40, 0)
     pings.push((await master.page.evaluate(() => window.__mesaTest!.overlays().pings.length)) + (await player.page.evaluate(() => window.__mesaTest!.overlays().pings.length)))
+    polyStarted.push((await master.page.evaluate(() => window.__mesaTest!.fogTool()!.preview)) !== null)
   }
   await player.page.waitForTimeout(300)
-  expect(pings).toEqual([0, 0, 0])
+  expect(pings).toEqual([0, 0, 0, 0])
+  expect(polyStarted, 'no fog tool started a shape').toEqual([false, false, false, false])
   expect(await coveredCenters(player.page)).toBe(coveredBefore)
   expect((await snap(player.page)).fog.shapes).toBe(0)
   expect((await snap(player.page)).camera).toEqual(other)

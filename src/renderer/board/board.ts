@@ -6,6 +6,7 @@ import type { TableClient } from '../net/table-client'
 import { h } from '../ui/dom'
 import { fit, pan, toWorld, zoomAt, type Camera } from './camera'
 import { FogRenderer } from './fog-layer'
+import { Selection, type SelectionSnapshot } from './selection'
 import { drawToken, type TokenSprite } from './token-sprite'
 
 export interface TextureProvider {
@@ -51,6 +52,7 @@ export interface BoardSnapshot {
   map: { hash: string; width: number; height: number; textured: boolean } | null
   grid: { cell: number; offsetX: number; offsetY: number; color: string; opacity: number; lines: number } | null
   fog: { shapes: number; base: 'revealed' | 'covered'; alpha: number }
+  selection: SelectionSnapshot
   tokens: TokenSnapshot[]
   dragging: string | null
   empty: string | null
@@ -77,12 +79,13 @@ export class Board {
 
   private sprites = new Map<string, TokenSprite>()
   private spriteKeys = new Map<string, string>()
-  private drag: { id: string; dx: number; dy: number; container: Container } | null = null
+  private drag: { id: string; dx: number; dy: number; container: Container; from: { x: number; y: number }; moved: boolean } | null = null
   private panning: { x: number; y: number } | null = null
   private space = false
   private fittedFor: string | null = null
   private gridLines = 0
   private fog!: FogRenderer
+  selection!: Selection
   private emptyEl: HTMLElement
   private offs: Array<() => void> = []
   private textures: TextureProvider
@@ -102,6 +105,7 @@ export class Board {
     b.tokenLayer.addChild(b.objectLayer, b.characterLayer)
     b.world.addChild(b.mapLayer, b.gridLayer, b.fogLayer, b.tokenLayer, b.overlayLayer) // tokens a player may see are drawn above the fog
     b.fog = new FogRenderer(b.world, b.fogLayer)
+    b.selection = new Selection(b, client)
     b.app.stage.addChild(b.world)
     b.bindInput()
     // the board area changes size with the layout, not only with the window
@@ -188,6 +192,8 @@ export class Board {
     stage.hitArea = this.app.screen
     stage.on('pointermove', (e: FederatedPointerEvent) => {
       if (!this.drag) return
+      if (!this.drag.moved && Math.hypot(e.global.x - this.drag.from.x, e.global.y - this.drag.from.y) < 4) return // a click selects, it does not move
+      this.drag.moved = true
       const w = this.toWorld(e.global.x, e.global.y)
       this.drag.container.position.set(w.x - this.drag.dx, w.y - this.drag.dy)
     })
@@ -197,10 +203,12 @@ export class Board {
 
   private startDrag(t: Token, sprite: TokenSprite, e: FederatedPointerEvent): void {
     if (e.button !== 0 || this.space || this.tool !== 'select') return
+    if (this.selection.onHandle(this.toWorld(e.global.x, e.global.y))) return this.selection.beginResize() // ITEM-04
+    this.selection.select(t.id)
     if (this.client.you?.role === 'master') this.opts.onSelect?.(t.id)
-    if (!this.canDrag(t)) return // PERM-07: players drag only their own tokens
+    if (!this.canDrag(t)) return // ITEM-14..16
     const w = this.toWorld(e.global.x, e.global.y)
-    this.drag = { id: t.id, dx: w.x - sprite.root.x, dy: w.y - sprite.root.y, container: sprite.root }
+    this.drag = { id: t.id, dx: w.x - sprite.root.x, dy: w.y - sprite.root.y, container: sprite.root, from: { x: e.global.x, y: e.global.y }, moved: false }
     sprite.root.parent?.addChild(sprite.root) // on top of its layer while dragging
   }
 
@@ -212,6 +220,7 @@ export class Board {
     const view = this.client.view
     if (!view || !view.tokens[d.id]) return this.render(true)
     const t = view.tokens[d.id]
+    if (!d.moved) return // a click: nothing moves, not even a snap
     const p = this.dropAt(t.kind, t.hash, t.width, d.container.x, d.container.y, shift)
     d.container.position.set(p.x, p.y)
     if (t.x === p.x && t.y === p.y) return
@@ -246,6 +255,7 @@ export class Board {
     this.fog.update(view)
     this.renderTokens(view, force)
     this.applyCamera()
+    this.selection.draw()
     this.app.render() // lay out new sprites now: hit tests use the transforms of the last render
   }
 
@@ -353,6 +363,7 @@ export class Board {
       map: view?.map ? { ...view.map, textured: !!this.textures.get(view.map.hash) } : null,
       grid: view?.map ? { ...view.grid, lines: this.gridLines } : null,
       fog: this.fog.snapshot(),
+      selection: this.selection.snapshot(),
       tokens,
       dragging: this.drag?.id ?? null,
       empty: this.emptyEl.hidden ? null : (this.emptyEl.querySelector('p')?.textContent ?? null)
@@ -372,6 +383,7 @@ export class Board {
   destroy(): void {
     for (const off of this.offs) off()
     this.fog.destroy()
+    this.selection.destroy()
     this.app.destroy(true, { children: true })
     this.emptyEl.remove()
   }

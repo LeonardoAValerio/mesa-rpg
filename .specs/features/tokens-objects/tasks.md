@@ -183,12 +183,13 @@ T4 → T5 → T6 → T7
 
 **Done when**:
 
-- [ ] e2e: E and Q rotate 15° both ways in both windows; a player rotates a Livre item but not a "Só mestre" one; dragging the handle by 1.3 cells makes the width grow by 1.25 and keeps the aspect
-- [ ] Task e2e gate passes
+- [x] e2e: E and Q rotate 15° both ways in both windows; a player rotates a Livre item but not a "Só mestre" one; dragging the handle by 1.3 cells makes the width grow by 1.25 and keeps the aspect
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(board): select, rotate with Q and E, resize with the corner handle`
+**Done**: yes
 
 ---
 
@@ -280,7 +281,7 @@ Proof: run unit | ✓ [C21] ITEM-21
 
 ## Handoff
 
-**Settled mid-build:** faster gates and e2e with 3 workers - user asked "precisamos testar tanto para cada implementação? (...) Sinto que está demorando muito para fazer os testes", approved with the tasks: "Aprovo"; author mutation checks only on core rules, the Verifier does the rest. T2 and T3 go in one commit: switching `Token` to the item shape breaks the reducer, `.mesa` and tests together. Their gate was unit (140) + build + src lint; the e2e (12 type errors in token specs) are rewritten in T4-T7, so the full phase gate moves to the end of Phase 2.
+**Settled mid-build:** faster gates and e2e with 3 workers - user asked "precisamos testar tanto para cada implementação? (...) Sinto que está demorando muito para fazer os testes", approved with the tasks: "Aprovo"; author mutation checks only on core rules, the Verifier does the rest. T2 and T3 go in one commit: switching `Token` to the item shape breaks the reducer, `.mesa` and tests together. Their gate was unit (140) + build + src lint; the e2e (12 type errors in token specs) are rewritten in T4-T7, so the full phase gate moves to the end of Phase 2. Found in T6: a click to select a character off the grid moved it (the drop snapped it); a press now becomes a drag only after 4 px of movement, with a test.
 **Dispatched:** none
 **Walked:** none
 

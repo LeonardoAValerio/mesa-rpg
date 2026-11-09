@@ -157,3 +157,66 @@ test('[C17] ITEM-17 a refused move puts the item back where it was', async () =>
   await expect.poll(async () => { const g = await item(player.page, 'Goblin'); return [g.x, g.y] }).toEqual([150, 150])
   expect([(await item(master.page, 'Goblin')).x, (await item(master.page, 'Goblin')).y]).toEqual([150, 150])
 })
+
+async function clickItem(page: Page, name: string): Promise<void> {
+  const t = await item(page, name)
+  const s = await snap(page)
+  await page.mouse.click(s.canvas.left + t.x * s.camera.scale + s.camera.x, s.canvas.top + t.y * s.camera.scale + s.camera.y)
+}
+
+test('[C13] ITEM-13 E and Q rotate the selected item 15° clockwise and anticlockwise, in every window', async () => {
+  const { master, player, square } = await table()
+  await act(master.page, { type: 'token/place', hash: square, name: 'Porta', kind: 'object', x: 250, y: 250, width: 1, ring: null })
+  await act(master.page, { type: 'token/place', hash: square, name: 'Ponte', kind: 'object', x: 550, y: 250, width: 1, ring: null })
+  await clickItem(master.page, 'Porta')
+  await expect.poll(async () => (await snap(master.page)).selection.id).toBe((await item(master.page, 'Porta')).id)
+  await master.page.keyboard.press('e')
+  for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Porta')).rotation).toBe(15)
+  await master.page.keyboard.press('q')
+  await master.page.keyboard.press('q')
+  for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Porta')).rotation).toBe(345)
+  expect((await item(master.page, 'Ponte')).rotation).toBe(0) // only the selected one
+  // a player rotates a Livre item, not a "Só mestre" one
+  await clickItem(player.page, 'Ponte')
+  await player.page.keyboard.press('E')
+  for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Ponte')).rotation).toBe(15)
+  await act(master.page, { type: 'token/update', id: (await item(master.page, 'Ponte')).id, movement: 'master' })
+  await player.page.waitForTimeout(200)
+  await player.page.keyboard.press('E')
+  await player.page.waitForTimeout(400)
+  for (const page of both(master, player)) expect((await item(page, 'Ponte')).rotation).toBe(15)
+})
+
+test('[C4] ITEM-04 dragging the corner handle resizes the item in steps of 0.25 cell, keeping the aspect, in every window', async () => {
+  const { master, player, tall } = await table()
+  await act(master.page, { type: 'token/place', hash: tall, name: 'Torre', kind: 'character', x: 300, y: 300, width: 1, ring: null }) // 100 x 150
+  await clickItem(master.page, 'Torre')
+  await expect.poll(async () => (await snap(master.page)).selection.handle).not.toBeNull()
+  const s = await snap(master.page)
+  const [hx, hy] = s.selection.handle!
+  expect([Math.round(hx), Math.round(hy)]).toEqual([350, 375]) // the bottom-right corner of the drawn image
+  const screen = (px: number, py: number) => ({ x: s.canvas.left + px * s.camera.scale + s.camera.x, y: s.canvas.top + py * s.camera.scale + s.camera.y })
+  await master.page.mouse.move(screen(hx, hy).x, screen(hx, hy).y)
+  await master.page.mouse.down()
+  await master.page.mouse.move(screen(hx + 65, hy).x, screen(hx + 65, hy).y, { steps: 5 }) // 1.3 cells wider: 2.3, rounded to 2.25
+  expect((await snap(master.page)).selection.resizing).toBe(2.25)
+  await master.page.mouse.up()
+  for (const page of both(master, player)) {
+    await expect.poll(async () => Math.round((await item(page, 'Torre')).w)).toBe(225)
+    expect((await item(page, 'Torre')).h).toBeCloseTo(337.5, 3)
+    expect([(await item(page, 'Torre')).x, (await item(page, 'Torre')).y]).toEqual([300, 300]) // resizing does not move it
+  }
+  // a player has no handle
+  await clickItem(player.page, 'Torre')
+  await expect.poll(async () => (await snap(player.page)).selection.id).not.toBeNull()
+  expect((await snap(player.page)).selection.handle).toBeNull()
+})
+
+test('clicking an item to select it does not move it, even off the grid (ITEM-08)', async () => {
+  const { master, player, tall } = await table()
+  await act(master.page, { type: 'token/place', hash: tall, name: 'Torre', kind: 'character', x: 300, y: 300, width: 1, ring: null })
+  await clickItem(master.page, 'Torre')
+  await clickItem(player.page, 'Torre')
+  await master.page.waitForTimeout(400)
+  for (const page of both(master, player)) expect([(await item(page, 'Torre')).x, (await item(page, 'Torre')).y]).toEqual([300, 300])
+})

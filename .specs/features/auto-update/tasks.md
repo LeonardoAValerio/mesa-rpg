@@ -227,9 +227,10 @@ T11 → T12
 
 **Done when**:
 
-- [ ] `available`/`progress` → `Baixando atualização <v>…`; `downloaded` → `Atualização <v> pronta`; `not-available` and `error` → no banner, except that an `error` after `downloaded` keeps `ready` (the file is already on disk)
-- [ ] Quick gate passes
+- [x] `available`/`progress` → `Baixando atualização <v>…`; `downloaded` → `Atualização <v> pronta`; `not-available` and `error` → no banner, except that an `error` after `downloaded` keeps `ready` (the file is already on disk)
+- [x] Quick gate passes
 
+**Done**: yes
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): update banner state`
@@ -425,7 +426,7 @@ Proof: `cd "$([ -d mesa-rpg ] && echo mesa-rpg || echo .)" && grep -qx '## Insta
 The feature's live state, written as it happens - a compaction gives no warning.
 
 **Settled mid-build:** execution with 2 batch sub-agents - user: "Aprovo. Pode fazer com 2 agentes"
-**Dispatched:** batch 1 (Phases 1-2, T1-T6) at 3b1bf34+spec docs commit, in the old basement-tabletop repo
+**Dispatched:** batch 1 (Phases 1-2, T1-T6) at 3b1bf34+spec docs commit, in the old basement-tabletop repo; returned at 479f370 (T1-T6 done, unit 101, e2e 50); batch 2 (Phases 3-4, T7-T12) at 479f370
 **Walked:** none
 
 ---

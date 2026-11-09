@@ -584,12 +584,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C59] TOOL-01, [C60] TOOL-02, [C61] TOOL-03, [C62] TOOL-04
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C59] TOOL-01, [C60] TOOL-02, [C61] TOOL-03, [C62] TOOL-04
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(board): ruler, ping and quick draw`
+**Done**: yes
 
 ---
 

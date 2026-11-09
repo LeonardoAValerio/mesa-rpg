@@ -48,6 +48,8 @@ export interface BoardSnapshot {
 
 const WHEEL_STEP = 1.1
 
+export type Tool = 'select' | 'ruler' | 'ping' | 'draw' | 'fog-brush' | 'fog-rect'
+
 /** The PixiJS table: map, grid and tokens, a camera per window, and token drag with grid snap. */
 export class Board {
   readonly app = new Application()
@@ -58,6 +60,7 @@ export class Board {
   readonly fogLayer = new Container()
   readonly overlayLayer = new Container()
   camera: Camera = { scale: 1, x: 0, y: 0 }
+  tool: Tool = 'select'
 
   private sprites = new Map<string, TokenSprite>()
   private drag: { id: string; dx: number; dy: number; container: Container } | null = null
@@ -158,7 +161,7 @@ export class Board {
   }
 
   private startDrag(t: Token, sprite: TokenSprite, e: FederatedPointerEvent): void {
-    if (e.button !== 0 || this.space) return
+    if (e.button !== 0 || this.space || this.tool !== 'select') return
     if (this.client.you?.role === 'master') this.opts.onSelect?.(t.id)
     if (!this.canDrag(t)) return // PERM-07: players drag only their own tokens
     const w = this.toWorld(e.global.x, e.global.y)
@@ -180,6 +183,11 @@ export class Board {
     if (t.col === cell.col && t.row === cell.row) return
     const r = await this.client.send({ type: 'token/move', id: d.id, col: cell.col, row: cell.row })
     if (!r.ok) this.render(true)
+  }
+
+  setTool(tool: Tool): void {
+    this.tool = tool
+    this.app.canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair'
   }
 
   render(force = false): void {

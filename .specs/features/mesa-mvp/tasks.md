@@ -356,12 +356,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C11] NET-11, [C14] NET-14, [C16] NET-16, [C45] PERM-03
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C11] NET-11, [C14] NET-14, [C16] NET-16, [C45] PERM-03
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(server): apply actions and broadcast patches`
+**Done**: yes
 
 ---
 

@@ -1,6 +1,8 @@
 // Test helpers for real ws clients against a real TableServer. Not shipped: only *.test.ts import it.
 import { WebSocket } from 'ws'
-import type { ServerMsg } from '../core/protocol'
+import type { Action, ServerMsg } from '../core/protocol'
+import type { View } from '../core/types'
+import { applyOps } from '../renderer/net/table-client'
 
 export interface TestClient {
   ws: WebSocket
@@ -10,6 +12,9 @@ export interface TestClient {
   next<T extends ServerMsg['t']>(t: T, pred?: (m: Extract<ServerMsg, { t: T }>) => boolean, timeoutMs?: number): Promise<Extract<ServerMsg, { t: T }>>
   closed: Promise<void>
   close(): void
+  /** The view rebuilt from welcome + every patch received so far, as a real client keeps it. */
+  view(): View
+  act(id: string, action: Action): void
 }
 
 export async function connectClient(port: number): Promise<TestClient> {
@@ -33,6 +38,16 @@ export async function connectClient(port: number): Promise<TestClient> {
     send: (m) => ws.send(JSON.stringify(m)),
     sendRaw: (t) => ws.send(t),
     close: () => ws.close(),
+    act: (id, action) => ws.send(JSON.stringify({ t: 'action', id, action })),
+    view: () => {
+      let v: View | null = null
+      for (const m of msgs) {
+        if (m.t === 'welcome') v = m.view
+        else if (m.t === 'patch' && v) v = applyOps(v, m.ops)
+      }
+      if (!v) throw new Error('no welcome yet')
+      return v
+    },
     next: (t, pred, timeoutMs = 2000) =>
       new Promise((resolve, reject) => {
         const check = (): boolean => {

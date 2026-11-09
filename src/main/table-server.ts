@@ -1,9 +1,12 @@
+import { randomInt } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { WebSocketServer, WebSocket } from 'ws'
-import { parseClientMsg, type ClientMsg, type ServerMsg } from '../core/protocol'
+import { parseClientMsg, type Action, type ClientMsg, type ServerMsg } from '../core/protocol'
+import { applyAction, type ReducerCtx } from '../core/reducer'
 import { normalizeName, validateJoin } from '../core/session-rules'
-import { emptyScene, type LogEntry, type Role, type Scene, type View } from '../core/types'
+import { emptyScene, type Actor, type LogEntry, type Role, type Scene, type View } from '../core/types'
+import { diffViews, viewFor } from '../core/view'
 
 export const MASTER_NAME = 'Mestre'
 
@@ -12,7 +15,11 @@ interface Session {
   name: string
   role: Role
   alive: boolean
+  last: View | null
 }
+
+/** DICE-02: each die is drawn uniformly from 1..max with the OS CSPRNG. */
+export const cryptoRng = (max: number): number => randomInt(1, max + 1)
 
 export interface TableServerOptions {
   port: number
@@ -26,13 +33,16 @@ export interface TableServer {
   readonly host: string
   players(): string[]
   getScene(): Scene
+  setScene(scene: Scene): void
   close(): Promise<void>
 }
 
 export async function startTableServer(opts: TableServerOptions): Promise<TableServer> {
   const host = opts.host ?? '0.0.0.0'
   const sessions = new Set<Session>()
-  const scene: Scene = emptyScene()
+  let scene: Scene = emptyScene()
+  let idSeq = 0
+  const ctx: ReducerCtx = { rng: cryptoRng, now: () => Date.now(), newId: () => `${Date.now().toString(36)}-${++idSeq}` }
   const log: LogEntry[] = []
 
   const http: Server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -46,11 +56,33 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
   }
   const joined = (): Session[] => [...sessions]
   const names = (): string[] => joined().map((s) => s.name)
-  const viewFor = (role: Role): View => ({ role, ...scene, players: names() })
+  const actorOf = (s: Session): Actor => ({ role: s.role, name: s.name })
 
-  const broadcastPlayers = (except?: Session): void => {
+  /** Sends each session only what changed in what it may see (diffs per viewer). */
+  const broadcastViews = (): void => {
     const players = names()
-    for (const s of sessions) if (s !== except) send(s, { t: 'patch', ops: [{ op: 'players', players }] })
+    for (const s of sessions) {
+      const next = viewFor(scene, actorOf(s), players)
+      const ops = s.last ? diffViews(s.last, next) : []
+      s.last = next
+      if (ops.length) send(s, { t: 'patch', ops })
+    }
+  }
+
+  const handleAction = (s: Session, id: string, action: Action): void => {
+    const r = applyAction(scene, actorOf(s), action, ctx)
+    if (!r.ok) {
+      send(s, { t: 'reject', id, reason: r.reason })
+      return
+    }
+    scene = r.scene
+    send(s, { t: 'ack', id })
+    if (r.log) {
+      log.push(r.log)
+      if (log.length > 200) log.splice(0, log.length - 200)
+      for (const x of sessions) send(x, { t: 'log', entry: r.log })
+    }
+    broadcastViews()
   }
 
   const handleJoin = (ws: WebSocket, msg: Extract<ClientMsg, { t: 'join' }>): Session | null => {
@@ -67,10 +99,12 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
       ws.close(4000, reason)
       return null
     }
-    const session: Session = { ws, name, role: isMaster ? 'master' : 'player', alive: true }
+    const session: Session = { ws, name, role: isMaster ? 'master' : 'player', alive: true, last: null }
     sessions.add(session)
-    send(session, { t: 'welcome', you: { role: session.role, name }, view: viewFor(session.role), log: log.slice(-200) })
-    broadcastPlayers(session)
+    const view = viewFor(scene, actorOf(session), names())
+    session.last = view
+    send(session, { t: 'welcome', you: { role: session.role, name }, view, log: log.slice(-200) })
+    broadcastViews()
     return session
   }
 
@@ -87,9 +121,10 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
         if (msg.t === 'join') session = handleJoin(ws, msg)
         return
       }
+      if (msg.t === 'action') handleAction(session, msg.id, msg.action)
     })
     ws.on('close', () => {
-      if (session && sessions.delete(session)) broadcastPlayers()
+      if (session && sessions.delete(session)) broadcastViews()
     })
     ws.on('error', () => ws.terminate())
   })
@@ -125,6 +160,10 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     host: address.address,
     players: names,
     getScene: () => scene,
+    setScene: (next) => {
+      scene = next
+      broadcastViews()
+    },
     close: async () => {
       clearInterval(heartbeat)
       for (const s of sessions) send(s, { t: 'closed' })

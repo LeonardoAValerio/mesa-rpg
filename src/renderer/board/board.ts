@@ -193,6 +193,11 @@ export class Board {
     if (!r.ok) this.render(true)
   }
 
+  /** Space is held: a left drag pans the view, so no tool may act on it (MAP-08). */
+  get spaceHeld(): boolean {
+    return this.space
+  }
+
   setTool(tool: Tool): void {
     this.tool = tool
     this.app.canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair'

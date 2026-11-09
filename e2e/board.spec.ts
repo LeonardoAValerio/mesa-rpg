@@ -91,3 +91,32 @@ test('[C31] TOK-06 a size-2 token covers 2x2 cells, shows its name and has a rin
     expect(tokens[0]).toMatchObject({ name: 'Elfa', label: 'Elfa', x: 500, y: 100, w: 100, h: 100, ring: '#3b82f6' })
   }
 })
+
+test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (ping, fog)', async () => {
+  const { master, player } = await masterAndPlayer()
+  await mapReady(master, player.page)
+  await act(master.page, { type: 'fog/coverAll' }) // so that a stray reveal would show
+  await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(48)
+  const other = (await snap(player.page)).camera
+  const coveredBefore = (await snap(player.page)).fog.covered
+  const pings: number[] = []
+  for (const tool of ['tool-ping', 'tool-fog-rect', 'tool-fog-brush']) {
+    await master.page.getByTestId(tool).click()
+    const before = await snap(master.page)
+    const p = { x: before.canvas.left + 400, y: before.canvas.top + 300 }
+    await master.page.mouse.move(p.x, p.y)
+    await master.page.keyboard.down('Space')
+    await master.page.mouse.down()
+    await master.page.mouse.move(p.x + 80, p.y + 40, { steps: 5 })
+    await master.page.mouse.up()
+    await master.page.keyboard.up('Space')
+    const after = await snap(master.page)
+    expect(after.camera.x - before.camera.x, tool).toBeCloseTo(80, 0)
+    expect(after.camera.y - before.camera.y, tool).toBeCloseTo(40, 0)
+    pings.push((await master.page.evaluate(() => window.__mesaTest!.overlays().pings.length)) + (await player.page.evaluate(() => window.__mesaTest!.overlays().pings.length)))
+  }
+  await player.page.waitForTimeout(300)
+  expect(pings).toEqual([0, 0, 0])
+  expect((await snap(player.page)).fog.covered).toBe(coveredBefore)
+  expect((await snap(player.page)).camera).toEqual(other)
+})

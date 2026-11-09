@@ -43,7 +43,7 @@ export function fogTools(board: Board, client: TableClient): { root: HTMLElement
   }
   const world = (e: FederatedPointerEvent): { x: number; y: number } => board.toWorld(e.global.x, e.global.y)
   const down = (e: FederatedPointerEvent): void => {
-    if (e.button !== 0) return
+    if (e.button !== 0 || board.spaceHeld) return
     const p = world(e)
     if (board.tool === 'fog-brush') {
       start = p

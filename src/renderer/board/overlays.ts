@@ -68,7 +68,7 @@ export class Overlays {
   }
 
   private down = (e: FederatedPointerEvent): void => {
-    if (e.button !== 0 || !this.client.view?.map) return
+    if (e.button !== 0 || this.board.spaceHeld || !this.client.view?.map) return
     const p = this.world(e)
     const tool = this.board.tool
     if (tool === 'ruler') {

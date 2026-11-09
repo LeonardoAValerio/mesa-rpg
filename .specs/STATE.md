@@ -49,3 +49,11 @@
 - **Scope**: `src/core/fog.ts`, reducer, view, `.mesa`, `src/renderer/board`.
 - **Date**: 2026-11-09
 - **Status**: active
+
+### AD-007
+- **Decision**: Itens (tokens) têm posição livre em pixels (centro), largura em células, rotação em passos de 15°, anel opcional, tipo Personagem ou Objeto e "Movimento" Livre / Só mestre / Travado; qualquer jogador move e gira o que é Livre. Testes: durante uma tarefa rodam a unidade e só os E2E que ela tocou; a suíte inteira roda no fim da fase e nas provas; E2E com 3 workers.
+- **Reason**: user: "deixamos que todos podem mexer tudo e só colocamos restrições por cima"; "Sinto que está demorando muito para fazer os testes"; spec "Aprovo sim", tarefas "Aprovo".
+- **Trade-off**: Substitui PERM-03, PERM-07, TOK-02, TOK-04..07 do MVP; os testes deles são reescritos. Um erro entre tarefas aparece só no fim da fase.
+- **Scope**: modelo de token, reducer, view, `.mesa`, board, editor; processo de testes.
+- **Date**: 2026-11-09
+- **Status**: active

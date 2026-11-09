@@ -9,8 +9,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: inline - the Design section below
-**Status**: Draft
-**Approved**: pending
+**Status**: In Progress
+**Approved**: 2026-11-09 - user: "Aprovo"
 **Build**: `scripts/with-node npm run build`; `scripts/with-node npm run typecheck`; `scripts/with-node npm run lint`
 **Run unit**: `scripts/with-node npx vitest run --reporter=verbose`
 **Run e2e**: `scripts/with-node npm run build && scripts/with-node npx playwright test --reporter=list`
@@ -83,12 +83,13 @@ T4 → T5 → T6 → T7
 
 **Done when**:
 
-- [ ] Unit tests for every rule and edge (clamp below/above/between steps, rotation 360/-15/7, snap with odd/even/fractional widths and an offset grid, Shift both ways, the three Movimento levels for master and player, old 1x1 and 3x3 tokens)
-- [ ] Quick gate passes
+- [x] Unit tests for every rule and edge (clamp below/above/between steps, rotation 360/-15/7, snap with odd/even/fractional widths and an offset grid, Shift both ways, the three Movimento levels for master and player, old 1x1 and 3x3 tokens)
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): items with free position, width, rotation and movement`
+**Done**: yes
 
 ---
 
@@ -275,7 +276,7 @@ Proof: run unit | ✓ [C21] ITEM-21
 
 ## Handoff
 
-**Settled mid-build:** none
+**Settled mid-build:** faster gates and e2e with 3 workers - user asked "precisamos testar tanto para cada implementação? (...) Sinto que está demorando muito para fazer os testes", approved with the tasks: "Aprovo"; author mutation checks only on core rules, the Verifier does the rest
 **Dispatched:** none
 **Walked:** none
 

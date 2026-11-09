@@ -19,10 +19,12 @@ test('[C59] TOOL-01 a ruler from (0,0) to (3,5) shows "5" in both windows while 
   const { master, player } = await table()
   await player.page.getByTestId('tool-ruler').click()
   const a = await screenOf(player.page, 50, 50)
+  const near = await screenOf(player.page, 250, 450)
   const b = await screenOf(player.page, 350, 550)
   await player.page.mouse.move(a.x, a.y)
   await player.page.mouse.down()
-  await player.page.mouse.move(b.x, b.y, { steps: 10 })
+  await player.page.mouse.move(near.x, near.y, { steps: 10 })
+  await player.page.mouse.move(b.x, b.y) // the last move comes right after the previous one; it must still reach the master
   await expect.poll(async () => (await overlays(player.page)).rulers).toEqual([{ from: 'Ana', distance: 5 }])
   await expect.poll(async () => (await overlays(master.page)).rulers).toEqual([{ from: 'Ana', distance: 5 }])
   await player.page.mouse.up()

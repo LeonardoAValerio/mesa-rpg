@@ -91,6 +91,10 @@ export class Board {
     b.world.addChild(b.mapLayer, b.gridLayer, b.fogLayer, b.tokenLayer, b.overlayLayer) // tokens a player may see are drawn above the fog
     b.app.stage.addChild(b.world)
     b.bindInput()
+    // the board area changes size with the layout, not only with the window
+    const ro = new ResizeObserver(() => b.app.resize())
+    ro.observe(host)
+    b.offs.push(() => ro.disconnect())
     b.offs.push(client.on('view', () => b.render()))
     b.offs.push(b.textures.onLoad(() => b.render())) // a texture arriving never cancels a drag
     b.render()

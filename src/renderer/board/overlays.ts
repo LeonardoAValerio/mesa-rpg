@@ -45,6 +45,8 @@ export class Overlays {
   private strokes = new Map<string, Stroke>()
   private local: { kind: 'ruler'; from: Pt } | { kind: 'stroke'; stroke: Stroke } | null = null
   private lastSent = 0
+  private trailing: ReturnType<typeof setTimeout> | null = null
+  private latest: Ephemeral | null = null
   private seq = 0
   private off: () => void
 
@@ -84,28 +86,49 @@ export class Overlays {
     }
   }
 
+  /** Sends at most every 40 ms, and always sends the latest position once the window closes. */
+  private throttled(e: Ephemeral): void {
+    this.latest = e
+    const wait = SEND_EVERY_MS - (performance.now() - this.lastSent)
+    if (wait <= 0) return this.flush()
+    if (!this.trailing) this.trailing = setTimeout(() => this.flush(), wait)
+  }
+
+  private flush(): void {
+    if (this.trailing) clearTimeout(this.trailing)
+    this.trailing = null
+    if (!this.latest) return
+    this.client.sendEphemeral(this.latest)
+    this.latest = null
+    this.lastSent = performance.now()
+  }
+
+  private cancelTrailing(): void {
+    if (this.trailing) clearTimeout(this.trailing)
+    this.trailing = null
+    this.latest = null
+  }
+
   private move = (e: FederatedPointerEvent): void => {
     if (!this.local) return
     const p = this.world(e)
-    const now = performance.now()
-    const due = now - this.lastSent >= SEND_EVERY_MS
     if (this.local.kind === 'ruler') {
       this.setRuler(this.me, this.local.from, p)
-      if (due) this.client.sendEphemeral({ type: 'ruler', from: this.local.from, to: p })
+      this.throttled({ type: 'ruler', from: this.local.from, to: p })
     } else {
       const s = this.local.stroke
       if (s.points.length >= 2000) return
       s.points.push(p)
       this.drawStroke(s)
-      if (due) this.client.sendEphemeral({ type: 'stroke', strokeId: s.id, points: s.points, done: false })
+      this.throttled({ type: 'stroke', strokeId: s.id, points: [...s.points], done: false })
     }
-    if (due) this.lastSent = now
   }
 
   private up = (e: FederatedPointerEvent): void => {
     const l = this.local
     if (!l) return
     this.local = null
+    this.cancelTrailing()
     if (l.kind === 'ruler') {
       this.clearRuler(this.me)
       this.client.sendEphemeral({ type: 'ruler', from: l.from, to: this.world(e) })
@@ -207,6 +230,7 @@ export class Overlays {
   }
 
   destroy(): void {
+    this.cancelTrailing()
     this.off()
     for (const s of this.strokes.values()) if (s.timer) clearTimeout(s.timer)
   }

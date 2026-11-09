@@ -17,3 +17,19 @@
 - **Scope**: mesa-rpg inteiro.
 - **Date**: 2026-11-08
 - **Status**: active
+
+### AD-003
+- **Decision**: O Mesa RPG é distribuído como instalador NSIS por usuário que se atualiza pelas releases do GitHub (`LeonardoAValerio/mesa-rpg`) com electron-updater; o `.exe` portátil sai do build.
+- **Reason**: O portátil não se atualiza sozinho. user: "Eu prefiro que seja um instaldor com atualizações automáticas e tenha essa checagem de versão no entrar".
+- **Trade-off**: Cada amigo instala uma vez; substitui PKG-01 do MVP (o check do `.exe` portátil deixa de valer).
+- **Scope**: empacotamento, processo main, publicação.
+- **Date**: 2026-11-09
+- **Status**: active
+
+### AD-004
+- **Decision**: `mesa-rpg` é a raiz do repositório git, com `.specs` dentro dela; o histórico antigo é reescrito para os novos caminhos e o `.git` de `basement-tabletop` fica guardado como `basement-tabletop/.git-pre-split`.
+- **Reason**: O repositório público tem só o app. user: "mesa-rpg vira a raiz (Recomendado)".
+- **Trade-off**: Os hashes de commit antigos mudam; `proofs.md` e `verification.md` do MVP citam hashes do repositório anterior, guardado no backup.
+- **Scope**: repositório.
+- **Date**: 2026-11-09
+- **Status**: active

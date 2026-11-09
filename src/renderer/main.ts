@@ -7,6 +7,7 @@ import { Board, type BoardSnapshot } from './board/board'
 import type { ActionResult } from './net/table-client'
 import { gridPanel } from './ui/grid-panel'
 import { libraryPanel } from './ui/library'
+import { logPanel } from './ui/log-panel'
 import { tokenEditor } from './ui/token-editor'
 
 declare global {
@@ -31,12 +32,15 @@ onSession(async ({ client, screen }) => {
     onSelect: (id) => editor?.select(id)
   })
   const stopSync = syncAssets(client, textures, screen.board)
+  const log = logPanel(client)
+  screen.sidebar.append(log.root)
   const library = master ? libraryPanel(client, board, screen.board) : null
   if (library) screen.sidebar.append(library.root)
   if (window.mesa.isTest) window.__mesaTest = { board: () => board.snapshot(), send: (a) => client.send(a) }
   return () => {
     if (window.__mesaTest) window.__mesaTest = undefined
     stopSync()
+    log.destroy()
     library?.destroy()
     editor?.destroy()
     panel?.destroy()

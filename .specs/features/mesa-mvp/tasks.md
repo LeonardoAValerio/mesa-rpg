@@ -546,12 +546,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C55] CHAT-01, [C58] CHAT-04
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C55] CHAT-01, [C58] CHAT-04
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(ui): dice and chat panel`
+**Done**: yes
 
 ---
 

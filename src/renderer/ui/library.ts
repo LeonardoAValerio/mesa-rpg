@@ -1,4 +1,3 @@
-import { cellAt } from '../../core/grid'
 import type { LibraryItem } from '../../core/types'
 import type { Board } from '../board/board'
 import type { TableClient } from '../net/table-client'
@@ -14,9 +13,9 @@ export function libraryPanel(client: TableClient, board: Board, dropZone: HTMLEl
   const draw = (items: LibraryItem[]): void => {
     clear(list)
     for (const item of items) {
-      const li = h('li', { testid: 'library-item', draggable: 'true', title: `${item.faction} · ${item.size}x${item.size}` },
+      const li = h('li', { testid: 'library-item', draggable: 'true', title: `${item.kind === 'object' ? 'objeto' : (item.ring ?? 'personagem')} · ${item.width}` },
         h('span', { testid: 'library-name' }, item.name),
-        h('small', {}, ` ${item.faction} · ${item.size}x${item.size}`)
+        h('small', {}, ` ${item.kind === 'object' ? 'objeto' : (item.ring ?? 'personagem')} · ${item.width}`)
       )
       li.addEventListener('dragstart', (e) => {
         e.dataTransfer?.setData(DRAG_TYPE, JSON.stringify(item))
@@ -39,8 +38,7 @@ export function libraryPanel(client: TableClient, board: Board, dropZone: HTMLEl
     const item = JSON.parse(raw) as LibraryItem
     const r = board.app.canvas.getBoundingClientRect()
     const w = board.toWorld(e.clientX - r.left, e.clientY - r.top)
-    const cell = cellAt(grid, w.x, w.y)
-    const res = await client.send({ type: 'token/place', hash: item.hash, name: item.name, faction: item.faction, size: item.size, ...cell })
+    const res = await client.send({ type: 'token/place', hash: item.hash, name: item.name, kind: item.kind, width: item.width, ring: item.ring, x: w.x, y: w.y })
     message.textContent = res.ok ? '' : res.reason
   }
   const dropListener = (e: DragEvent): void => void onDrop(e)

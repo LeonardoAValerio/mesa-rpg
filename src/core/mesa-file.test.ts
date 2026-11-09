@@ -18,8 +18,9 @@ function scene(): Scene {
     map,
     grid,
     tokens: {
-      a: { id: 'a', name: 'Guerreira', hash: TOK, faction: 'grupo', size: 1, col: 3, row: 4, owner: 'Ana', hidden: false },
-      b: { id: 'b', name: 'Ogro', hash: TOK, faction: 'inimigo', size: 3, col: 10, row: 7, owner: null, hidden: true }
+      a: { id: 'a', name: 'Guerreira', hash: TOK, kind: 'character', x: 291.5, y: 377.3, width: 1.25, rotation: 30, ring: 'grupo', owner: 'Ana', hidden: false, movement: 'free' },
+      b: { id: 'b', name: 'Baú', hash: TOK, kind: 'object', x: 900, y: 650.5, width: 0.5, rotation: 345, ring: null, owner: null, hidden: true, movement: 'locked' },
+      c: { id: 'c', name: 'Ogro', hash: TOK, kind: 'character', x: 1000, y: 700, width: 3, rotation: 0, ring: null, owner: null, hidden: false, movement: 'master' }
     },
     fog: {
       base: 'covered',
@@ -38,11 +39,11 @@ describe('.mesa file', () => {
   it('[C72] SAVE-01 the saved .mesa has the map, grid, tokens with every field, fog and each image in base64', () => {
     const file = JSON.parse(encodeMesa(scene(), assets()))
     expect(file.format).toBe('mesa')
-    expect(file.version).toBe(2)
+    expect(file.version).toBe(3)
     expect(file.scene.map).toEqual({ hash: MAP, width: 2000, height: 1500 })
     expect(file.scene.grid).toEqual(scene().grid)
-    expect(file.scene.tokens.a).toEqual({ id: 'a', name: 'Guerreira', hash: TOK, faction: 'grupo', size: 1, col: 3, row: 4, owner: 'Ana', hidden: false })
-    expect(file.scene.tokens.b).toMatchObject({ size: 3, owner: null, hidden: true })
+    expect(file.scene.tokens.a).toEqual(scene().tokens.a)
+    expect(file.scene.tokens.b).toMatchObject({ kind: 'object', owner: null, hidden: true, movement: 'locked' })
     expect(file.scene.fog).toEqual(scene().fog)
     expect(Object.keys(file.assets).sort()).toEqual([MAP, TOK].sort())
     expect(Buffer.from(file.assets[MAP], 'base64')).toEqual(Buffer.from(mapBytes))
@@ -60,7 +61,7 @@ describe('.mesa file', () => {
     expect('error' in e ? e : e.scene).toEqual(empty)
   })
 
-  it('[C75] SAVE-04 invalid JSON, version 3 or an image with the wrong hash give "Arquivo .mesa inválido"', () => {
+  it('[C75] SAVE-04 invalid JSON, version 4 or an image with the wrong hash give "Arquivo .mesa inválido"', () => {
     const good = JSON.parse(encodeMesa(scene(), assets()))
     const bad = (mutate: (f: typeof good) => void): string => {
       const f = structuredClone(good)
@@ -70,13 +71,15 @@ describe('.mesa file', () => {
     const cases = [
       '{ não é json',
       '',
-      bad((f) => (f.version = 3)),
+      bad((f) => (f.version = 4)),
       bad((f) => (f.scene.fog.shapes[0].kind = 'circle')),
       bad((f) => (f.format = 'zip')),
       bad((f) => (f.assets[TOK] = Buffer.from([9, 9, 9]).toString('base64'))),
       bad((f) => delete f.assets[MAP]),
-      bad((f) => (f.scene.tokens.a.size = 4)),
-      bad((f) => (f.scene.tokens.a.faction = 'pirata')),
+      bad((f) => (f.scene.tokens.a.kind = 'cadeira')),
+      bad((f) => (f.scene.tokens.a.ring = 'pirata')),
+      bad((f) => (f.scene.tokens.a.movement = 'solto')),
+      bad((f) => delete f.scene.tokens.a.x),
       bad((f) => (f.assets[MAP] = '%%%')),
       bad((f) => (f.scene.tokens.a.id = 'outro'))
     ]
@@ -114,5 +117,31 @@ describe('.mesa file', () => {
       }
     }
     expect(r.scene.fog!.shapes.every((s) => s.kind === 'rect' && s.mode === 'cover')).toBe(true)
+  })
+
+  it('[C21] ITEM-21 saving and loading keeps every item field: kind, position, size, rotation, ring, owner, Movimento, hidden', () => {
+    const r = decodeMesa(encodeMesa(scene(), assets()), sha)
+    if ('error' in r) throw new Error(r.error)
+    expect(r.scene.tokens).toEqual(scene().tokens)
+  })
+
+  it('[C20] ITEM-20 a version 2 (and 1) file loads its tokens as characters centred on their cells, as wide as their size, with their faction as ring, Livre', () => {
+    const grid = { ...DEFAULT_GRID, cell: 100, offsetX: 0, offsetY: 0 }
+    const oldTokens = {
+      g: { id: 'g', name: 'Goblin', hash: TOK, faction: 'inimigo', size: 2, col: 3, row: 4, owner: 'Ana', hidden: true },
+      n: { id: 'n', name: 'Velho', hash: TOK, faction: 'neutro', size: 1, col: 0, row: 0, owner: null, hidden: false }
+    }
+    for (const [version, fog] of [[2, { base: 'revealed', shapes: [] }], [1, null]] as const) {
+      const old = {
+        format: 'mesa',
+        version,
+        scene: { map: { hash: MAP, width: 800, height: 600 }, grid, tokens: oldTokens, fog, palette: null },
+        assets: { [MAP]: Buffer.from(mapBytes).toString('base64'), [TOK]: Buffer.from(tokBytes).toString('base64') }
+      }
+      const r = decodeMesa(JSON.stringify(old), sha)
+      if ('error' in r) throw new Error(`v${version}: ${r.error}`)
+      expect(r.scene.tokens.g, `v${version}`).toEqual({ id: 'g', name: 'Goblin', hash: TOK, kind: 'character', x: 400, y: 500, width: 2, rotation: 0, ring: 'inimigo', owner: 'Ana', hidden: true, movement: 'free' })
+      expect(r.scene.tokens.n, `v${version}`).toMatchObject({ kind: 'character', x: 50, y: 50, width: 1, ring: 'neutro', movement: 'free' })
+    }
   })
 })

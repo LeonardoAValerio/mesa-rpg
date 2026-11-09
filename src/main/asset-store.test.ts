@@ -50,7 +50,7 @@ describe('GET /asset/:hash', () => {
     expect((await fetch(base + '..%2F..%2Fetc%2Fpasswd')).status).toBe(404)
     expect((await fetch(`http://127.0.0.1:${server.port}/`)).status).toBe(404)
 
-    server.addLibrary([{ hash: libHash, name: 'goblin', faction: 'inimigo', size: 1 }])
+    server.addLibrary([{ hash: libHash, name: 'goblin', kind: 'character', width: 1, ring: 'inimigo' }])
     expect((await fetch(base + libHash)).status).toBe(200)
   })
 
@@ -61,8 +61,8 @@ describe('GET /asset/:hash', () => {
     const master = await joinAs(server.port, 'Mestre', 't')
     const ana = await joinAs(server.port, 'Ana')
     clients.push(master, ana)
-    server.addLibrary([{ hash: lib, name: 'goblin', faction: 'inimigo', size: 2 }])
-    expect((await master.next('library', (m) => m.items.length === 1)).items).toEqual([{ hash: lib, name: 'goblin', faction: 'inimigo', size: 2 }])
+    server.addLibrary([{ hash: lib, name: 'goblin', kind: 'character', width: 2, ring: 'inimigo' }])
+    expect((await master.next('library', (m) => m.items.length === 1)).items).toEqual([{ hash: lib, name: 'goblin', kind: 'character', width: 2, ring: 'inimigo' }])
     await new Promise((r) => setTimeout(r, 50))
     expect(ana.msgs.some((m) => m.t === 'library')).toBe(false)
   })

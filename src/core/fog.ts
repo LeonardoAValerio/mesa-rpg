@@ -84,9 +84,8 @@ export function addShape(fog: Fog, shape: FogShape): { ok: true; fog: Fog } | { 
 }
 
 /** FOGS-06: a token is under the fog when its centre is. */
-export function tokenCovered(fog: Fog, grid: Grid, t: Token): boolean {
-  const o = cellOrigin(grid, t.col, t.row)
-  return fogAt(fog, o.x + (t.size * grid.cell) / 2, o.y + (t.size * grid.cell) / 2)
+export function tokenCovered(fog: Fog, t: Pick<Token, 'x' | 'y'>): boolean {
+  return fogAt(fog, t.x, t.y)
 }
 
 /** The fog of `.mesa` version 1: a bitset over grid cells, bit 1 = covered. */

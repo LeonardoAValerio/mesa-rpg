@@ -8,12 +8,15 @@ const tok = (id: string, extra: Partial<Token> = {}): Token => ({
   id,
   name: id,
   hash: 'c'.repeat(64),
-  faction: 'inimigo',
-  size: 1,
-  col: 0,
-  row: 0,
+  kind: 'character',
+  x: 50,
+  y: 50,
+  width: 1,
+  rotation: 0,
+  ring: null,
   owner: null,
   hidden: false,
+  movement: 'free',
   ...extra
 })
 const sceneWith = (...tokens: Token[]): Scene => ({
@@ -58,7 +61,7 @@ describe('diffViews', () => {
 
   it('is empty when nothing the viewer sees changed, and lists map, grid and players changes', () => {
     const a = sceneWith(tok('x', { hidden: true }))
-    const b = sceneWith(tok('x', { hidden: true, col: 4 }))
+    const b = sceneWith(tok('x', { hidden: true, x: 450 }))
     expect(diffViews(viewFor(a, ana, ['Ana']), viewFor(b, ana, ['Ana']))).toEqual([])
     const c = { ...a, grid: { ...a.grid, cell: 90 }, map: { hash: 'e'.repeat(64), width: 10, height: 10 } }
     expect(diffViews(viewFor(a, ana, ['Ana']), viewFor(c, ana, ['Ana', 'Bia']))).toEqual([

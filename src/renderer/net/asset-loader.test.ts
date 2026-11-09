@@ -37,7 +37,7 @@ async function hosted(): Promise<{ base: string; map: string; token: string }> {
   const master = await joinAs(server.port, 'Mestre', 't')
   clients.push(master)
   master.act('m', { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100 } })
-  master.act('p', { type: 'token/place', hash: token, name: 'goblin', faction: 'inimigo', size: 1, col: 1, row: 1 })
+  master.act('p', { type: 'token/place', hash: token, name: 'goblin', kind: 'character', x: 150, y: 150, width: 1, ring: 'inimigo' })
   await master.next('ack', (m) => m.id === 'p')
   return { base: `http://127.0.0.1:${server.port}`, map, token }
 }

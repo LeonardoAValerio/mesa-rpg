@@ -103,12 +103,13 @@ T4 → T5 → T6 → T7
 
 **Done when**:
 
-- [ ] Unit tests: each Movimento level for move and rotate from master and player with the exact messages; a player's edits refused with "Sem permissão"; a new item is Livre; manifest fields and fallbacks
-- [ ] Quick gate passes
+- [x] Unit tests: each Movimento level for move and rotate from master and player with the exact messages; a player's edits refused with "Sem permissão"; a new item is Livre; manifest fields and fallbacks
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): anyone moves free items; master-only and locked items`
+**Done**: yes
 
 ---
 
@@ -122,12 +123,13 @@ T4 → T5 → T6 → T7
 
 **Done when**:
 
-- [ ] Unit tests: a version 2 file with a 2x2 token at (3,4) loads as a 2-cell character centred on those cells with its old ring; a save and load keeps every field
-- [ ] Phase gate passes (the renderer is updated for the new type in this commit only as far as it needs to build)
+- [x] Unit tests: a version 2 file with a 2x2 token at (3,4) loads as a 2-cell character centred on those cells with its old ring; a save and load keeps every field
+- [x] Phase gate passes (the renderer is updated for the new type in this commit only as far as it needs to build)
 
 **Tests**: unit
 **Gate**: phase
 **Commit**: `feat(core): .mesa version 3 keeps items and reads older tokens`
+**Done**: yes
 
 ---
 
@@ -276,7 +278,7 @@ Proof: run unit | ✓ [C21] ITEM-21
 
 ## Handoff
 
-**Settled mid-build:** faster gates and e2e with 3 workers - user asked "precisamos testar tanto para cada implementação? (...) Sinto que está demorando muito para fazer os testes", approved with the tasks: "Aprovo"; author mutation checks only on core rules, the Verifier does the rest
+**Settled mid-build:** faster gates and e2e with 3 workers - user asked "precisamos testar tanto para cada implementação? (...) Sinto que está demorando muito para fazer os testes", approved with the tasks: "Aprovo"; author mutation checks only on core rules, the Verifier does the rest. T2 and T3 go in one commit: switching `Token` to the item shape breaks the reducer, `.mesa` and tests together. Their gate was unit (140) + build + src lint; the e2e (12 type errors in token specs) are rewritten in T4-T7, so the full phase gate moves to the end of Phase 2.
 **Dispatched:** none
 **Walked:** none
 

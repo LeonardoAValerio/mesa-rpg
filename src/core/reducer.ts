@@ -1,10 +1,12 @@
 import { validChat } from './chat'
 import { parseDice, rollDice } from './dice'
 import { addShape, coverAll, revealAll } from './fog'
-import { clampGrid, insideMap } from './grid'
+import { clampGrid } from './grid'
+import { canMove, clampWidth, normalizeRotation } from './items'
 import { parsePalette } from './palette'
 import type { Action } from './protocol'
-import type { Actor, LogEntry, Scene, Token } from './types'
+import type { Actor, LogEntry, MapRef, Scene, Token } from './types'
+import { canSee } from './view'
 
 export const NO_PERMISSION = 'Sem permissão'
 export const OUTSIDE_MAP = 'Fora do mapa'
@@ -36,6 +38,8 @@ const MASTER_ONLY = new Set<Action['type']>([
 ])
 
 const refuse = (reason: string): ApplyResult => ({ ok: false, reason })
+/** TOK-10: an item's centre must be on the map. */
+const centreInside = (map: MapRef, x: number, y: number): boolean => x >= 0 && y >= 0 && x <= map.width && y <= map.height
 const withToken = (scene: Scene, token: Token): Scene => ({ ...scene, tokens: { ...scene.tokens, [token.id]: token } })
 
 /** NET-14: the only way the scene changes. Every action is checked against the actor first (PERM-02..04). */
@@ -66,38 +70,54 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
 
     case 'token/place': {
       if (!scene.map) return refuse(NO_MAP)
-      if (!insideMap(scene.grid, scene.map, action.col, action.row, action.size)) return refuse(OUTSIDE_MAP)
+      if (!centreInside(scene.map, action.x, action.y)) return refuse(OUTSIDE_MAP)
       const name = action.name.trim()
       if (!name) return refuse(BAD_NAME)
+      const character = action.kind === 'character'
       const token: Token = {
         id: ctx.newId(),
         name,
         hash: action.hash,
-        faction: action.faction,
-        size: action.size,
-        col: action.col,
-        row: action.row,
+        kind: action.kind,
+        x: action.x,
+        y: action.y,
+        width: clampWidth(action.width),
+        rotation: 0,
+        ring: character ? action.ring : null, // ITEM-02: objects never have a ring
         owner: null,
-        hidden: false
+        hidden: false,
+        movement: 'free' // ITEM-19
       }
       return { ok: true, scene: withToken(scene, token) }
     }
-    case 'token/move': {
+    case 'token/move':
+    case 'token/rotate': {
       const t = scene.tokens[action.id]
       if (!t) return refuse(NO_TOKEN)
-      if (actor.role !== 'master' && (t.owner !== actor.name || t.hidden)) return refuse(NO_PERMISSION)
-      if (!scene.map || !insideMap(scene.grid, scene.map, action.col, action.row, t.size)) return refuse(OUTSIDE_MAP)
-      return { ok: true, scene: withToken(scene, { ...t, col: action.col, row: action.row }) }
+      if (actor.role !== 'master' && !canSee(scene, actor, t)) return refuse(NO_PERMISSION) // what a player cannot see
+      const allowed = canMove(t, actor) // ITEM-14..16
+      if (!allowed.ok) return refuse(allowed.reason)
+      if (action.type === 'token/rotate') return { ok: true, scene: withToken(scene, { ...t, rotation: normalizeRotation(action.rotation) }) }
+      if (!scene.map || !centreInside(scene.map, action.x, action.y)) return refuse(OUTSIDE_MAP)
+      return { ok: true, scene: withToken(scene, { ...t, x: action.x, y: action.y }) }
     }
     case 'token/update': {
       const t = scene.tokens[action.id]
       if (!t) return refuse(NO_TOKEN)
       const name = action.name === undefined ? t.name : action.name.trim()
       if (!name) return refuse(BAD_NAME)
-      return {
-        ok: true,
-        scene: withToken(scene, { ...t, name, faction: action.faction ?? t.faction, size: action.size ?? t.size })
+      const kind = action.kind ?? t.kind
+      const next: Token = {
+        ...t,
+        name,
+        kind,
+        width: action.width === undefined ? t.width : clampWidth(action.width),
+        rotation: action.rotation === undefined ? t.rotation : normalizeRotation(action.rotation),
+        ring: kind === 'object' ? null : action.ring === undefined ? t.ring : action.ring,
+        owner: kind === 'object' ? null : t.owner,
+        movement: action.movement ?? t.movement
       }
+      return { ok: true, scene: withToken(scene, next) }
     }
     case 'token/remove': {
       if (!scene.tokens[action.id]) return refuse(NO_TOKEN)
@@ -114,6 +134,7 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
     case 'token/owner': {
       const t = scene.tokens[action.id]
       if (!t) return refuse(NO_TOKEN)
+      if (t.kind === 'object') return refuse('Objetos não têm dono')
       const owner = action.owner === null ? null : action.owner.trim() || null
       return { ok: true, scene: withToken(scene, { ...t, owner }) }
     }

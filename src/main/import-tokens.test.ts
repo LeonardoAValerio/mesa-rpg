@@ -27,28 +27,40 @@ describe('importTokenFolder', () => {
     expect(tokens.every((t) => t.bytes.length > 0)).toBe(true)
   })
 
-  it('[C27] TOK-02 goblin.json with "inimigo" and size 2 makes goblin an enemy 2x2', async () => {
-    const dir = folder({ 'goblin.png': png(), 'goblin.json': JSON.stringify({ nome: 'Goblin Chefe', faccao: 'inimigo', tamanho: 2 }) })
-    const { tokens } = await importTokenFolder(dir)
-    expect(tokens).toHaveLength(1)
-    expect(tokens[0]).toMatchObject({ name: 'Goblin Chefe', faction: 'inimigo', size: 2 })
+  it('[C11] ITEM-11 goblin.json with "inimigo", tamanho 2 makes a 2-cell enemy character with a ring; tipo "objeto" makes an object', async () => {
+    const dir = folder({
+      'goblin.png': png(),
+      'goblin.json': JSON.stringify({ nome: 'Goblin Chefe', faccao: 'inimigo', tamanho: 2 }),
+      'bau.png': png(),
+      'bau.json': JSON.stringify({ tipo: 'objeto', tamanho: 0.75, faccao: 'npc' }),
+      'porta.png': png(),
+      'porta.json': JSON.stringify({ tipo: 'personagem', tamanho: 1.3 })
+    })
+    const byName = Object.fromEntries((await importTokenFolder(dir)).tokens.map((t) => [t.name, t]))
+    expect(byName['Goblin Chefe']).toMatchObject({ kind: 'character', width: 2, ring: 'inimigo' })
+    expect(byName.bau).toMatchObject({ kind: 'object', width: 0.75, ring: null }) // an object never has a ring
+    expect(byName.porta).toMatchObject({ kind: 'character', width: 1.25, ring: null }) // rounded to a 0.25 step
   })
 
-  it('[C28] TOK-03 no manifest, invalid JSON or `faccao: "x"` give `neutro` and size 1', async () => {
+  it('[C28] TOK-03 no manifest, invalid JSON or values out of range fall back to personagem, 1 cell, no ring, field by field', async () => {
     const dir = folder({
       'sem.png': png(),
       'quebrado.png': png(),
       'quebrado.json': '{ isto não é json',
       'estranho.png': png(),
-      'estranho.json': JSON.stringify({ faccao: 'x', tamanho: 5 }),
+      'estranho.json': JSON.stringify({ faccao: 'x', tamanho: 25, tipo: 'cadeira' }),
+      'pequeno.png': png(),
+      'pequeno.json': JSON.stringify({ tamanho: 0.1 }),
       'meio.png': png(),
       'meio.json': JSON.stringify({ faccao: 'npc', tamanho: '2' })
     })
     const byName = Object.fromEntries((await importTokenFolder(dir)).tokens.map((t) => [t.name, t]))
-    expect(byName.sem).toMatchObject({ faction: 'neutro', size: 1 })
-    expect(byName.quebrado).toMatchObject({ faction: 'neutro', size: 1 })
-    expect(byName.estranho).toMatchObject({ faction: 'neutro', size: 1 })
-    expect(byName.meio).toMatchObject({ faction: 'npc', size: 1 })
+    const plain = { kind: 'character', width: 1, ring: null }
+    expect(byName.sem).toMatchObject(plain)
+    expect(byName.quebrado).toMatchObject(plain)
+    expect(byName.estranho).toMatchObject(plain)
+    expect(byName.pequeno).toMatchObject(plain)
+    expect(byName.meio).toMatchObject({ kind: 'character', width: 1, ring: 'npc' })
   })
 
   it('skips a .png that is not an image', async () => {
@@ -57,7 +69,7 @@ describe('importTokenFolder', () => {
   })
 
   it('parseManifest keeps the file name when "nome" is empty', () => {
-    expect(parseManifest(JSON.stringify({ nome: '  ' }), 'C:\\tokens\\orc.png')).toEqual({ name: 'orc', faction: 'neutro', size: 1 })
+    expect(parseManifest(JSON.stringify({ nome: '  ' }), 'C:\\tokens\\orc.png')).toEqual({ name: 'orc', kind: 'character', width: 1, ring: null })
   })
 })
 

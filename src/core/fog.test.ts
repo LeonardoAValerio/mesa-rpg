@@ -25,17 +25,7 @@ const add = (fog: Fog, ...shapes: FogShape[]): Fog => {
   }
   return fog
 }
-const token = (col: number, row: number, size: 1 | 2 | 3 = 1): Token => ({
-  id: 't',
-  name: 'T',
-  hash: 'h',
-  faction: 'inimigo',
-  size,
-  col,
-  row,
-  owner: null,
-  hidden: false
-})
+const token = (x: number, y: number): Pick<Token, 'x' | 'y'> => ({ x, y })
 
 describe('fog shapes', () => {
   it('[C4] FOGS-04 at a point the last shape containing it decides, and with none the base decides', () => {
@@ -118,16 +108,14 @@ describe('fog shapes', () => {
     expect(clampBrushCells(Number.NaN)).toBe(1)
   })
 
-  it('a token is under the fog when its centre is, whatever covers its corners', () => {
-    // a 2x2 token at (1,1) has its centre at (200, 200)
-    const t = token(1, 1, 2)
-    expect(tokenCovered(add(revealAll(), rect('cover', 190, 190, 20, 20)), grid, t)).toBe(true)
-    expect(tokenCovered(add(revealAll(), rect('cover', 100, 100, 90, 90)), grid, t)).toBe(false) // a corner only
-    expect(tokenCovered(add(coverAll(), rect('reveal', 195, 195, 10, 10)), grid, t)).toBe(false)
-    // the grid offset moves the centre
-    expect(tokenCovered(add(revealAll(), rect('cover', 90, 90, 20, 20)), { ...grid, offsetX: -50, offsetY: -50 }, token(1, 1))).toBe(true) // centre (100, 100)
-    expect(tokenCovered(add(revealAll(), rect('cover', 140, 140, 20, 20)), { ...grid, offsetX: -50, offsetY: -50 }, token(1, 1))).toBe(false)
+  it('a token is under the fog when its centre is, whatever covers the rest of it', () => {
+    // a 2-cell token centred at (200, 200)
+    const t = token(200, 200)
+    expect(tokenCovered(add(revealAll(), rect('cover', 190, 190, 20, 20)), t)).toBe(true)
+    expect(tokenCovered(add(revealAll(), rect('cover', 100, 100, 90, 90)), t)).toBe(false) // a corner only
+    expect(tokenCovered(add(coverAll(), rect('reveal', 195, 195, 10, 10)), t)).toBe(false)
   })
+
 
   it('a version 1 cell fog becomes one covered rectangle per run of covered cells in a row', () => {
     // 4x2 cells; row 0: covered, covered, revealed, covered; row 1: all revealed

@@ -30,7 +30,7 @@ describe('parseClientMsg (NET-15)', () => {
 
   it('parses a well-formed join, action and ephemeral message', () => {
     expect(parseClientMsg(JSON.stringify({ t: 'join', name: 'Ana' }))).toEqual({ t: 'join', name: 'Ana' })
-    const place = { type: 'token/place', hash: H, name: 'goblin', faction: 'inimigo', size: 2, col: 3, row: 4 }
+    const place = { type: 'token/place', hash: H, name: 'goblin', kind: 'character', x: 350, y: 450, width: 2, ring: 'inimigo' }
     expect(parseClientMsg(JSON.stringify({ t: 'action', id: '7', action: place }))).toEqual({ t: 'action', id: '7', action: place })
     expect(parseClientMsg(JSON.stringify({ t: 'ephemeral', e: { type: 'ping', x: 1, y: 2 } }))).toEqual({
       t: 'ephemeral',

@@ -62,7 +62,7 @@ export function registerIpc(version: string): void {
     const pick = await dialog.showOpenDialog({ title: 'Importar pasta de tokens', properties: ['openDirectory'] })
     if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
     const { tokens, skipped } = await importTokenFolder(pick.filePaths[0])
-    const items = tokens.map((t) => ({ hash: store.put(t.bytes), name: t.name, faction: t.faction, size: t.size }))
+    const items = tokens.map((t) => ({ hash: store.put(t.bytes), name: t.name, kind: t.kind, width: t.width, ring: t.ring }))
     server?.addLibrary(items)
     return { ok: true, count: items.length, skipped }
   })

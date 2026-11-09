@@ -185,12 +185,15 @@ export class Board {
     this.drag = null
     const view = this.client.view
     if (!view || !view.tokens[d.id]) return this.render(true)
+    const t = view.tokens[d.id]
+    const half = (t.width * view.grid.cell) / 2
     const cell = cellAt(view.grid, d.container.x, d.container.y)
     const o = cellOrigin(view.grid, cell.col, cell.row)
     d.container.position.set(o.x, o.y)
-    const t = view.tokens[d.id]
-    if (t.col === cell.col && t.row === cell.row) return
-    const r = await this.client.send({ type: 'token/move', id: d.id, col: cell.col, row: cell.row })
+    const x = o.x + half
+    const y = o.y + half
+    if (t.x === x && t.y === y) return
+    const r = await this.client.send({ type: 'token/move', id: d.id, x, y })
     if (!r.ok) this.render(true)
   }
 
@@ -273,7 +276,7 @@ export class Board {
     const colors = this.colors()
     const g = view.grid
     const keyOf = (t: Token): string =>
-      JSON.stringify([t, g.cell, g.offsetX, g.offsetY, colors[t.faction], !!this.textures.get(t.hash), view.role, this.canDrag(t)])
+      JSON.stringify([t, g.cell, g.offsetX, g.offsetY, t.ring ? colors[t.ring] : '', !!this.textures.get(t.hash), view.role, this.canDrag(t)])
     for (const [id, s] of this.sprites) {
       const t = view.tokens[id]
       if (this.drag?.id === id) continue
@@ -284,7 +287,7 @@ export class Board {
     }
     for (const t of Object.values(view.tokens)) {
       if (this.sprites.has(t.id)) continue
-      const s = drawToken(t, g, colors[t.faction], this.textures.get(t.hash), view.role === 'master' ? t.owner : null)
+      const s = drawToken(t, g, t.ring ? colors[t.ring] : '#00000000', this.textures.get(t.hash), view.role === 'master' ? t.owner : null)
       s.root.eventMode = 'static'
       s.root.cursor = this.canDrag(t) ? 'grab' : 'default'
       s.root.on('pointerdown', (e: FederatedPointerEvent) => this.startDrag(t, s, e))
@@ -302,7 +305,7 @@ export class Board {
       for (const [id, s] of this.sprites) {
         const t = view.tokens[id]
         if (!t) continue
-        const side = t.size * view.grid.cell
+        const side = t.width * view.grid.cell
         tokens.push({ id, name: t.name, label: s.label, x: s.root.x, y: s.root.y, w: side, h: side, ring: s.ring, alpha: s.root.alpha, owner: t.owner, hidden: t.hidden, textured: !!this.textures.get(t.hash) })
       }
     }

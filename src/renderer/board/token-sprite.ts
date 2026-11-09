@@ -1,5 +1,4 @@
 import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js'
-import { cellOrigin } from '../../core/grid'
 import type { Grid, Token } from '../../core/types'
 
 export interface TokenSprite {
@@ -10,10 +9,9 @@ export interface TokenSprite {
 
 /** TOK-06: a token covers size×size cells, with a ring in its faction colour and its name below. */
 export function drawToken(t: Token, grid: Grid, ringColor: string, texture: Texture | null, owner: string | null): TokenSprite {
-  const side = t.size * grid.cell
+  const side = t.width * grid.cell
   const root = new Container()
-  const o = cellOrigin(grid, t.col, t.row)
-  root.position.set(o.x, o.y)
+  root.position.set(t.x - side / 2, t.y - side / 2)
   root.alpha = t.hidden ? 0.5 : 1
   const r = side / 2
   if (texture) {

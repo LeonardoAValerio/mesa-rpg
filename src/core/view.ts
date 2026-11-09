@@ -5,7 +5,7 @@ import type { Actor, PatchOp, Scene, Token, View } from './types'
 export function canSee(scene: Scene, viewer: Actor, token: Token): boolean {
   if (viewer.role === 'master') return true
   if (token.hidden) return false
-  if (scene.fog && token.owner !== viewer.name && tokenCovered(scene.fog, scene.grid, token)) return false
+  if (scene.fog && token.owner !== viewer.name && tokenCovered(scene.fog, token)) return false
   return true
 }
 

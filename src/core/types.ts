@@ -1,7 +1,7 @@
+import type { Item, ItemKind } from './items'
+
 export type Faction = 'grupo' | 'inimigo' | 'npc' | 'neutro'
 export const FACTIONS: readonly Faction[] = ['grupo', 'inimigo', 'npc', 'neutro']
-
-export type TokenSize = 1 | 2 | 3
 
 export interface Grid {
   cell: number // 10..500 px
@@ -17,17 +17,8 @@ export interface MapRef {
   height: number
 }
 
-export interface Token {
-  id: string
-  name: string
-  hash: string
-  faction: Faction
-  size: TokenSize
-  col: number
-  row: number
-  owner: string | null
-  hidden: boolean
-}
+/** A token or object on the table (AD-007); see `src/core/items.ts`. */
+export type Token = Item
 
 export type FogMode = 'reveal' | 'cover'
 
@@ -97,8 +88,9 @@ export interface View {
 export interface LibraryItem {
   hash: string
   name: string
-  faction: Faction
-  size: TokenSize
+  kind: ItemKind
+  width: number
+  ring: Faction | null
 }
 
 export type PatchOp =

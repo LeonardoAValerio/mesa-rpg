@@ -93,9 +93,9 @@ describe('fog in the scene', () => {
   })
 
   it('[C6] FOGS-06 a token whose centre is under the fog is withheld from non-owners and sent once its centre is revealed', () => {
-    let s = run(foggedMap(), { type: 'token/place', hash: H, name: 'Guerreira', faction: 'grupo', size: 1, col: 2, row: 2 })
+    let s = run(foggedMap(), { type: 'token/place', hash: H, name: 'Guerreira', kind: 'character', x: 250, y: 250, width: 1, ring: 'grupo' })
     s = run(s, { type: 'token/owner', id: 't1', owner: 'Ana' })
-    s = run(s, { type: 'token/place', hash: H, name: 'Goblin', faction: 'inimigo', size: 2, col: 5, row: 3 }) // centre (600, 400)
+    s = run(s, { type: 'token/place', hash: H, name: 'Goblin', kind: 'character', x: 600, y: 400, width: 2, ring: null }) // covers 500..700 x 300..500
     expect(Object.keys(viewFor(s, ana, []).tokens)).toEqual(['t1']) // the owner always sees hers
     expect(Object.keys(viewFor(s, bia, []).tokens)).toEqual([])
     expect(Object.keys(viewFor(s, master, []).tokens).sort()).toEqual(['t1', 't2'])

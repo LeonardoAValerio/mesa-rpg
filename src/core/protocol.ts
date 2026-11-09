@@ -5,7 +5,8 @@ const num = z.number().finite()
 const int = z.number().int()
 const hash = z.string().regex(/^[0-9a-f]{64}$/)
 const faction = z.enum(['grupo', 'inimigo', 'npc', 'neutro'])
-const size = z.union([z.literal(1), z.literal(2), z.literal(3)])
+const kind = z.enum(['character', 'object'])
+const movement = z.enum(['free', 'master', 'locked'])
 const fogMode = z.enum(['reveal', 'cover'])
 const point = z.object({ x: num, y: num })
 /**
@@ -30,14 +31,18 @@ const gridPatch = z
   .partial()
 
 export const actionSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('token/place'), hash, name: z.string().max(100), faction, size, col: int, row: int }),
-  z.object({ type: z.literal('token/move'), id: z.string(), col: int, row: int }),
+  z.object({ type: z.literal('token/place'), hash, name: z.string().max(100), kind, x: num, y: num, width: num, ring: faction.nullable() }),
+  z.object({ type: z.literal('token/move'), id: z.string(), x: num, y: num }),
+  z.object({ type: z.literal('token/rotate'), id: z.string(), rotation: num }),
   z.object({
     type: z.literal('token/update'),
     id: z.string(),
     name: z.string().max(100).optional(),
-    faction: faction.optional(),
-    size: size.optional()
+    kind: kind.optional(),
+    width: num.optional(),
+    rotation: num.optional(),
+    ring: faction.nullable().optional(),
+    movement: movement.optional()
   }),
   z.object({ type: z.literal('token/remove'), id: z.string() }),
   z.object({ type: z.literal('token/hide'), id: z.string() }),

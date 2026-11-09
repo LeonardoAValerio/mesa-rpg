@@ -1,5 +1,7 @@
-import { readFile, stat } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
+import { join } from 'node:path'
 import { imageInfo, INVALID_IMAGE, MAX_IMAGE_BYTES, type ImageInfo } from '../core/image-info'
+import { baseName, parseManifest, type TokenMeta } from '../core/manifest'
 
 export type ImageFile = { ok: true; bytes: Uint8Array; info: ImageInfo } | { ok: false; error: typeof INVALID_IMAGE }
 
@@ -14,4 +16,25 @@ export async function readImageFile(path: string): Promise<ImageFile> {
   } catch {
     return { ok: false, error: INVALID_IMAGE }
   }
+}
+
+export interface ImportedToken extends TokenMeta {
+  bytes: Uint8Array
+}
+
+/** TOK-01: every PNG in the folder becomes a token; its name comes from the file (or the manifest). */
+export async function importTokenFolder(dir: string): Promise<{ tokens: ImportedToken[]; skipped: string[] }> {
+  const files = (await readdir(dir)).filter((f) => /\.png$/i.test(f)).sort((a, b) => a.localeCompare(b))
+  const tokens: ImportedToken[] = []
+  const skipped: string[] = []
+  for (const file of files) {
+    const img = await readImageFile(join(dir, file))
+    if (!img.ok) {
+      skipped.push(file)
+      continue
+    }
+    const manifest = await readFile(join(dir, `${baseName(file)}.json`), 'utf8').catch(() => null)
+    tokens.push({ ...parseManifest(manifest, file), bytes: img.bytes })
+  }
+  return { tokens, skipped }
 }

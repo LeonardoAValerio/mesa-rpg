@@ -451,12 +451,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C26] TOK-01, [C27] TOK-02, [C28] TOK-03, [C34] TOK-09
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C26] TOK-01, [C27] TOK-02, [C28] TOK-03, [C34] TOK-09
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(core): token manifest and palette`
+**Done**: yes
 
 ---
 

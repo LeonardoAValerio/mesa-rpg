@@ -54,6 +54,7 @@ O grupo quer jogar a campanha numa mesa virtual própria, com os mapas e tokens 
 | Tipos e tamanho de imagem | PNG, JPG e WebP; até 50 MB por arquivo | Cobre os mapas 2000x1500 e tokens 512x512 | n |
 | Manifesto do token | Lê `<nome>.json` ao lado do PNG se existir; sem ele, facção `neutro`, tamanho 1 | O kit ainda não grava o manifesto | n |
 | Paleta | Lê um `palette.json` escolhido pelo mestre; sem ele, cores padrão por facção | O caminho do kit é do PC Windows do mestre | n |
+| Formato do `palette.json` | Cores `#rrggbb` com chaves `grupo`, `inimigo`, `npc`, `neutro` na raiz ou em `faccoes`; facção ausente usa a cor padrão | O formato do arquivo do kit não está no plano e o arquivo está no PC Windows; confirmar com um `palette.json` real | n |
 | Firewall do Windows | O app escuta em `0.0.0.0`; o Windows mostra o próprio pedido de liberação na primeira vez, e a tela de hospedar explica que é preciso aceitar | O app não altera o firewall sozinho (exigiria administrador) | n |
 | Queda de conexão | O jogador vê o aviso e o app tenta reconectar a cada 3 s por até 60 s | Quedas curtas do Hamachi são comuns | n |
 | Janela | Funciona a partir de 1280x720 | Notebooks do grupo | n |

@@ -6,7 +6,7 @@ user: "Sim, nessa ordem (Recomendado)".
 | # | Feature | Folder | Status |
 | --- | --- | --- | --- |
 | A | Névoa em formas livres, com ferramentas claras | `.specs/features/fog-shapes/` | Done - v0.3.0 |
-| B | Tokens e objetos: PNG no tamanho natural, anel de facção opcional, tipo Objeto | - | Pending |
+| B | Tokens e objetos: PNG no tamanho natural, anel de facção opcional, tipo Objeto | `.specs/features/tokens-objects/` | Done - v0.4.0 |
 | C | Abas na barra lateral: Tokens, Mapas, Dados, Chat, Sons (depois Ficha e outras) | - | Pending |
 | D | Pasta da campanha em `Documentos/Mesa RPG/<Campanha>/` com mapas, tokens, objetos, músicas, efeitos e cenas; as abas listam o que está nela | - | Pending |
 | E | Sons: músicas e efeitos tocados pelo mestre, sincronizados com os jogadores, volume por pessoa | - | Pending |

@@ -1,5 +1,5 @@
 import { _electron as electron, expect, type ElectronApplication, type Page } from '@playwright/test'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { PNG } from 'pngjs'
 import { tmpdir } from 'node:os'
@@ -30,7 +30,10 @@ export async function launch(opts: { ifaces?: string[] } = {}): Promise<AppHandl
 }
 
 export async function closeAll(): Promise<void> {
-  for (const h of open.splice(0)) await h.app.close().catch(() => {})
+  for (const h of open.splice(0)) {
+    await h.app.close().catch(() => {})
+    rmSync(h.userData, { recursive: true, force: true }) // each profile is tens of MB; never leave them in /tmp
+  }
 }
 
 export async function freePort(): Promise<number> {

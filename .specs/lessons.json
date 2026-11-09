@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 9,
+  "next_id": 10,
   "lessons": [
     {
       "id": "L-001",
@@ -148,6 +148,24 @@
       ],
       "created": "2026-11-09T16:59:39Z",
       "last_seen": "2026-11-09T16:59:39Z"
+    },
+    {
+      "id": "L-009",
+      "key": "weak_test::a ci step s arguments are tested with the shell that runs them pwsh on windows runners drops and does not expand var and a publish step is tested against the tool s behaviour when nothing exists yet",
+      "text": "A CI step's arguments are tested with the shell that runs them (pwsh on Windows runners drops '--' and does not expand $VAR), and a publish step is tested against the tool's behaviour when nothing exists yet.",
+      "signal": "weak_test",
+      "scope": "ci",
+      "status": "candidate",
+      "features": [
+        "auto-update"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C20 / v0.2.0 release (ci)"
+      ],
+      "created": "2026-11-09T17:20:00Z",
+      "last_seen": "2026-11-09T17:20:00Z"
     }
   ]
 }

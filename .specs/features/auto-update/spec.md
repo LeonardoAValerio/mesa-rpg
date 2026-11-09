@@ -44,7 +44,7 @@ Hoje cada versão nova do Mesa RPG é um `.exe` portátil que o mestre precisa m
 | Mensagem de versão diferente | `Versão diferente da do mestre: mestre <versão do mestre>, você <sua versão>. Atualize o app.`; versão ausente aparece como `desconhecida` | Diz as duas versões e o que fazer | n |
 | Versão na tela inicial | `Versão <versão>` no rodapé da tela inicial | Quem dá suporte pergunta "qual versão você tem?" | n |
 | Gate da Action | A Action roda typecheck e testes de unidade antes de publicar; os E2E rodam localmente | E2E com várias janelas Electron no runner Windows é lento e instável | n |
-| Release publicada | A Action publica a release como pública (não rascunho), com o instalador, o `.blockmap` e o `latest.yml` | O atualizador ignora rascunhos | n |
+| Release publicada | A Action cria a release `v<versão>` como rascunho, o electron-builder envia o instalador, o `.blockmap` e o `latest.yml` para ela, e a Action a publica (não rascunho) no fim | O atualizador ignora rascunhos; sem o rascunho prévio o electron-builder criou duas releases `0.2.0` na v0.2.0 | n |
 | README | `README.md` em português com como instalar, como jogar e como publicar uma versão | Repositório público; os amigos baixam pela página de releases | n |
 
 **Open questions:** none - all resolved or logged above.

@@ -62,6 +62,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C25 / F3 (repo)
 - last seen: 2026-11-09T16:59:39Z
 
+### L-009 - A CI step's arguments are tested with the shell that runs them (pwsh on Windows runners drops '--' and does not expand $VAR), and a publish step is tested against the tool's behaviour when nothing exists yet.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `ci` · harmful: 0
+- features: auto-update
+- evidence: C20 / v0.2.0 release (ci)
+- last seen: 2026-11-09T17:20:00Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

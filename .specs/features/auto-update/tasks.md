@@ -400,7 +400,7 @@ Proof: run unit | ✓ [C18] VER-04
 **C19** - A refused player is in neither window's players list (VER-05, AC 5)
 Proof: run e2e | ✓ [C19] VER-05
 
-**C20** - The workflow runs on `v*` tags, on `windows-latest`, publishing with `npm run release` and `releaseType: release` (REL-01, AC 1)
+**C20** - The workflow runs on `v*` tags, on `windows-latest`: it creates a draft named after the tag in bash, `npm run release` uploads into that draft (electron-builder's own publisher reuses it), then the draft goes public (REL-01, AC 1)
 Proof: run unit | ✓ [C20] REL-01
 
 **C21** - A tag different from `v` + the `package.json` version fails with the message (REL-02, AC 2)
@@ -432,6 +432,7 @@ The feature's live state, written as it happens - a compaction gives no warning.
 
 **Settled mid-build:** execution with 2 batch sub-agents - user: "Aprovo. Pode fazer com 2 agentes"; T10 NSIS needs Wine, absent on Linux: `npm run dist` builds the installer inside the electronuserland/builder wine Docker image - user: "Build via Docker (Recomendado)"
 **Dispatched:** batch 1 (Phases 1-2, T1-T6) at 3b1bf34+spec docs commit, in the old basement-tabletop repo; returned at 479f370 (T1-T6 done, unit 101, e2e 50); batch 2 (Phases 3-4, T7-T12) at 479f370; batch 2 returned stopped at T10 (T7 c1f3def, T8 7d91620, T9 876ed35 done; T10 uncommitted: NSIS on Linux needs Wine, absent) - waiting for the user; batch 2 resumed for T10 (Docker build), T11, T12; batch 2 returned at 4b3adfa (T7-T12 done, unit 120, e2e 57); Verifier (validate.md) at the proofs commit after 6e53382; Verifier returned FAIL with F1-F3, all closed (47f4202, 3b29140, d19997e); proofs round 2 green at 31a20c3
+**Released:** v0.2.0 on 2026-11-09 (run 42662623894, green) came out as two public releases named `0.2.0` (one with the exe and latest.yml, one with the blockmap): pwsh swallowed `--` so the releaseName override never reached electron-builder, and its parallel uploads each created a release. Fixed by hand on GitHub (duplicate deleted, blockmap moved, renamed v0.2.0); the workflow now creates the draft first - user: "Consegue finalizar a parte da release?"
 **Walked:** at 4b3adfa with real clicks in Electron (MESA_TEST=1, fake updater driven via `globalThis.__mesaUpdater.emit`): Versão na mesa - master hosts on a free port, a second window launched with MESA_VERSION=0.0.9 fills 127.0.0.1/port/"Ana" and clicks Entrar: start screen shows "Versão diferente da do mestre: mestre 0.1.0, você 0.0.9. Atualize o app." with the fields kept and "Versão 0.0.9" in the footer; the master list stays Mestre. Atualização - a same-version player "Bia" joins; master emits update-available 0.2.0: top bar "Baixando atualização 0.2.0…"; update-downloaded: "Atualização 0.2.0 pronta" + "Reiniciar e atualizar" above the table header, nothing covered; click: dialog "Reiniciar encerra a mesa para todos. Continuar?"; Não keeps the table; Sim records quitAndInstall(false, true) and Bia sees "O mestre encerrou a mesa" with "Voltar ao início". Publicação/Repositório - no screen; covered by their proofs.
 
 ---

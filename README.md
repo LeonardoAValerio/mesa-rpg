@@ -48,10 +48,10 @@ A publicação roda numa GitHub Action. Nenhum token fica na sua máquina.
    git push --follow-tags
    ```
 
-3. A Action roda o typecheck e os testes de unidade, gera o instalador no Windows e publica a release `v<versão>` com o instalador, o `.blockmap` e o `latest.yml`.
+3. A Action roda o typecheck e os testes de unidade, cria a release `v<versão>` como rascunho, gera o instalador no Windows, envia o instalador, o `.blockmap` e o `latest.yml` e só então publica a release.
 4. Na próxima vez que abrirem o app, os amigos recebem a versão nova.
 
-Se a tag não bater com a versão do `package.json`, ou se um teste falhar, a Action falha e nada é publicado.
+Se a tag não bater com a versão do `package.json`, ou se um teste falhar, a Action falha e nada é publicado. Se o build falhar depois do rascunho criado, o rascunho fica na página de releases: apague-o antes de tentar de novo.
 
 ## Rodar localmente
 

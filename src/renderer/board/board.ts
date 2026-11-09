@@ -1,6 +1,5 @@
 import 'pixi.js/unsafe-eval' // keeps the CSP free of 'unsafe-eval'
 import { Application, Container, Graphics, Sprite, type FederatedPointerEvent, type Texture } from 'pixi.js'
-import { cellAt, cellOrigin } from '../../core/grid'
 import { DEFAULT_FACTION_COLORS, type FactionColors, type Token, type View } from '../../core/types'
 import type { TableClient } from '../net/table-client'
 import { h } from '../ui/dom'
@@ -25,12 +24,20 @@ export interface BoardOptions {
 export interface TokenSnapshot {
   id: string
   name: string
+  kind: 'character' | 'object'
+  /** The name drawn under it; empty for an object. */
   label: string
+  /** The centre where the sprite is drawn, in map pixels. */
   x: number
   y: number
+  /** The drawn image size, in map pixels. */
   w: number
   h: number
-  ring: string
+  /** The drawn rotation, in degrees. */
+  rotation: number
+  ring: string | null
+  /** Drawing order over all items: higher is drawn on top. */
+  z: number
   alpha: number
   owner: string | null
   hidden: boolean
@@ -59,6 +66,9 @@ export class Board {
   readonly mapLayer = new Container()
   readonly gridLayer = new Graphics()
   readonly tokenLayer = new Container()
+  /** ITEM-07: objects are drawn below characters. */
+  readonly objectLayer = new Container()
+  readonly characterLayer = new Container()
   readonly fogLayer = new Container()
   readonly overlayLayer = new Container()
   camera: Camera = { scale: 1, x: 0, y: 0 }
@@ -88,6 +98,7 @@ export class Board {
     await b.app.init({ resizeTo: host, background: '#0d0e11', antialias: true, preference: 'webgl' })
     b.app.canvas.dataset.testid = 'board-canvas'
     host.append(b.app.canvas, b.emptyEl)
+    b.tokenLayer.addChild(b.objectLayer, b.characterLayer)
     b.world.addChild(b.mapLayer, b.gridLayer, b.fogLayer, b.tokenLayer, b.overlayLayer) // tokens a player may see are drawn above the fog
     b.fog = new FogRenderer(b.world, b.fogLayer)
     b.app.stage.addChild(b.world)
@@ -175,7 +186,7 @@ export class Board {
     if (!this.canDrag(t)) return // PERM-07: players drag only their own tokens
     const w = this.toWorld(e.global.x, e.global.y)
     this.drag = { id: t.id, dx: w.x - sprite.root.x, dy: w.y - sprite.root.y, container: sprite.root }
-    this.tokenLayer.addChild(sprite.root) // on top while dragging
+    sprite.root.parent?.addChild(sprite.root) // on top of its layer while dragging
   }
 
   /** TOK-05: the token's top-left corner snaps to the cell under it; a refused move goes back (PERM-03, TOK-10). */
@@ -186,12 +197,8 @@ export class Board {
     const view = this.client.view
     if (!view || !view.tokens[d.id]) return this.render(true)
     const t = view.tokens[d.id]
-    const half = (t.width * view.grid.cell) / 2
-    const cell = cellAt(view.grid, d.container.x, d.container.y)
-    const o = cellOrigin(view.grid, cell.col, cell.row)
-    d.container.position.set(o.x, o.y)
-    const x = o.x + half
-    const y = o.y + half
+    const x = d.container.x
+    const y = d.container.y
     if (t.x === x && t.y === y) return
     const r = await this.client.send({ type: 'token/move', id: d.id, x, y })
     if (!r.ok) this.render(true)
@@ -276,7 +283,7 @@ export class Board {
     const colors = this.colors()
     const g = view.grid
     const keyOf = (t: Token): string =>
-      JSON.stringify([t, g.cell, g.offsetX, g.offsetY, t.ring ? colors[t.ring] : '', !!this.textures.get(t.hash), view.role, this.canDrag(t)])
+      JSON.stringify([t, g.cell, g.offsetX, g.offsetY, t.ring ? colors[t.ring] : '', this.textureSize(t.hash), view.role, this.canDrag(t)])
     for (const [id, s] of this.sprites) {
       const t = view.tokens[id]
       if (this.drag?.id === id) continue
@@ -287,11 +294,11 @@ export class Board {
     }
     for (const t of Object.values(view.tokens)) {
       if (this.sprites.has(t.id)) continue
-      const s = drawToken(t, g, t.ring ? colors[t.ring] : '#00000000', this.textures.get(t.hash), view.role === 'master' ? t.owner : null)
+      const s = drawToken(t, g, t.ring ? colors[t.ring] : null, this.textures.get(t.hash), view.role === 'master' ? t.owner : null)
       s.root.eventMode = 'static'
       s.root.cursor = this.canDrag(t) ? 'grab' : 'default'
       s.root.on('pointerdown', (e: FederatedPointerEvent) => this.startDrag(t, s, e))
-      this.tokenLayer.addChild(s.root)
+      ;(t.kind === 'object' ? this.objectLayer : this.characterLayer).addChild(s.root)
       this.sprites.set(t.id, s)
       this.spriteKeys.set(t.id, keyOf(t))
     }
@@ -302,11 +309,27 @@ export class Board {
     const r = this.app.canvas.getBoundingClientRect()
     const tokens: TokenSnapshot[] = []
     if (view) {
+      const order = [...this.objectLayer.children, ...this.characterLayer.children]
       for (const [id, s] of this.sprites) {
         const t = view.tokens[id]
         if (!t) continue
-        const side = t.width * view.grid.cell
-        tokens.push({ id, name: t.name, label: s.label, x: s.root.x, y: s.root.y, w: side, h: side, ring: s.ring, alpha: s.root.alpha, owner: t.owner, hidden: t.hidden, textured: !!this.textures.get(t.hash) })
+        tokens.push({
+          id,
+          name: t.name,
+          kind: t.kind,
+          label: s.label,
+          x: s.root.x,
+          y: s.root.y,
+          w: s.body.children[0].width, // measured from the drawn image or placeholder
+          h: s.body.children[0].height,
+          rotation: Math.round((s.body.rotation * 180) / Math.PI),
+          ring: s.ring,
+          z: order.indexOf(s.root),
+          alpha: s.root.alpha,
+          owner: t.owner,
+          hidden: t.hidden,
+          textured: !!this.textures.get(t.hash)
+        })
       }
     }
     return {
@@ -319,6 +342,11 @@ export class Board {
       dragging: this.drag?.id ?? null,
       empty: this.emptyEl.hidden ? null : (this.emptyEl.querySelector('p')?.textContent ?? null)
     }
+  }
+
+  private textureSize(hash: string): string {
+    const tex = this.textures.get(hash)
+    return tex ? `${tex.width}x${tex.height}` : ''
   }
 
   /** Test hook: whether the drawn fog hides each map point (FOGS-01..05). */

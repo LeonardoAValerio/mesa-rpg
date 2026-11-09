@@ -143,12 +143,13 @@ T4 → T5 → T6 → T7
 
 **Done when**:
 
-- [ ] e2e: a 512x768 PNG at width 2 on 100 px cells is drawn 200x300 centred on its position in both windows; ring only when set; name only for characters; an object drawn below a character at the same spot
-- [ ] Task e2e gate passes
+- [x] e2e: a 512x768 PNG at width 2 on 100 px cells is drawn 200x300 centred on its position in both windows; ring only when set; name only for characters; an object drawn below a character at the same spot
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(board): items drawn as the whole PNG, rotated, ring optional`
+**Done**: yes
 
 ---
 

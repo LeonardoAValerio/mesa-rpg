@@ -1,0 +1,15 @@
+appId: com.leonardo.mesarpg
+productName: MesaRPG
+directories:
+  output: dist
+files:
+  - out/**
+  - package.json
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  signAndEditExecutable: false
+portable:
+  artifactName: MesaRPG-${version}-portable.exe

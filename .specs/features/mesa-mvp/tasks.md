@@ -130,11 +130,12 @@ T32
 
 **Done when**:
 
-- [ ] `scripts/with-node npm run dist` produces exactly one `dist/MesaRPG-*-portable.exe`: [C77] PKG-01
+- [x] `scripts/with-node npm run dist` produces exactly one `dist/MesaRPG-*-portable.exe`: [C77] PKG-01
 
 **Tests**: none
 **Gate**: build
 **Commit**: `build(mesa): portable windows exe target`
+**Done**: yes
 
 ---
 

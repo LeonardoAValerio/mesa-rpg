@@ -18,6 +18,7 @@ export interface BoardOptions {
   textures?: TextureProvider
   colors?: () => FactionColors
   onImportMap?: () => void
+  onSelect?: (id: string) => void
 }
 
 export interface TokenSnapshot {
@@ -84,7 +85,7 @@ export class Board {
     b.app.stage.addChild(b.world)
     b.bindInput()
     b.offs.push(client.on('view', () => b.render()))
-    b.offs.push(b.textures.onLoad(() => b.render(true)))
+    b.offs.push(b.textures.onLoad(() => b.render())) // a texture arriving never cancels a drag
     b.render()
     return b
   }
@@ -157,7 +158,9 @@ export class Board {
   }
 
   private startDrag(t: Token, sprite: TokenSprite, e: FederatedPointerEvent): void {
-    if (e.button !== 0 || this.space || !this.canDrag(t)) return
+    if (e.button !== 0 || this.space) return
+    if (this.client.you?.role === 'master') this.opts.onSelect?.(t.id)
+    if (!this.canDrag(t)) return // PERM-07: players drag only their own tokens
     const w = this.toWorld(e.global.x, e.global.y)
     this.drag = { id: t.id, dx: w.x - sprite.root.x, dy: w.y - sprite.root.y, container: sprite.root }
     this.tokenLayer.addChild(sprite.root) // on top while dragging

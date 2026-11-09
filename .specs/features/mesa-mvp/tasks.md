@@ -489,12 +489,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C32] TOK-07, [C33] TOK-08, [C36] TOK-11, [C43] PERM-01, [C47] PERM-05, [C48] PERM-06, [C49] PERM-07
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C32] TOK-07, [C33] TOK-08, [C36] TOK-11, [C43] PERM-01, [C47] PERM-05, [C48] PERM-06, [C49] PERM-07
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(ui): token editor and ownership`
+**Done**: yes
 
 ---
 

@@ -7,6 +7,7 @@ import { Board, type BoardSnapshot } from './board/board'
 import type { ActionResult } from './net/table-client'
 import { gridPanel } from './ui/grid-panel'
 import { libraryPanel } from './ui/library'
+import { tokenEditor } from './ui/token-editor'
 
 declare global {
   interface Window {
@@ -22,7 +23,13 @@ onSession(async ({ client, screen }) => {
   const master = client.you?.role === 'master'
   const panel = master ? gridPanel(client, textures) : null
   if (panel) screen.sidebar.append(panel.root)
-  const board = await Board.create(screen.board, client, { textures, onImportMap: () => void panel?.importMap() })
+  const editor = master ? tokenEditor(client) : null
+  if (editor) screen.sidebar.append(editor.root)
+  const board = await Board.create(screen.board, client, {
+    textures,
+    onImportMap: () => void panel?.importMap(),
+    onSelect: (id) => editor?.select(id)
+  })
   const stopSync = syncAssets(client, textures, screen.board)
   const library = master ? libraryPanel(client, board, screen.board) : null
   if (library) screen.sidebar.append(library.root)
@@ -31,6 +38,7 @@ onSession(async ({ client, screen }) => {
     if (window.__mesaTest) window.__mesaTest = undefined
     stopSync()
     library?.destroy()
+    editor?.destroy()
     panel?.destroy()
     board.destroy()
   }

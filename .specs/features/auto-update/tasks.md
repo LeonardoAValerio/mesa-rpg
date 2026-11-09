@@ -103,11 +103,12 @@ T11 → T12
 
 **Done when**:
 
-- [ ] `git -C mesa-rpg rev-parse --show-toplevel` is `mesa-rpg`, and `.specs/features/auto-update/tasks.md` is tracked there
-- [ ] `git log` in `mesa-rpg` has every old commit that touched `mesa-rpg/` or `.specs/`, and no path starts with `mesa-rpg/`
-- [ ] `git ls-files` and the history hold none of the plan `.md`, skill folders, `node_modules`, `out`, `dist`, `test-results`
-- [ ] Build gate passes from `mesa-rpg`
+- [x] `git -C mesa-rpg rev-parse --show-toplevel` is `mesa-rpg`, and `.specs/features/auto-update/tasks.md` is tracked there
+- [x] `git log` in `mesa-rpg` has every old commit that touched `mesa-rpg/` or `.specs/`, and no path starts with `mesa-rpg/`
+- [x] `git ls-files` and the history hold none of the plan `.md`, skill folders, `node_modules`, `out`, `dist`, `test-results`
+- [x] Build gate passes from `mesa-rpg`
 
+**Done**: yes
 **Tests**: none
 **Gate**: build
 **Commit**: `chore(repo): mesa-rpg is the repository root with .specs inside`

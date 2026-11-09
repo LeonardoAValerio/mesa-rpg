@@ -311,9 +311,10 @@ T11 → T12
 
 **Done when**:
 
-- [ ] `v0.1.0` exits 0; `v0.1.1` and `0.1.0` exit 1 with the message
-- [ ] Quick gate passes
+- [x] `v0.1.0` exits 0; `v0.1.1` and `0.1.0` exit 1 with the message
+- [x] Quick gate passes
 
+**Done**: yes
 **Tests**: unit
 **Gate**: quick
 **Commit**: `build: refuse a release tag that does not match package.json`

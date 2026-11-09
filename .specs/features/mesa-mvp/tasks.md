@@ -679,12 +679,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C73] SAVE-02, [C76] SAVE-05
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C73] SAVE-02, [C76] SAVE-05
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(ui): save and load scene`
+**Done**: yes
 
 ---
 

@@ -99,3 +99,10 @@ export async function putAsset(app: AppHandle['app'], bytes: Buffer = solidPng()
     return store.put(new Uint8Array(Buffer.from(b64, 'base64')))
   }, bytes.toString('base64'))
 }
+
+/** Makes the next native "save" dialog of this app return `path`. */
+export async function nextSaveDialog(app: AppHandle['app'], path: string): Promise<void> {
+  await app.evaluate(({ dialog }, filePath) => {
+    dialog.showSaveDialog = (async () => ({ canceled: false, filePath })) as typeof dialog.showSaveDialog
+  }, path)
+}

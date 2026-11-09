@@ -1,11 +1,12 @@
 import { randomBytes } from 'node:crypto'
 import { app, clipboard, dialog, ipcMain } from 'electron'
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
+import { decodeMesa, encodeMesa, sceneHashes } from '../core/mesa-file'
 import { parsePalette } from '../core/palette'
-import type { HostResult, ImportedImage, ImportTokensResult, PaletteResult } from '../preload/api'
+import type { HostResult, ImportedImage, ImportTokensResult, PaletteResult, SceneFileResult } from '../preload/api'
 import { join } from 'node:path'
 import { AssetCache } from './asset-cache'
-import { AssetStore } from './asset-store'
+import { AssetStore, sha256 } from './asset-store'
 import { importTokenFolder, readImageFile } from './import'
 import { validatePort } from '../core/session-rules'
 import { listAddresses } from './netinfo'
@@ -70,6 +71,26 @@ export function registerIpc(): void {
     if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
     const text = await readFile(pick.filePaths[0], 'utf8').catch(() => null)
     return { ok: true, palette: parsePalette(text) }
+  })
+  ipcMain.handle('mesa:saveScene', async (): Promise<SceneFileResult> => {
+    if (!server) return { ok: false, error: 'Nenhuma mesa hospedada' }
+    const pick = await dialog.showSaveDialog({ title: 'Salvar cena', defaultPath: 'cena.mesa', filters: [{ name: 'Cena', extensions: ['mesa'] }] })
+    if (pick.canceled || !pick.filePath) return { ok: false, canceled: true }
+    const scene = server.getScene()
+    const assets = new Map(sceneHashes(scene).map((h) => [h, store.get(h)!]))
+    await writeFile(pick.filePath, encodeMesa(scene, assets))
+    return { ok: true }
+  })
+  ipcMain.handle('mesa:loadScene', async (): Promise<SceneFileResult> => {
+    if (!server) return { ok: false, error: 'Nenhuma mesa hospedada' }
+    const pick = await dialog.showOpenDialog({ title: 'Carregar cena', properties: ['openFile'], filters: [{ name: 'Cena', extensions: ['mesa'] }] })
+    if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
+    const text = await readFile(pick.filePaths[0], 'utf8').catch(() => '')
+    const file = decodeMesa(text, sha256)
+    if ('error' in file) return { ok: false, error: file.error } // SAVE-04: the scene stays as it is
+    for (const bytes of file.assets.values()) store.put(bytes)
+    server.setScene(file.scene)
+    return { ok: true }
   })
   ipcMain.handle('mesa:importMap', async (): Promise<ImportedImage> => {
     const pick = await dialog.showOpenDialog({

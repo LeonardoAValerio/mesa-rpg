@@ -10,6 +10,7 @@ import type { ActionResult } from './net/table-client'
 import { gridPanel } from './ui/grid-panel'
 import { libraryPanel } from './ui/library'
 import { logPanel } from './ui/log-panel'
+import { sceneMenu } from './ui/scene-menu'
 import { tokenEditor } from './ui/token-editor'
 import { toolbar } from './ui/toolbar'
 
@@ -26,6 +27,7 @@ declare global {
 onSession(async ({ client, screen }) => {
   const textures = new TextureStore()
   const master = client.you?.role === 'master'
+  if (master) screen.sidebar.append(sceneMenu(client, screen.root).root)
   const panel = master ? gridPanel(client, textures) : null
   if (panel) screen.sidebar.append(panel.root)
   const editor = master ? tokenEditor(client) : null

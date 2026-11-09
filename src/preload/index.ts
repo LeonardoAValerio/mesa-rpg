@@ -10,6 +10,8 @@ const api: MesaApi = {
   importMap: () => ipcRenderer.invoke('mesa:importMap'),
   importTokens: () => ipcRenderer.invoke('mesa:importTokens'),
   loadPalette: () => ipcRenderer.invoke('mesa:loadPalette'),
+  saveScene: () => ipcRenderer.invoke('mesa:saveScene'),
+  loadScene: () => ipcRenderer.invoke('mesa:loadScene'),
   cacheGet: (hash) => ipcRenderer.invoke('mesa:cacheGet', hash),
   cachePut: (hash, bytes) => ipcRenderer.invoke('mesa:cachePut', hash, bytes)
 }

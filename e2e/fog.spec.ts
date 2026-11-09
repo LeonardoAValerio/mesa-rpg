@@ -10,8 +10,8 @@ async function table(): Promise<{ master: AppHandle; player: AppHandle }> {
   const tok = await putAsset(master.app, solidPng(16, 16))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
   await act(master.page, { type: 'fog/coverAll' }) // a new map has no fog (FOGD-01)
-  await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', faction: 'inimigo', size: 1, col: 1, row: 1 })
-  await act(master.page, { type: 'token/place', hash: tok, name: 'Ogro', faction: 'inimigo', size: 1, col: 5, row: 4 })
+  await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', kind: 'character', x: 150, y: 150, width: 1, ring: 'inimigo' })
+  await act(master.page, { type: 'token/place', hash: tok, name: 'Ogro', kind: 'character', x: 550, y: 450, width: 1, ring: 'inimigo' })
   await expect.poll(() => coveredCenters(player.page)).toBe(48)
   return { master, player }
 }

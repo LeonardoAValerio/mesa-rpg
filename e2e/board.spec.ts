@@ -62,12 +62,12 @@ test('[C24] MAP-08 dragging with the middle button pans only that window', async
   expect((await snap(player.page)).camera).toEqual(other)
 })
 
-test('[C30] TOK-05 dropping a dragged token snaps its top-left corner to the cell under it, in both windows', async () => {
+test('[C30] TOK-05 dropping a dragged character snaps its left and top edges to the grid lines, in both windows (ITEM-08)', async () => {
   const { master, player } = await masterAndPlayer()
   await mapReady(master, player.page)
-  await act(master.page, { type: 'token/place', hash: H, name: 'Goblin', faction: 'inimigo', size: 1, col: 1, row: 1 })
+  await act(master.page, { type: 'token/place', hash: H, name: 'Goblin', kind: 'character', x: 150, y: 150, width: 1, ring: 'inimigo' })
   await expect.poll(async () => (await snap(player.page)).tokens.length).toBe(1)
-  // grab the centre (150,150) and move by (+235,+120): the corner lands at (335,220), inside cell (3,2)
+  // grab the centre (150,150) and move by (+235,+120): the edges land at (335,220) and snap to (300,200), so the centre is (350,250)
   const from = await screenOf(master.page, 150, 150)
   const to = await screenOf(master.page, 385, 270)
   await master.page.mouse.move(from.x, from.y)
@@ -75,20 +75,20 @@ test('[C30] TOK-05 dropping a dragged token snaps its top-left corner to the cel
   await master.page.mouse.move(to.x, to.y, { steps: 8 })
   await master.page.mouse.up()
   for (const page of [master.page, player.page]) {
-    await expect.poll(async () => (await snap(page)).tokens.map((t) => [t.x, t.y])).toEqual([[300, 200]])
+    await expect.poll(async () => (await snap(page)).tokens.map((t) => [t.x, t.y])).toEqual([[350, 250]])
   }
 })
 
-test('[C31] TOK-06 a size-2 token covers 2x2 cells, shows its name and has a ring in its faction colour', async () => {
+test('[C31] TOK-06 a 2-cell character is drawn 2 cells wide with its name and a ring in its faction colour (ITEM-01, ITEM-02)', async () => {
   const { master, player } = await masterAndPlayer()
   await mapReady(master, player.page)
-  await act(master.page, { type: 'token/place', hash: H, name: 'Ogro', faction: 'inimigo', size: 2, col: 2, row: 2 })
-  await act(master.page, { type: 'token/place', hash: H, name: 'Elfa', faction: 'grupo', size: 1, col: 5, row: 1 })
+  await act(master.page, { type: 'token/place', hash: H, name: 'Ogro', kind: 'character', x: 300, y: 300, width: 2, ring: 'inimigo' })
+  await act(master.page, { type: 'token/place', hash: H, name: 'Elfa', kind: 'character', x: 550, y: 150, width: 1, ring: 'grupo' })
   for (const page of [master.page, player.page]) {
     await expect.poll(async () => (await snap(page)).tokens.length).toBe(2)
     const tokens = (await snap(page)).tokens.sort((a, b) => a.name.localeCompare(b.name))
-    expect(tokens[1]).toMatchObject({ name: 'Ogro', label: 'Ogro', x: 200, y: 200, w: 200, h: 200, ring: '#ef4444' })
-    expect(tokens[0]).toMatchObject({ name: 'Elfa', label: 'Elfa', x: 500, y: 100, w: 100, h: 100, ring: '#3b82f6' })
+    expect(tokens[1]).toMatchObject({ name: 'Ogro', label: 'Ogro', x: 300, y: 300, w: 200, h: 200, ring: '#ef4444' })
+    expect(tokens[0]).toMatchObject({ name: 'Elfa', label: 'Elfa', x: 550, y: 150, w: 100, h: 100, ring: '#3b82f6' })
   }
 })
 

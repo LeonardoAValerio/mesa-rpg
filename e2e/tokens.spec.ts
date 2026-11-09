@@ -10,8 +10,8 @@ async function table(): Promise<{ master: AppHandle; player: AppHandle; id: (nam
   const tok = await putAsset(master.app, solidPng(32, 32, [200, 200, 200]))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
   await act(master.page, { type: 'fog/revealAll' }) // a no-op since FOGD-01 (a new map has no fog); kept so the board is open either way
-  await act(master.page, { type: 'token/place', hash: tok, name: 'Guerreira', faction: 'grupo', size: 1, col: 1, row: 1 })
-  await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', faction: 'inimigo', size: 1, col: 3, row: 3 })
+  await act(master.page, { type: 'token/place', hash: tok, name: 'Guerreira', kind: 'character', x: 150, y: 150, width: 1, ring: 'grupo' })
+  await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', kind: 'character', x: 350, y: 350, width: 1, ring: 'inimigo' })
   await expect.poll(async () => (await snap(player.page)).tokens.length).toBe(2)
   for (const page of [master.page, player.page]) {
     await expect.poll(async () => (await snap(page)).tokens.every((t) => t.textured) && (await snap(page)).map?.textured).toBe(true)
@@ -40,8 +40,9 @@ test('[C32] TOK-07 the master renames the token to "Chefe" and both windows show
   await master.page.getByTestId('token-name').fill('Chefe')
   await master.page.getByTestId('token-name').press('Enter')
   for (const page of [master.page, player.page]) await expect.poll(() => names(page)).toEqual(['Chefe', 'Guerreira'])
-  await master.page.getByTestId('token-faction').selectOption('npc')
-  await master.page.getByTestId('token-size').selectOption('2')
+  await master.page.getByTestId('token-ring').selectOption('npc')
+  await master.page.getByTestId('token-size').fill('2')
+  await master.page.getByTestId('token-size').press('Enter')
   await expect.poll(async () => (await snap(player.page)).tokens.find((t) => t.name === 'Chefe')).toMatchObject({ ring: '#eab308', w: 200 })
 })
 
@@ -72,10 +73,10 @@ test('[C48] PERM-06 showing the hidden token makes it appear again in the player
   await expect.poll(async () => (await snap(master.page)).tokens.find((t) => t.name === 'Goblin')?.alpha).toBe(1)
 })
 
-test('[C49] PERM-07 Ana drags the Guerreira, which is hers, and cannot drag the Goblin', async () => {
+test('Ana drags the Livre Guerreira and cannot drag the Goblin once it is "Só mestre" (ITEM-14, ITEM-15)', async () => {
   const { master, player, id } = await table()
-  await act(master.page, { type: 'token/owner', id: await id('Guerreira'), owner: 'Ana' })
-  await expect.poll(async () => (await snap(player.page)).tokens.find((t) => t.name === 'Guerreira')?.owner).toBe('Ana')
+  await act(master.page, { type: 'token/update', id: await id('Goblin'), movement: 'master' })
+  await player.page.waitForTimeout(300)
   const drag = async (fx: number, fy: number, tx: number, ty: number): Promise<void> => {
     const a = await screenOf(player.page, fx, fy)
     const b = await screenOf(player.page, tx, ty)
@@ -84,14 +85,14 @@ test('[C49] PERM-07 Ana drags the Guerreira, which is hers, and cannot drag the 
     await player.page.mouse.move(b.x, b.y, { steps: 6 })
     await player.page.mouse.up()
   }
-  await drag(150, 150, 570, 170) // corner lands at (520, 120): cell (5, 1)
+  await drag(150, 150, 570, 170) // edges land at (520, 120) and snap to (500, 100): centre (550, 150)
   for (const page of [player.page, master.page]) {
-    await expect.poll(async () => (await snap(page)).tokens.find((t) => t.name === 'Guerreira')).toMatchObject({ x: 500, y: 100 })
+    await expect.poll(async () => (await snap(page)).tokens.find((t) => t.name === 'Guerreira')).toMatchObject({ x: 550, y: 150 })
   }
   await drag(350, 350, 650, 450)
   await player.page.waitForTimeout(300)
   for (const page of [player.page, master.page]) {
-    expect((await snap(page)).tokens.find((t) => t.name === 'Goblin')).toMatchObject({ x: 300, y: 300 })
+    expect((await snap(page)).tokens.find((t) => t.name === 'Goblin')).toMatchObject({ x: 350, y: 350 })
   }
 })
 
@@ -119,9 +120,9 @@ test('[C79] TOK-12 a master click on a token right after a scene update selects 
   for (let i = 0; i < 10; i++) {
     const col = i % 8
     const row = 5
-    await act(master.page, { type: 'token/place', hash: tok, name: `T${i}`, faction: 'npc', size: 1, col, row })
+    await act(master.page, { type: 'token/place', hash: tok, name: `T${i}`, kind: 'character', x: col * 100 + 50, y: row * 100 + 50, width: 1, ring: 'npc' })
     await click(master.page, col * 100 + 50, row * 100 + 50) // no wait: the update and the click race
-    await expect(master.page.getByTestId('token-editor').locator('h3')).toHaveText(`Token: T${i}`)
+    await expect(master.page.getByTestId('token-editor').locator('h3')).toHaveText(`Personagem: T${i}`)
     await act(master.page, { type: 'token/remove', id: (await snap(master.page)).tokens.find((t) => t.name === `T${i}`)!.id })
   }
 })

@@ -216,7 +216,7 @@ test('the master sees "Névoa com formas demais: use Cobrir tudo ou Revelar tudo
 test('a self-crossing polygon is drawn as the fog rule decides: a covering star leaves its centre revealed, with a token there visible (FOGS-03, FOGS-06)', async () => {
   const { master, player } = await table('tool-fog-poly')
   const tok = await putAsset(master.app, solidPng(16, 16))
-  await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', faction: 'inimigo', size: 1, col: 3, row: 2 }) // centre (350, 250)
+  await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', kind: 'character', x: 350, y: 250, width: 1, ring: 'inimigo' }) // centre (350, 250)
   const star: Array<[number, number]> = [[350, 50], [470, 420], [160, 190], [540, 190], [230, 420]]
   for (const [x, y] of star) await clickAt(master.page, x, y)
   await master.page.keyboard.press('Enter')

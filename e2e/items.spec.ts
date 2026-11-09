@@ -220,3 +220,65 @@ test('clicking an item to select it does not move it, even off the grid (ITEM-08
   await master.page.waitForTimeout(400)
   for (const page of both(master, player)) expect([(await item(page, 'Torre')).x, (await item(page, 'Torre')).y]).toEqual([300, 300])
 })
+
+async function field(page: Page, testid: string, value: string): Promise<void> {
+  await page.getByTestId(testid).fill(value)
+  await page.getByTestId(testid).press('Enter')
+}
+
+test('[C3] ITEM-03 Tamanho accepts 0.25 to 20 cells in steps of 0.25 and clamps the rest, in every window', async () => {
+  const { master, player, square } = await table()
+  await act(master.page, { type: 'token/place', hash: square, name: 'Goblin', kind: 'character', x: 400, y: 300, width: 1, ring: null })
+  await clickItem(master.page, 'Goblin')
+  for (const [typed, shown, px] of [['2.5', '2.5', 250], ['0.1', '0.25', 25], ['33', '20', 2000], ['1.6', '1.5', 150]] as const) {
+    await field(master.page, 'token-size', typed)
+    await expect(master.page.getByTestId('token-size')).toHaveValue(shown)
+    for (const page of both(master, player)) await expect.poll(async () => Math.round((await item(page, 'Goblin')).w), typed).toBe(px)
+  }
+})
+
+test('[C6] ITEM-06 Tipo switches an item between Objeto and Personagem in every window', async () => {
+  const { master, player, square } = await table()
+  await act(master.page, { type: 'token/place', hash: square, name: 'Goblin', kind: 'character', x: 300, y: 300, width: 1, ring: 'inimigo' })
+  await act(master.page, { type: 'token/place', hash: square, name: 'Pedra', kind: 'character', x: 300, y: 300, width: 1, ring: null })
+  await clickItem(master.page, 'Pedra')
+  await master.page.getByTestId('token-kind').selectOption('object')
+  for (const page of both(master, player)) {
+    await expect.poll(async () => (await item(page, 'Pedra')).kind).toBe('object')
+    expect((await item(page, 'Pedra')).label).toBe('') // drawn as an object: no name, below the characters
+    const s = await snap(page)
+    expect(s.tokens.find((t) => t.name === 'Pedra')!.z).toBeLessThan(s.tokens.find((t) => t.name === 'Goblin')!.z)
+  }
+  // an object has no ring and no owner in the editor
+  await expect(master.page.getByTestId('token-ring-label')).toBeHidden()
+  await expect(master.page.getByTestId('token-owner-label')).toBeHidden()
+  await expect(master.page.getByTestId('token-editor').locator('h3')).toHaveText('Objeto: Pedra')
+  await master.page.getByTestId('token-kind').selectOption('character')
+  for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Pedra')).label).toBe('Pedra')
+  await expect(master.page.getByTestId('token-ring-label')).toBeVisible()
+})
+
+test('the editor sets Rotação (rounded to 15°), Anel and Movimento in every window (ITEM-12, ITEM-02, ITEM-15, ITEM-16)', async () => {
+  const { master, player, square } = await table()
+  await act(master.page, { type: 'token/place', hash: square, name: 'Porta', kind: 'character', x: 300, y: 300, width: 1, ring: null })
+  await clickItem(master.page, 'Porta')
+  await field(master.page, 'token-rotation', '50')
+  await expect(master.page.getByTestId('token-rotation')).toHaveValue('45')
+  await field(master.page, 'token-rotation', '370')
+  await expect(master.page.getByTestId('token-rotation')).toHaveValue('15')
+  for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Porta')).rotation).toBe(15)
+  await master.page.getByTestId('token-ring').selectOption('grupo')
+  for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Porta')).ring).toBe('#3b82f6')
+  await master.page.getByTestId('token-movement').selectOption('locked')
+  await expect(master.page.getByTestId('token-movement')).toHaveValue('locked')
+  // locked: the player's drag does not start
+  const t = await item(player.page, 'Porta')
+  const s = await snap(player.page)
+  await expect.poll(async () => player.page.evaluate(() => window.__mesaTest!.board()!.dragging)).toBeNull()
+  await player.page.mouse.move(s.canvas.left + t.x * s.camera.scale + s.camera.x, s.canvas.top + t.y * s.camera.scale + s.camera.y)
+  await player.page.mouse.down()
+  await player.page.mouse.move(10, 10, { steps: 4 })
+  expect(await player.page.evaluate(() => window.__mesaTest!.board()!.dragging)).toBeNull()
+  await player.page.mouse.up()
+  expect([(await item(master.page, 'Porta')).x, (await item(master.page, 'Porta')).y]).toEqual([300, 300])
+})

@@ -203,12 +203,13 @@ T4 → T5 → T6 → T7
 
 **Done when**:
 
-- [ ] e2e: each field changes the item in both windows; Tamanho and Rotação clamp; Anel and Dono are absent for objects
-- [ ] Phase gate passes
+- [x] e2e: each field changes the item in both windows; Tamanho and Rotação clamp; Anel and Dono are absent for objects
+- [x] Phase gate passes
 
 **Tests**: e2e
 **Gate**: phase
 **Commit**: `feat(ui): item editor with kind, size, rotation, ring and movement`
+**Done**: yes
 
 ---
 
@@ -281,7 +282,7 @@ Proof: run unit | ✓ [C21] ITEM-21
 
 ## Handoff
 
-**Settled mid-build:** faster gates and e2e with 3 workers - user asked "precisamos testar tanto para cada implementação? (...) Sinto que está demorando muito para fazer os testes", approved with the tasks: "Aprovo"; author mutation checks only on core rules, the Verifier does the rest. T2 and T3 go in one commit: switching `Token` to the item shape breaks the reducer, `.mesa` and tests together. Their gate was unit (140) + build + src lint; the e2e (12 type errors in token specs) are rewritten in T4-T7, so the full phase gate moves to the end of Phase 2. Found in T6: a click to select a character off the grid moved it (the drop snapped it); a press now becomes a drag only after 4 px of movement, with a test.
+**Settled mid-build:** faster gates and e2e with 3 workers - user asked "precisamos testar tanto para cada implementação? (...) Sinto que está demorando muito para fazer os testes", approved with the tasks: "Aprovo"; author mutation checks only on core rules, the Verifier does the rest. T2 and T3 go in one commit: switching `Token` to the item shape breaks the reducer, `.mesa` and tests together. Their gate was unit (140) + build + src lint; the e2e (12 type errors in token specs) are rewritten in T4-T7, so the full phase gate moves to the end of Phase 2. Found in T6: a click to select a character off the grid moved it (the drop snapped it); a press now becomes a drag only after 4 px of movement, with a test. Phase 2 gate at T7: build, typecheck, lint, unit 140, e2e 86 (3 workers, 2.1 min); the MVP token e2e (TOK-05, TOK-06, TOK-07, TOK-12, PERM-07, TOOL-01) were rewritten for items.
 **Dispatched:** none
 **Walked:** none
 

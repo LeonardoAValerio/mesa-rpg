@@ -508,12 +508,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C52] DICE-02, [C53] DICE-03
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C52] DICE-02, [C53] DICE-03
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): dice notation and roller`
+**Done**: yes
 
 ---
 
@@ -522,11 +523,11 @@ T32
 **What**: Actions `roll` and `chat` in the reducer; the server keeps 200 entries and sends them on join. Touches as well: modify; reducer branch in `core/reducer.ts`.
 **Where**: `mesa-rpg/src/main/table-server.ts`
 **Depends on**: T22
-**Requirement**: DICE-01, DICE-04, CHAT-02, CHAT-03, PERM-08
+**Requirement**: DICE-01, DICE-04, CHAT-02, CHAT-03
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C51] DICE-01, [C54] DICE-04, [C56] CHAT-02, [C57] CHAT-03, [C50] PERM-08
+- [ ] Unit/integration tests named and passing: [C51] DICE-01, [C54] DICE-04, [C56] CHAT-02, [C57] CHAT-03
 - [ ] Quick gate passes
 
 **Tests**: integration
@@ -558,11 +559,11 @@ T32
 **What**: `createLimiter` and server relay of `ruler`, `ruler/end`, `ping`, `stroke` to everyone. Touches as well: the relay in `table-server.ts`.
 **Where**: `mesa-rpg/src/core/ratelimit.ts`
 **Depends on**: None
-**Requirement**: TOOL-05
+**Requirement**: TOOL-05, PERM-08
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C63] TOOL-05
+- [ ] Unit/integration tests named and passing: [C63] TOOL-05, [C50] PERM-08 (moved from T23: it needs the ephemeral relay)
 - [ ] Quick gate passes
 
 **Tests**: integration

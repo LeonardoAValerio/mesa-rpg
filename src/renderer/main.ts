@@ -4,6 +4,7 @@ import { onSession, showHome } from './app'
 import { syncAssets } from './assets/sync'
 import { TextureStore } from './assets/textures'
 import { Board, type BoardSnapshot } from './board/board'
+import { fogTools } from './board/fog-layer'
 import { Overlays, type OverlaySnapshot } from './board/overlays'
 import type { ActionResult } from './net/table-client'
 import { gridPanel } from './ui/grid-panel'
@@ -36,7 +37,9 @@ onSession(async ({ client, screen }) => {
   })
   const stopSync = syncAssets(client, textures, screen.board)
   const overlays = new Overlays(board, client)
-  const stopToolbar = toolbar(screen.toolbar, board)
+  const stopToolbar = toolbar(screen.toolbar, board, master ? [{ tool: 'fog-brush', label: 'Pincel de névoa' }, { tool: 'fog-rect', label: 'Retângulo de névoa' }] : [])
+  const fog = master ? fogTools(board, client) : null
+  if (fog) screen.sidebar.append(fog.root)
   const log = logPanel(client)
   screen.sidebar.append(log.root)
   const library = master ? libraryPanel(client, board, screen.board) : null
@@ -47,6 +50,7 @@ onSession(async ({ client, screen }) => {
     stopSync()
     stopToolbar()
     overlays.destroy()
+    fog?.destroy()
     log.destroy()
     library?.destroy()
     editor?.destroy()

@@ -1,0 +1,62 @@
+import { expect, test, type Page } from '@playwright/test'
+import { act, closeAll, masterAndPlayer, putAsset, screenOf, snap, solidPng, type AppHandle } from './helpers'
+
+test.afterEach(closeAll)
+
+/** 800x600 map with 100 px cells (48 cells, all covered), Goblin at (1,1) and Ogro at (5,4). */
+async function table(): Promise<{ master: AppHandle; player: AppHandle }> {
+  const { master, player } = await masterAndPlayer('Ana')
+  const map = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
+  const tok = await putAsset(master.app, solidPng(16, 16))
+  await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  await act(master.page, { type: 'token/place', hash: tok, name: 'Goblin', faction: 'inimigo', size: 1, col: 1, row: 1 })
+  await act(master.page, { type: 'token/place', hash: tok, name: 'Ogro', faction: 'inimigo', size: 1, col: 5, row: 4 })
+  await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(48)
+  return { master, player }
+}
+async function dragRect(page: Page, x0: number, y0: number, x1: number, y1: number): Promise<void> {
+  const a = await screenOf(page, x0, y0)
+  const b = await screenOf(page, x1, y1)
+  await page.mouse.move(a.x, a.y)
+  await page.mouse.down()
+  await page.mouse.move(b.x, b.y, { steps: 6 })
+  await page.mouse.up()
+}
+const names = async (page: Page): Promise<string[]> => (await snap(page)).tokens.map((t) => t.name).sort()
+
+test('[C65] FOG-02 a covered cell is opaque in the player window and 50% opaque in the master window', async () => {
+  const { master, player } = await table()
+  expect((await snap(player.page)).fog).toEqual({ covered: 48, alpha: 1 })
+  expect((await snap(master.page)).fog).toEqual({ covered: 48, alpha: 0.5 })
+  await master.page.getByTestId('tool-fog-rect').click()
+  await dragRect(master.page, 10, 10, 290, 190) // cells (0..2, 0..1)
+  await expect.poll(async () => (await snap(player.page)).fog).toEqual({ covered: 42, alpha: 1 })
+  await expect.poll(async () => (await snap(master.page)).fog).toEqual({ covered: 42, alpha: 0.5 })
+})
+
+test('the master reveals a rectangle and the player sees only that area and the tokens inside it (FOG-04, FOG-06, FOG-07)', async () => {
+  const { master, player } = await table()
+  expect(await names(player.page)).toEqual([])
+  expect(await names(master.page)).toEqual(['Goblin', 'Ogro'])
+  await master.page.getByTestId('tool-fog-rect').click()
+  await dragRect(master.page, 10, 10, 290, 190)
+  await expect.poll(() => names(player.page)).toEqual(['Goblin'])
+  await master.page.getByTestId('fog-mode-cover').click()
+  await dragRect(master.page, 110, 110, 190, 190)
+  await expect.poll(() => names(player.page)).toEqual([])
+})
+
+test('the brush reveals around the cursor and "Cobrir tudo" covers everything again (FOG-03, FOG-05)', async () => {
+  const { master, player } = await table()
+  await master.page.getByTestId('fog-radius').fill('1')
+  await master.page.getByTestId('fog-radius').press('Enter')
+  await master.page.getByTestId('tool-fog-brush').click()
+  // (570, 470): within one cell of the centres of (5,4), (6,4) and (5,5) only (82 px); the rest are over 100 px away
+  const p = await screenOf(master.page, 570, 470)
+  await master.page.mouse.click(p.x, p.y)
+  await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(45)
+  await expect.poll(() => names(player.page)).toEqual(['Ogro'])
+  await master.page.getByTestId('fog-cover-all').click()
+  await expect.poll(async () => (await snap(player.page)).fog.covered).toBe(48)
+  await expect.poll(() => names(player.page)).toEqual([])
+})

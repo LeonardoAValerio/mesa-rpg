@@ -5,6 +5,7 @@ import { DEFAULT_FACTION_COLORS, type FactionColors, type Token, type View } fro
 import type { TableClient } from '../net/table-client'
 import { h } from '../ui/dom'
 import { fit, pan, toWorld, zoomAt, type Camera } from './camera'
+import { drawFog } from './fog-layer'
 import { drawToken, type TokenSprite } from './token-sprite'
 
 export interface TextureProvider {
@@ -41,6 +42,7 @@ export interface BoardSnapshot {
   canvas: { left: number; top: number; width: number; height: number }
   map: { hash: string; width: number; height: number; textured: boolean } | null
   grid: { cell: number; offsetX: number; offsetY: number; color: string; opacity: number; lines: number } | null
+  fog: { covered: number; alpha: number }
   tokens: TokenSnapshot[]
   dragging: string | null
   empty: string | null
@@ -57,7 +59,7 @@ export class Board {
   readonly mapLayer = new Container()
   readonly gridLayer = new Graphics()
   readonly tokenLayer = new Container()
-  readonly fogLayer = new Container()
+  readonly fogLayer = new Graphics()
   readonly overlayLayer = new Container()
   camera: Camera = { scale: 1, x: 0, y: 0 }
   tool: Tool = 'select'
@@ -68,6 +70,7 @@ export class Board {
   private space = false
   private fittedFor: string | null = null
   private gridLines = 0
+  private fogInfo = { covered: 0, alpha: 1 }
   private emptyEl: HTMLElement
   private offs: Array<() => void> = []
   private textures: TextureProvider
@@ -84,7 +87,7 @@ export class Board {
     await b.app.init({ resizeTo: host, background: '#0d0e11', antialias: true, preference: 'webgl' })
     b.app.canvas.dataset.testid = 'board-canvas'
     host.append(b.app.canvas, b.emptyEl)
-    b.world.addChild(b.mapLayer, b.gridLayer, b.tokenLayer, b.fogLayer, b.overlayLayer)
+    b.world.addChild(b.mapLayer, b.gridLayer, b.fogLayer, b.tokenLayer, b.overlayLayer) // tokens a player may see are drawn above the fog
     b.app.stage.addChild(b.world)
     b.bindInput()
     b.offs.push(client.on('view', () => b.render()))
@@ -196,6 +199,7 @@ export class Board {
     this.renderEmpty(view)
     this.renderMap(view)
     this.renderGrid(view)
+    this.fogInfo = drawFog(this.fogLayer, view)
     this.renderTokens(view, force)
     this.applyCamera()
   }
@@ -279,6 +283,7 @@ export class Board {
       canvas: { left: r.left, top: r.top, width: r.width, height: r.height },
       map: view?.map ? { ...view.map, textured: !!this.textures.get(view.map.hash) } : null,
       grid: view?.map ? { ...view.grid, lines: this.gridLines } : null,
+      fog: { ...this.fogInfo },
       tokens,
       dragging: this.drag?.id ?? null,
       empty: this.emptyEl.hidden ? null : (this.emptyEl.querySelector('p')?.textContent ?? null)

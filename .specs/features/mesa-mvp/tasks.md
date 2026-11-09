@@ -641,12 +641,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C65] FOG-02
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C65] FOG-02
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `feat(board): fog layer and tools`
+**Done**: yes
 
 ---
 

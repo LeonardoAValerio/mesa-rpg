@@ -53,14 +53,14 @@ export const ephemeralSchema = z.discriminatedUnion('type', [
 export type Ephemeral = z.infer<typeof ephemeralSchema>
 
 const clientMsgSchema = z.discriminatedUnion('t', [
-  z.object({ t: z.literal('join'), name: z.string().max(200), hostToken: z.string().max(200).optional() }),
+  z.object({ t: z.literal('join'), name: z.string().max(200), hostToken: z.string().max(200).optional(), version: z.string().max(64).optional() }),
   z.object({ t: z.literal('action'), id: z.string().max(64), action: actionSchema }),
   z.object({ t: z.literal('ephemeral'), e: ephemeralSchema })
 ])
 export type ClientMsg = z.infer<typeof clientMsgSchema>
 
 export type ServerMsg =
-  | { t: 'welcome'; you: { role: Role; name: string }; view: View; log: LogEntry[] }
+  | { t: 'welcome'; you: { role: Role; name: string }; view: View; log: LogEntry[]; version?: string }
   | { t: 'join-error'; reason: string }
   | { t: 'patch'; ops: PatchOp[] }
   | { t: 'ack'; id: string }

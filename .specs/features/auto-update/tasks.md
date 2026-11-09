@@ -165,10 +165,11 @@ T11 → T12
 
 **Done when**:
 
-- [ ] A join with another version or none gets `join-error` with the message and no session (the master's player list stays the same)
-- [ ] A join with the same version gets `welcome` with `version`
-- [ ] Quick gate passes; integration tests grow
+- [x] A join with another version or none gets `join-error` with the message and no session (the master's player list stays the same)
+- [x] A join with the same version gets `welcome` with `version`
+- [x] Quick gate passes; integration tests grow
 
+**Done**: yes
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(server): refuse a join from a different app version`

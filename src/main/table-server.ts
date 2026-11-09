@@ -6,6 +6,7 @@ import { parseClientMsg, type Action, type ClientMsg, type Ephemeral, type Serve
 import { createLimiter } from '../core/ratelimit'
 import { applyAction, type ReducerCtx } from '../core/reducer'
 import { normalizeName, validateJoin } from '../core/session-rules'
+import { versionError } from '../core/version'
 import { imageInfo } from '../core/image-info'
 import { emptyScene, type Actor, type LibraryItem, type LogEntry, type Role, type Scene, type View } from '../core/types'
 import { diffViews, viewFor } from '../core/view'
@@ -32,6 +33,11 @@ export interface TableServerOptions {
   hostToken: string
   heartbeatMs?: number
   store?: AssetStore
+  /**
+   * VER-01..VER-05: the app version; a join from any other version (or none) is refused.
+   * Left out only by tests of other rules, where no version is checked.
+   */
+  version?: string
 }
 
 export interface TableServer {
@@ -130,11 +136,15 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     const isMaster = msg.hostToken !== undefined && msg.hostToken === opts.hostToken
     const name = isMaster ? MASTER_NAME : normalizeName(msg.name)
     const playerCount = joined().filter((s) => s.role === 'player').length
-    const reason = isMaster
-      ? joined().some((s) => s.role === 'master')
-        ? 'Nome já em uso'
-        : null
-      : validateJoin(name, [...names(), MASTER_NAME], playerCount)
+    // The version is checked before the name rules, so a refused join never becomes a session (VER-05).
+    const versionReason = opts.version === undefined ? null : versionError(opts.version, msg.version)
+    const reason =
+      versionReason ??
+      (isMaster
+        ? joined().some((s) => s.role === 'master')
+          ? 'Nome já em uso'
+          : null
+        : validateJoin(name, [...names(), MASTER_NAME], playerCount))
     if (reason) {
       ws.send(JSON.stringify({ t: 'join-error', reason } satisfies ServerMsg))
       ws.close(4000, reason)
@@ -152,7 +162,7 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     sessions.add(session)
     const view = viewFor(scene, actorOf(session), names())
     session.last = view
-    send(session, { t: 'welcome', you: { role: session.role, name }, view, log: log.slice(-200) })
+    send(session, { t: 'welcome', you: { role: session.role, name }, view, log: log.slice(-200), version: opts.version })
     if (session.role === 'master') send(session, { t: 'library', items: library })
     broadcastViews()
     return session

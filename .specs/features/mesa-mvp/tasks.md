@@ -318,12 +318,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C35] TOK-10, [C44] PERM-02, [C46] PERM-04
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C35] TOK-10, [C44] PERM-02, [C46] PERM-04
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): scene reducer with permissions`
+**Done**: yes
 
 ---
 

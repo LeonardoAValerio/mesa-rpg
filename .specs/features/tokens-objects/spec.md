@@ -1,5 +1,7 @@
 # Mesa RPG — Tokens e objetos
 
+**Approved**: 2026-11-09 - user: "Aprovo sim"
+
 ## Problem Statement
 
 Todo token é recortado num círculo de 1×1, 2×2 ou 3×3 células com um anel de facção, então o PNG do kit aparece achatado e com borda, e não há como pôr na mesa um baú, um item no chão ou uma porta. user: "os tokens eles estão colocando uma borda e achatando o elemento, mas na verdade acho que deve ser do tamanho do PNG ou fazer alguma escala"; "as vezes eu vou querer colocar um token como um item no chão, um báu, etc.". Além disso só o dono move um token, e o usuário quer que todos movam tudo, com restrições por item.
@@ -30,7 +32,7 @@ Todo token é recortado num círculo de 1×1, 2×2 ou 3×3 células com um anel 
 | Tamanho | Largura em células, de 0,25 a 20 em passos de 0,25; a altura segue a proporção do PNG; começa em 1 célula; muda no editor ou arrastando a alça do canto | user: "Largura em células (Recomendado)" | y |
 | Encaixe | Personagem encaixa ao soltar (a borda esquerda e a de cima numa linha do grid); objeto fica onde foi solto; Shift ao soltar inverte | user: "Personagem encaixa, objeto livre (Recomendado)" | y |
 | Rotação | Passos de 15°, de 0° a 345°; campo "Rotação" no editor e teclas Q (anti-horário) e E (horário) no item selecionado | user: "Sim, em passos de 15° (Recomendado)" | y |
-| Quem move | Cada item tem "Movimento": **Livre** (padrão: quem vê o item move e gira), **Só mestre** (só o mestre move e gira) ou **Travado** (ninguém arrasta nem gira, nem o mestre, até o mestre destravar no editor); substitui PERM-03 e PERM-07 do MVP | user: "deixamos que todos podem mexer tudo e só colocamos restrições por cima"; a forma dos três níveis é a proposta do agente | n |
+| Quem move | Cada item tem "Movimento": **Livre** (padrão: quem vê o item move e gira), **Só mestre** (só o mestre move e gira) ou **Travado** (ninguém arrasta nem gira, nem o mestre, até o mestre destravar no editor); substitui PERM-03 e PERM-07 do MVP | user: "deixamos que todos podem mexer tudo e só colocamos restrições por cima"; os três níveis propostos pelo agente, spec aprovada: "Aprovo sim" | y |
 | O que o jogador edita | Só move e gira (respeitando "Movimento"); nome, tamanho, anel, tipo, movimento, ocultar e remover são do mestre | O pedido fala em mover; editar o item é do mestre | n |
 | Dono | Continua existindo só para personagens: o dono vê o próprio personagem sob a névoa e o nome dele aparece para o mestre; não dá permissão extra | Com todos movendo, o dono serve à névoa | n |
 | Objetos | Desenhados abaixo dos personagens; sem nome na mesa (o nome aparece no editor); sem dono; a névoa os esconde pela mesma regra do centro; o mestre pode ocultá-los | Baú, porta e item no chão ficam sob os personagens | n |

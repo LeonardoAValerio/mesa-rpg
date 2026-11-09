@@ -331,9 +331,10 @@ T11 → T12
 
 **Done when**:
 
-- [ ] The test passes and fails if the publish step is moved before the tests
-- [ ] Build gate passes
+- [x] The test passes and fails if the publish step is moved before the tests
+- [x] Build gate passes
 
+**Done**: yes
 **Tests**: unit
 **Gate**: build
 **Commit**: `ci: release workflow on version tags`

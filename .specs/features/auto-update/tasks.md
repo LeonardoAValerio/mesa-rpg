@@ -145,9 +145,10 @@ T11 → T12
 
 **Done when**:
 
-- [ ] Equal versions give `null`; different, absent player and absent master give the exact message
-- [ ] Quick gate passes; unit tests grow by at least 1
+- [x] Equal versions give `null`; different, absent player and absent master give the exact message
+- [x] Quick gate passes; unit tests grow by at least 1
 
+**Done**: yes
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): version rule for joining a table`

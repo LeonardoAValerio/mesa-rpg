@@ -1,0 +1,38 @@
+{
+  "name": "mesa-rpg",
+  "productName": "MesaRPG",
+  "version": "0.1.0",
+  "description": "Mesa virtual de RPG para jogar em LAN",
+  "private": true,
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "electron-vite build && playwright test",
+    "dist": "electron-vite build && electron-builder --win portable --x64"
+  },
+  "dependencies": {
+    "ws": "^8.22.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^22.20.5",
+    "@types/pngjs": "^6.0.5",
+    "@types/ws": "^8.18.2",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
+    "eslint": "^10.14.0",
+    "pixi.js": "^8.22.0",
+    "pngjs": "^7.0.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}

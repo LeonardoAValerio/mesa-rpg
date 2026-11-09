@@ -111,12 +111,13 @@ T32
 
 **Done when**:
 
-- [ ] `scripts/with-node npm run build`, `typecheck` and `lint` exit 0
-- [ ] `npm run dev` opens an empty window with `contextIsolation: true`, `sandbox: true`
+- [x] `scripts/with-node npm run build`, `typecheck` and `lint` exit 0
+- [x] `npm run dev` opens an empty window with `contextIsolation: true`, `sandbox: true`
 
 **Tests**: none
 **Gate**: build
 **Commit**: `chore(mesa): scaffold electron-vite project`
+**Done**: yes
 
 ---
 

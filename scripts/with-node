@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Runs a command with the Node version in .nvmrc (via ~/.nvm); non-interactive shells here have no node on PATH.
+set -e
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+. "$NVM_DIR/nvm.sh" --no-use
+nvm use --silent "$(cat "$(dirname "$0")/../.nvmrc")" >/dev/null
+exec "$@"

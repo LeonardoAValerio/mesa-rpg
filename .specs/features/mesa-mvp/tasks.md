@@ -955,7 +955,7 @@ The feature's live state, written as it happens - a compaction gives no warning.
 
 **Settled mid-build:** user: "aprovado" (2026-11-08) without picking sub-agents; batches run inline in the main session. Git defaults accepted: git init at the repo root, `.specs/` tracked, skill folders ignored.
 **Dispatched:** none
-**Walked:** in progress (2026-11-09): walk found TOK-12 (a click right after a scene update missed the token); fixed in `board.ts` with C79
+**Walked:** 2026-11-09, two app windows on this PC (master hosts on a free port, Ana joins 127.0.0.1), scripted with real gestures (dialogs mocked to return fixture files). Home: Hospedar/Entrar with port 47800. Master empty table: "Nenhum mapa carregado" + "Importar mapa"; Ana: "Aguardando o mestre carregar um mapa". Master imports a 2000x1500 24x18 map (grid ~83 px detected) and a kit folder (guerreira grupo 1x1, ogro inimigo 2x2, mercador neutro), drags the three onto the map, makes Ana owner of guerreira, reveals a rectangle with the fog tool: Ana sees the revealed area and only guerreira + ogro; master sees fog at 50%. Ana drags her token, rolls 2d20kh1+5 (dropped die struck through, total shown in both), chats, drags the ruler (distance 5 in both windows). Master saves cena.mesa and uses "Encerrar mesa": Ana sees "O mestre encerrou a mesa" + "Voltar ao início". Found and fixed: TOK-12 (click right after an update missed the token, 6addeea) and the stale remote ruler (TOOL-01, c0ed55e).
 
 ---
 

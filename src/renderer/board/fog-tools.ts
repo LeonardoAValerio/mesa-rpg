@@ -15,10 +15,10 @@ const CLOSE_PX = 12
 export interface FogToolSnapshot {
   mode: FogMode
   radiusCells: number
-  /** The circle under the cursor, in map pixels (FOGT-03). */
+  /** The circle drawn under the cursor, measured from what is drawn, in map pixels (FOGT-03). */
   cursor: { x: number; y: number; r: number } | null
-  /** The shape being drawn, shown only in this window (FOGT-04). */
-  preview: { kind: FogShape['kind']; mode: FogMode; points: number } | null
+  /** The shape being drawn and the box of what is drawn for it, shown only in this window (FOGT-04). */
+  preview: { kind: FogShape['kind']; mode: FogMode; points: number; x: number; y: number; w: number; h: number } | null
 }
 
 /**
@@ -243,11 +243,17 @@ export class FogTools {
 
   snapshot(): FogToolSnapshot {
     const shape = this.current()
+    const ring = this.ring.getLocalBounds()
+    const box = this.preview.getLocalBounds()
+    const stroke = 2 / this.board.camera.scale // the ring's line straddles its radius
     return {
       mode: this.mode,
       radiusCells: this.radiusCells,
-      cursor: this.board.tool === 'fog-brush' && this.cursor ? { ...this.cursor, r: this.radiusPx } : null,
-      preview: shape ? { kind: shape.kind, mode: shape.mode, points: this.drawing?.kind === 'poly' ? this.drawing.points.length : 'points' in shape ? shape.points.length / 2 : 4 } : null
+      cursor: ring.width > 0 ? { x: ring.x + ring.width / 2, y: ring.y + ring.height / 2, r: (ring.width - stroke) / 2 } : null,
+      preview:
+        shape && box.width > 0
+          ? { kind: shape.kind, mode: shape.mode, points: this.drawing?.kind === 'poly' ? this.drawing.points.length : 'points' in shape ? shape.points.length / 2 : 4, x: box.x, y: box.y, w: box.width, h: box.height }
+          : null
     }
   }
 

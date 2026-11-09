@@ -97,14 +97,16 @@ test('[C11] FOGT-02 holding Alt draws in the opposite mode, and releasing it goe
 test('[C12] FOGT-03 the brush shows a circle of its radius under the cursor', async () => {
   const { master } = await table('tool-fog-brush')
   await to(master.page, 400, 300)
-  await expect.poll(() => fogTool(master.page)).toMatchObject({ cursor: { r: 100 } })
+  // measured from the circle that is drawn: centre on the cursor, radius 1 cell = 100 px
+  await expect.poll(async () => (await fogTool(master.page))!.cursor).not.toBeNull()
   const c = (await fogTool(master.page))!.cursor!
-  expect(c.x).toBeCloseTo(400, 0)
-  expect(c.y).toBeCloseTo(300, 0)
+  expect(Math.abs(c.x - 400)).toBeLessThan(2)
+  expect(Math.abs(c.y - 300)).toBeLessThan(2)
+  expect(Math.abs(c.r - 100)).toBeLessThan(2)
   await master.page.getByTestId('fog-radius').fill('2.5')
   await master.page.getByTestId('fog-radius').press('Enter')
   await to(master.page, 200, 200)
-  await expect.poll(async () => (await fogTool(master.page))!.cursor).toMatchObject({ r: 250 })
+  await expect.poll(async () => Math.round((await fogTool(master.page))!.cursor!.r)).toBe(250)
   // the input clamps what the master types (FOGT-06)
   await master.page.getByTestId('fog-radius').fill('13')
   await master.page.getByTestId('fog-radius').press('Enter')
@@ -119,6 +121,12 @@ test('[C13] FOGT-04 while drawing only the master sees a preview; the fog change
   const { master, player } = await table('tool-fog-brush')
   await press(master.page, 150, 300, [400, 300], [600, 300])
   await expect.poll(async () => (await fogTool(master.page))!.preview).toMatchObject({ kind: 'stroke', mode: 'cover' })
+  // the drawn preview spans the path plus the brush radius on each side: x 50..700, y 200..400
+  const box = (await fogTool(master.page))!.preview!
+  expect(Math.abs(box.x - 50)).toBeLessThan(5)
+  expect(Math.abs(box.x + box.w - 700)).toBeLessThan(5)
+  expect(Math.abs(box.y - 200)).toBeLessThan(5)
+  expect(Math.abs(box.h - 200)).toBeLessThan(5)
   await master.page.waitForTimeout(400)
   for (const page of both(master, player)) expect(await fogSample(page, [[400, 300]]), 'nothing sent yet').toEqual([false])
   await master.page.mouse.up()
@@ -128,6 +136,8 @@ test('[C13] FOGT-04 while drawing only the master sees a preview; the fog change
   await master.page.getByTestId('tool-fog-rect').click()
   await press(master.page, 100, 450, [300, 550])
   await expect.poll(async () => (await fogTool(master.page))!.preview).toMatchObject({ kind: 'rect' })
+  const r = (await fogTool(master.page))!.preview!
+  expect([Math.round(r.x), Math.round(r.y), Math.round(r.w), Math.round(r.h)]).toEqual([100, 450, 200, 100])
   await master.page.waitForTimeout(400)
   expect(await fogSample(player.page, [[200, 500]])).toEqual([false])
   await master.page.mouse.up()

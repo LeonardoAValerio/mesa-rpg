@@ -1,5 +1,7 @@
 # Mesa RPG — Névoa em formas livres
 
+**Approved**: 2026-11-09 - user: "Aprovo"
+
 ## Problem Statement
 
 A névoa segue as células do grid, então o resultado fica quadriculado, e as ferramentas confundem: o pincel e o retângulo começam em "Revelar" e, como desde a 0.2.1 o mapa vem sem névoa, pintar não muda nada; os modos ficam no painel lateral, longe das ferramentas. user: "a Fog ainda está meio estranha, não está funcionando, apenas o botão de cobrir tudo e revelar tudo" (mapa de teste `Florestas Frias.jpg`). O usuário escolheu névoa em formas livres, como no Owlbear Rodeo.

@@ -603,12 +603,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C66] FOG-03, [C67] FOG-04, [C68] FOG-05
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C66] FOG-03, [C67] FOG-04, [C68] FOG-05
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): fog of war bitset`
+**Done**: yes
 
 ---
 

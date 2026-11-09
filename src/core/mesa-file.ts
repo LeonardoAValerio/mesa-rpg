@@ -1,17 +1,23 @@
 import { z } from 'zod'
 import { fromBase64, toBase64 } from './base64'
+import { fromCellFog } from './fog'
 import { clampGrid } from './grid'
+import { fogShapeSchema } from './protocol'
 import type { Scene } from './types'
 
 export const INVALID_MESA = 'Arquivo .mesa inválido'
-export const MESA_VERSION = 1
+/** Version 2 keeps the fog as shapes (AD-006); version 1 files, with the cell fog, still load (FOGS-10). */
+export const MESA_VERSION = 2
 
 const hash = z.string().regex(/^[0-9a-f]{64}$/)
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 const faction = z.enum(['grupo', 'inimigo', 'npc', 'neutro'])
 const int = z.number().int()
 
-const sceneSchema = z.object({
+const cellFog = z.object({ colStart: int, rowStart: int, cols: int.nonnegative(), rows: int.nonnegative(), covered: z.string() })
+const shapeFog = z.object({ base: z.enum(['revealed', 'covered']), shapes: z.array(fogShapeSchema) })
+
+const sceneFields = {
   map: z.object({ hash, width: int.positive(), height: int.positive() }).nullable(),
   grid: z.object({ cell: z.number(), offsetX: z.number(), offsetY: z.number(), color, opacity: z.number() }),
   tokens: z.record(
@@ -28,16 +34,13 @@ const sceneSchema = z.object({
       hidden: z.boolean()
     })
   ),
-  fog: z.object({ colStart: int, rowStart: int, cols: int.nonnegative(), rows: int.nonnegative(), covered: z.string() }).nullable(),
   palette: z.record(faction, color).nullable().default(null)
-})
+}
 
-const fileSchema = z.object({
-  format: z.literal('mesa'),
-  version: z.literal(MESA_VERSION),
-  scene: sceneSchema,
-  assets: z.record(hash, z.string())
-})
+const fileSchema = z.discriminatedUnion('version', [
+  z.object({ format: z.literal('mesa'), version: z.literal(1), scene: z.object({ ...sceneFields, fog: cellFog.nullable() }), assets: z.record(hash, z.string()) }),
+  z.object({ format: z.literal('mesa'), version: z.literal(2), scene: z.object({ ...sceneFields, fog: shapeFog.nullable() }), assets: z.record(hash, z.string()) })
+])
 
 /** Every image the scene uses. */
 export function sceneHashes(scene: Scene): string[] {
@@ -69,7 +72,10 @@ export function decodeMesa(
   }
   const parsed = fileSchema.safeParse(data)
   if (!parsed.success) return fail
-  const scene: Scene = { ...parsed.data.scene, grid: clampGrid(parsed.data.scene.grid) }
+  const grid = clampGrid(parsed.data.scene.grid)
+  const raw = parsed.data
+  const fog = raw.version === 1 ? (raw.scene.fog ? fromCellFog(raw.scene.fog, grid) : null) : raw.scene.fog
+  const scene: Scene = { ...raw.scene, grid, fog }
   for (const [id, t] of Object.entries(scene.tokens)) if (t.id !== id) return fail
   const assets = new Map<string, Uint8Array>()
   for (const h of sceneHashes(scene)) {

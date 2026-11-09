@@ -82,9 +82,9 @@ describe('applyAction', () => {
       { type: 'token/owner', id: 't2', owner: 'Ana' },
       { type: 'grid/set', grid: { cell: 50 } },
       { type: 'map/set', hash: H, width: 10, height: 10 },
-      { type: 'fog/brush', x: 0, y: 0, radius: 2, mode: 'reveal' },
-      { type: 'fog/rect', x0: 0, y0: 0, x1: 100, y1: 100, mode: 'reveal' },
-      { type: 'fog/coverAll' }
+      { type: 'fog/shape', shape: { kind: 'rect', mode: 'cover', x: 0, y: 0, w: 100, h: 100 } },
+      { type: 'fog/coverAll' },
+      { type: 'fog/revealAll' }
     ]
     for (const a of masterOnly) expect(applyAction(s, ana, a, ctx()), a.type).toEqual({ ok: false, reason: NO_PERMISSION })
     expect(JSON.stringify(s)).toBe(before)

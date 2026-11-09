@@ -48,8 +48,8 @@ Todo mapa importado vem 100% coberto pela névoa (FOG-01 do MVP): o mestre o vê
 1. FOGD-01: WHEN the master imports a map THEN the server SHALL leave every fog cell revealed.
 2. FOGD-02: WHEN the master uses "Revelar tudo" THEN the server SHALL reveal every fog cell and every window SHALL show the map with no fog.
 3. FOGD-03: IF a player sends the "Revelar tudo" action THEN the server SHALL refuse it with "Sem permissão" and change nothing.
-4. FOGD-04: WHILE every fog cell is revealed, WHEN the master changes the cell size or the grid offset THEN the server SHALL keep every cell revealed.
-5. FOGD-05: WHILE at least one fog cell is covered, WHEN the master changes the cell size or the grid offset THEN the server SHALL cover every cell.
+4. FOGD-04: WHILE every fog cell is revealed, WHEN the master changes the cell size or the grid offset THEN the server SHALL keep every cell revealed. (replaced by FOGS-09, AD-006: the grid never changes the fog)
+5. FOGD-05: WHILE at least one fog cell is covered, WHEN the master changes the cell size or the grid offset THEN the server SHALL cover every cell. (replaced by FOGS-09, AD-006: the grid never changes the fog)
 
 **Independent Test**: o mestre importa um mapa e o vê claro; o jogador vê o mapa; o mestre usa "Cobrir tudo", o jogador vê preto; "Revelar tudo" e o jogador vê o mapa de novo.
 

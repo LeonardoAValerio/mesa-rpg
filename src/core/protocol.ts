@@ -8,6 +8,13 @@ const faction = z.enum(['grupo', 'inimigo', 'npc', 'neutro'])
 const size = z.union([z.literal(1), z.literal(2), z.literal(3)])
 const fogMode = z.enum(['reveal', 'cover'])
 const point = z.object({ x: num, y: num })
+/** At most 2000 points (4000 numbers); the server checks the 2000 with its own message (FOGS-08). */
+const coords = z.array(num).max(4002)
+export const fogShapeSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('stroke'), mode: fogMode, radius: num.positive(), points: coords }),
+  z.object({ kind: z.literal('rect'), mode: fogMode, x: num, y: num, w: num, h: num }),
+  z.object({ kind: z.literal('poly'), mode: fogMode, points: coords })
+])
 
 const gridPatch = z
   .object({
@@ -35,8 +42,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('token/owner'), id: z.string(), owner: z.string().max(100).nullable() }),
   z.object({ type: z.literal('grid/set'), grid: gridPatch }),
   z.object({ type: z.literal('map/set'), hash, width: int.positive(), height: int.positive(), grid: gridPatch.optional() }),
-  z.object({ type: z.literal('fog/brush'), x: num, y: num, radius: int, mode: fogMode }),
-  z.object({ type: z.literal('fog/rect'), x0: num, y0: num, x1: num, y1: num, mode: fogMode }),
+  z.object({ type: z.literal('fog/shape'), shape: fogShapeSchema }),
   z.object({ type: z.literal('fog/coverAll') }),
   z.object({ type: z.literal('fog/revealAll') }),
   z.object({ type: z.literal('palette/set'), palette: z.record(faction, z.string().regex(/^#[0-9a-fA-F]{6}$/)) }),

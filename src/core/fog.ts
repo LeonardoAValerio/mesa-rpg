@@ -1,108 +1,122 @@
-import { fromBase64, toBase64 } from './base64'
-import type { Fog, Grid, MapRef, Token } from './types'
+import { fromBase64 } from './base64'
+import { cellOrigin } from './grid'
+import type { Fog, FogMode, FogShape, Grid, Token } from './types'
 
-export type FogMode = 'reveal' | 'cover'
-export const BRUSH_MIN = 1
+export type { FogMode } from './types'
+
+export const BRUSH_MIN = 0.5
 export const BRUSH_MAX = 10
+export const MAX_SHAPES = 2000
+export const MAX_POINTS = 2000
+export const TOO_MANY_SHAPES = 'Névoa com formas demais: use Cobrir tudo ou Revelar tudo'
 
-export interface FogDims {
+/** FOGS-05: the whole map covered, or revealed; both start the shape list over. */
+export const coverAll = (): Fog => ({ base: 'covered', shapes: [] })
+export const revealAll = (): Fog => ({ base: 'revealed', shapes: [] })
+
+/** FOGT-06: the brush radius in cells, 0.5 to 10 in steps of 0.5. */
+export function clampBrushCells(value: number): number {
+  if (!Number.isFinite(value)) return 1
+  return Math.min(BRUSH_MAX, Math.max(BRUSH_MIN, Math.round(value * 2) / 2))
+}
+
+function distToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const dx = bx - ax
+  const dy = by - ay
+  const len = dx * dx + dy * dy
+  const t = len === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len))
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+}
+
+function inPolygon(points: number[], x: number, y: number): boolean {
+  let inside = false
+  const n = points.length / 2
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = points[2 * i]
+    const yi = points[2 * i + 1]
+    const xj = points[2 * j]
+    const yj = points[2 * j + 1]
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
+  }
+  return inside
+}
+
+/** Whether one shape holds the point (x, y). */
+export function shapeContains(shape: FogShape, x: number, y: number): boolean {
+  switch (shape.kind) {
+    case 'rect':
+      return x >= shape.x && x <= shape.x + shape.w && y >= shape.y && y <= shape.y + shape.h
+    case 'poly':
+      return inPolygon(shape.points, x, y)
+    case 'stroke': {
+      const p = shape.points
+      if (p.length === 2) return Math.hypot(x - p[0], y - p[1]) <= shape.radius
+      for (let i = 0; i + 3 < p.length; i += 2) if (distToSegment(x, y, p[i], p[i + 1], p[i + 2], p[i + 3]) <= shape.radius) return true
+      return false
+    }
+  }
+}
+
+/** FOGS-04: covered when the last shape holding the point is a Cobrir; with none, the base decides. */
+export function fogAt(fog: Fog, x: number, y: number): boolean {
+  for (let i = fog.shapes.length - 1; i >= 0; i--) {
+    const s = fog.shapes[i]
+    if (shapeContains(s, x, y)) return s.mode === 'cover'
+  }
+  return fog.base === 'covered'
+}
+
+const distinctPoints = (points: number[]): number => new Set(Array.from({ length: points.length / 2 }, (_, i) => `${points[2 * i]},${points[2 * i + 1]}`)).size
+
+/** A shape with no area: a flat rectangle, a polygon under 3 distinct points, an empty stroke. */
+export function degenerate(shape: FogShape): boolean {
+  if (shape.kind === 'rect') return !(shape.w > 0 && shape.h > 0)
+  if (shape.kind === 'poly') return shape.points.length % 2 !== 0 || distinctPoints(shape.points) < 3
+  return shape.points.length < 2 || shape.points.length % 2 !== 0 || !(shape.radius > 0)
+}
+
+/** FOGS-08: the fog with one more shape; a degenerate shape changes nothing; past the limits, the refusal. */
+export function addShape(fog: Fog, shape: FogShape): { ok: true; fog: Fog } | { ok: false; reason: string } {
+  if ('points' in shape && shape.points.length / 2 > MAX_POINTS) return { ok: false, reason: TOO_MANY_SHAPES }
+  if (degenerate(shape)) return { ok: true, fog }
+  if (fog.shapes.length >= MAX_SHAPES) return { ok: false, reason: TOO_MANY_SHAPES }
+  return { ok: true, fog: { ...fog, shapes: [...fog.shapes, shape] } }
+}
+
+/** FOGS-06: a token is under the fog when its centre is. */
+export function tokenCovered(fog: Fog, grid: Grid, t: Token): boolean {
+  const o = cellOrigin(grid, t.col, t.row)
+  return fogAt(fog, o.x + (t.size * grid.cell) / 2, o.y + (t.size * grid.cell) / 2)
+}
+
+/** The fog of `.mesa` version 1: a bitset over grid cells, bit 1 = covered. */
+export interface CellFog {
   colStart: number
   rowStart: number
   cols: number
   rows: number
+  covered: string
 }
 
-const byteLength = (d: FogDims): number => Math.ceil((d.cols * d.rows) / 8)
-
-/** Every cell that touches the image, given the grid offset. */
-export function fogDims(map: MapRef, grid: Grid): FogDims {
-  const colStart = -Math.ceil(grid.offsetX / grid.cell) || 0 // never -0
-  const rowStart = -Math.ceil(grid.offsetY / grid.cell) || 0
-  const colEnd = Math.ceil((map.width - grid.offsetX) / grid.cell)
-  const rowEnd = Math.ceil((map.height - grid.offsetY) / grid.cell)
-  return { colStart, rowStart, cols: colEnd - colStart, rows: rowEnd - rowStart }
-}
-
-/** FOGD-01, FOGD-02: every cell revealed (no fog). */
-export function revealAll(d: FogDims): Fog {
-  const { colStart, rowStart, cols, rows } = d
-  return { colStart, rowStart, cols, rows, covered: toBase64(new Uint8Array(byteLength(d))) }
-}
-
-/** FOG-05: every cell covered. */
-export function coverAll(d: FogDims): Fog {
-  const bits = new Uint8Array(byteLength(d))
-  for (let i = 0; i < d.cols * d.rows; i++) bits[i >> 3] |= 1 << (i & 7)
-  return { ...d, covered: toBase64(bits) }
-}
-
-function bitsOf(fog: Fog): Uint8Array {
-  const out = new Uint8Array(byteLength(fog))
-  out.set((fromBase64(fog.covered) ?? new Uint8Array(0)).subarray(0, out.length))
-  return out
-}
-
-const indexOf = (fog: FogDims, col: number, row: number): number | null => {
-  const c = col - fog.colStart
-  const r = row - fog.rowStart
-  if (c < 0 || r < 0 || c >= fog.cols || r >= fog.rows) return null
-  return r * fog.cols + c
-}
-
-/** FOGD-04, FOGD-05: whether any cell of the fog is covered. */
-export function anyCovered(fog: Fog): boolean {
-  const bits = bitsOf(fog)
-  for (let i = 0; i < fog.cols * fog.rows; i++) if (bits[i >> 3] & (1 << (i & 7))) return true
-  return false
-}
-
-/** Cells outside the fog grid count as covered. */
-export function isCovered(fog: Fog, col: number, row: number): boolean {
-  const i = indexOf(fog, col, row)
-  if (i === null) return true
-  return (bitsOf(fog)[i >> 3] & (1 << (i & 7))) !== 0
-}
-
-function paint(fog: Fog, grid: Grid, mode: FogMode, inside: (cx: number, cy: number) => boolean): Fog {
-  const bits = bitsOf(fog)
-  for (let r = 0; r < fog.rows; r++) {
-    for (let c = 0; c < fog.cols; c++) {
-      const cx = grid.offsetX + (fog.colStart + c + 0.5) * grid.cell
-      const cy = grid.offsetY + (fog.rowStart + r + 0.5) * grid.cell
-      if (!inside(cx, cy)) continue
-      const i = r * fog.cols + c
-      if (mode === 'cover') bits[i >> 3] |= 1 << (i & 7)
-      else bits[i >> 3] &= ~(1 << (i & 7))
+/** FOGS-10: each run of covered cells in a row becomes one covered rectangle over a revealed base. */
+export function fromCellFog(old: CellFog, grid: Grid): Fog {
+  const bits = fromBase64(old.covered) ?? new Uint8Array(0)
+  const at = (i: number): boolean => ((bits[i >> 3] ?? 0) & (1 << (i & 7))) !== 0
+  const shapes: FogShape[] = []
+  for (let r = 0; r < old.rows; r++) {
+    let c = 0
+    while (c < old.cols) {
+      if (!at(r * old.cols + c)) {
+        c++
+        continue
+      }
+      const start = c
+      while (c < old.cols && at(r * old.cols + c)) c++
+      const o = cellOrigin(grid, old.colStart + start, old.rowStart + r)
+      shapes.push({ kind: 'rect', mode: 'cover', x: o.x, y: o.y, w: (c - start) * grid.cell, h: grid.cell })
     }
   }
-  return { ...fog, covered: toBase64(bits) }
+  return { base: 'revealed', shapes }
 }
 
-/** FOG-03: reveals or covers the cells whose centre is within `radius` cells of (x, y). */
-export function brush(fog: Fog, grid: Grid, x: number, y: number, radius: number, mode: FogMode): Fog {
-  const rad = Math.min(BRUSH_MAX, Math.max(BRUSH_MIN, Math.round(radius))) * grid.cell
-  return paint(fog, grid, mode, (cx, cy) => (cx - x) ** 2 + (cy - y) ** 2 <= rad * rad)
-}
-
-/** FOG-04: reveals or covers the cells whose centre is inside the rectangle. */
-export function rect(fog: Fog, grid: Grid, x0: number, y0: number, x1: number, y1: number, mode: FogMode): Fog {
-  const [ax, bx] = [Math.min(x0, x1), Math.max(x0, x1)]
-  const [ay, by] = [Math.min(y0, y1), Math.max(y0, y1)]
-  return paint(fog, grid, mode, (cx, cy) => cx >= ax && cx <= bx && cy >= ay && cy <= by)
-}
-
-/** FOG-06: a token is under the fog when any of its cells is covered. */
-export function tokenCovered(fog: Fog, t: Token): boolean {
-  for (let r = 0; r < t.size; r++) for (let c = 0; c < t.size; c++) if (isCovered(fog, t.col + c, t.row + r)) return true
-  return false
-}
-
-/** Covered cells as [col, row] pairs, for drawing. */
-export function coveredCells(fog: Fog): Array<[number, number]> {
-  const bits = bitsOf(fog)
-  const out: Array<[number, number]> = []
-  for (let i = 0; i < fog.cols * fog.rows; i++) {
-    if (bits[i >> 3] & (1 << (i & 7))) out.push([fog.colStart + (i % fog.cols), fog.rowStart + Math.floor(i / fog.cols)])
-  }
-  return out
-}
+export type { FogShape }

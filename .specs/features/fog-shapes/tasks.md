@@ -9,8 +9,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: inline - the Design section below
-**Status**: Draft
-**Approved**: pending
+**Status**: In Progress
+**Approved**: 2026-11-09 - user: "aprovo"
 **Build**: `scripts/with-node npm run build`; `scripts/with-node npm run typecheck`; `scripts/with-node npm run lint`
 **Run unit**: `scripts/with-node npx vitest run --reporter=verbose`
 **Run e2e**: `scripts/with-node npm run build && scripts/with-node npx playwright test --reporter=list`
@@ -78,12 +78,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Unit tests: last shape wins, base when none, stroke/rect/poly containment at and just past their edges, a single-point stroke is a circle, limits refuse at 2001, degenerate shapes dropped, radius clamp, token centre rule, cell runs to rects
-- [ ] Quick gate passes
+- [x] Unit tests: last shape wins, base when none, stroke/rect/poly containment at and just past their edges, a single-point stroke is a circle, limits refuse at 2001, degenerate shapes dropped, radius clamp, token centre rule, cell runs to rects
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): fog made of free-form shapes`
+**Done**: yes
 
 ---
 
@@ -97,12 +98,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Unit tests: a player's `fog/shape` gets "Sem permissão"; the 2001st shape gets the limit message and the scene is unchanged; grid changes keep the fog; a token is sent or withheld as its centre is revealed or covered
-- [ ] Quick gate passes
+- [x] Unit tests: a player's `fog/shape` gets "Sem permissão"; the 2001st shape gets the limit message and the scene is unchanged; grid changes keep the fog; a token is sent or withheld as its centre is revealed or covered
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): fog/shape action replaces the cell brush and rectangle`
+**Done**: yes
 
 ---
 
@@ -116,12 +118,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Unit tests: a version 1 file with a revealed 3x2 block loads with the same points covered and revealed; encode then decode keeps shapes in order
-- [ ] Build gate passes
+- [x] Unit tests: a version 1 file with a revealed 3x2 block loads with the same points covered and revealed; encode then decode keeps shapes in order
+- [x] Build gate passes
 
 **Tests**: unit
 **Gate**: build
 **Commit**: `feat(core): .mesa version 2 keeps fog shapes and reads version 1`
+**Done**: yes
 
 ---
 
@@ -242,7 +245,7 @@ Proof: run unit | ✓ [C18] FOGS-11
 
 ## Handoff
 
-**Settled mid-build:** none
+**Settled mid-build:** T1, T2 and T3 go in one commit: changing the `Fog` type breaks the reducer, view and `.mesa` until all three change, so none builds alone. The renderer and the e2e still use the cell fog in that commit (typecheck red there) until T4, the next commit.
 **Dispatched:** none
 **Walked:** none
 

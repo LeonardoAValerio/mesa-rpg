@@ -41,3 +41,11 @@
 - **Scope**: `src/core/reducer.ts`, `src/core/fog.ts`, painel de névoa.
 - **Date**: 2026-11-09
 - **Status**: active
+
+### AD-006
+- **Decision**: A névoa é uma lista ordenada de formas livres (traço de pincel, retângulo, polígono) em pixels do mapa, cada uma em Cobrir ou Revelar, sobre uma base coberta ou revelada; num ponto vale a última forma que o contém; um token some para quem não é dono quando o centro dele está sob a névoa; o grid não mexe na névoa.
+- **Reason**: user: "Formas livres (Recomendado)"; spec aprovada: "Aprovo"; tarefas aprovadas: "aprovo".
+- **Trade-off**: Substitui FOG-03, FOG-04, FOG-06 do MVP e FOGD-04, FOGD-05; os testes C66, C67, C69, C70 do MVP e C4, C5 de fog-default são reescritos para formas. O `.mesa` passa à versão 2 (a 0.2.x não abre arquivos novos).
+- **Scope**: `src/core/fog.ts`, reducer, view, `.mesa`, `src/renderer/board`.
+- **Date**: 2026-11-09
+- **Status**: active

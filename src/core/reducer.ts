@@ -1,6 +1,6 @@
 import { validChat } from './chat'
 import { parseDice, rollDice } from './dice'
-import { anyCovered, brush, coverAll, fogDims, rect, revealAll } from './fog'
+import { addShape, coverAll, revealAll } from './fog'
 import { clampGrid, insideMap } from './grid'
 import { parsePalette } from './palette'
 import type { Action } from './protocol'
@@ -29,8 +29,7 @@ const MASTER_ONLY = new Set<Action['type']>([
   'token/owner',
   'grid/set',
   'map/set',
-  'fog/brush',
-  'fog/rect',
+  'fog/shape',
   'fog/coverAll',
   'fog/revealAll',
   'palette/set'
@@ -47,32 +46,22 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
     case 'map/set': {
       const grid = clampGrid(action.grid ?? {}, scene.grid)
       const map = { hash: action.hash, width: action.width, height: action.height }
-      return { ok: true, scene: { ...scene, map, grid, fog: revealAll(fogDims(map, grid)) } } // FOGD-01: a new map has no fog
+      return { ok: true, scene: { ...scene, map, grid, fog: revealAll() } } // FOGD-01: a new map has no fog
     }
     case 'palette/set':
       return { ok: true, scene: { ...scene, palette: parsePalette(JSON.stringify(action.palette)) } }
     case 'grid/set': {
-      const grid = clampGrid(action.grid, scene.grid)
-      const moved = grid.cell !== scene.grid.cell || grid.offsetX !== scene.grid.offsetX || grid.offsetY !== scene.grid.offsetY
-      // FOGD-04, FOGD-05: the cells change, so the fog starts over - covered only if something was covered
-      const dims = scene.map ? fogDims(scene.map, grid) : null
-      const fog = moved && dims ? (scene.fog && anyCovered(scene.fog) ? coverAll(dims) : revealAll(dims)) : scene.fog
-      return { ok: true, scene: { ...scene, grid, fog } }
+      // FOGS-09: the fog is in map pixels, so the grid leaves it as it is
+      return { ok: true, scene: { ...scene, grid: clampGrid(action.grid, scene.grid) } }
     }
-    case 'fog/brush':
-    case 'fog/rect':
     case 'fog/coverAll':
-    case 'fog/revealAll': {
+    case 'fog/revealAll':
       if (!scene.map || !scene.fog) return refuse(NO_MAP)
-      const fog =
-        action.type === 'fog/coverAll'
-          ? coverAll(scene.fog)
-          : action.type === 'fog/revealAll'
-            ? revealAll(scene.fog)
-            : action.type === 'fog/brush'
-              ? brush(scene.fog, scene.grid, action.x, action.y, action.radius, action.mode)
-              : rect(scene.fog, scene.grid, action.x0, action.y0, action.x1, action.y1, action.mode)
-      return { ok: true, scene: { ...scene, fog } }
+      return { ok: true, scene: { ...scene, fog: action.type === 'fog/coverAll' ? coverAll() : revealAll() } } // FOGS-05
+    case 'fog/shape': {
+      if (!scene.map || !scene.fog) return refuse(NO_MAP)
+      const r = addShape(scene.fog, action.shape) // FOGS-01..04, FOGS-08
+      return r.ok ? { ok: true, scene: { ...scene, fog: r.fog } } : refuse(r.reason)
     }
 
     case 'token/place': {

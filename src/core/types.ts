@@ -29,12 +29,18 @@ export interface Token {
   hidden: boolean
 }
 
+export type FogMode = 'reveal' | 'cover'
+
+/** One fog shape in map pixels (AD-006). A stroke holds the points within `radius` of its polyline. */
+export type FogShape =
+  | { kind: 'stroke'; mode: FogMode; radius: number; points: number[] }
+  | { kind: 'rect'; mode: FogMode; x: number; y: number; w: number; h: number }
+  | { kind: 'poly'; mode: FogMode; points: number[] }
+
+/** The fog: a base state and shapes in order; at a point the last shape containing it decides (FOGS-04). */
 export interface Fog {
-  colStart: number
-  rowStart: number
-  cols: number
-  rows: number
-  covered: string // base64 bitset, bit = 1 means covered
+  base: 'revealed' | 'covered'
+  shapes: FogShape[]
 }
 
 export interface Scene {

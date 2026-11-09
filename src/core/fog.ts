@@ -1,3 +1,4 @@
+import { fromBase64, toBase64 } from './base64'
 import type { Fog, Grid, MapRef, Token } from './types'
 
 export type FogMode = 'reveal' | 'cover'
@@ -9,30 +10,6 @@ export interface FogDims {
   rowStart: number
   cols: number
   rows: number
-}
-
-const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-
-function toB64(bytes: Uint8Array): string {
-  let out = ''
-  for (let i = 0; i < bytes.length; i += 3) {
-    const n = (bytes[i] << 16) | ((bytes[i + 1] ?? 0) << 8) | (bytes[i + 2] ?? 0)
-    out += B64[(n >> 18) & 63] + B64[(n >> 12) & 63]
-    out += i + 1 < bytes.length ? B64[(n >> 6) & 63] : '='
-    out += i + 2 < bytes.length ? B64[n & 63] : '='
-  }
-  return out
-}
-
-function fromB64(text: string, length: number): Uint8Array {
-  const out = new Uint8Array(length)
-  let o = 0
-  for (let i = 0; i < text.length && o < length; i += 4) {
-    const v = [0, 1, 2, 3].map((k) => Math.max(0, B64.indexOf(text[i + k] ?? 'A')))
-    const n = (v[0] << 18) | (v[1] << 12) | (v[2] << 6) | v[3]
-    for (const b of [(n >> 16) & 255, (n >> 8) & 255, n & 255]) if (o < length) out[o++] = b
-  }
-  return out
 }
 
 const byteLength = (d: FogDims): number => Math.ceil((d.cols * d.rows) / 8)
@@ -50,11 +27,13 @@ export function fogDims(map: MapRef, grid: Grid): FogDims {
 export function coverAll(d: FogDims): Fog {
   const bits = new Uint8Array(byteLength(d))
   for (let i = 0; i < d.cols * d.rows; i++) bits[i >> 3] |= 1 << (i & 7)
-  return { ...d, covered: toB64(bits) }
+  return { ...d, covered: toBase64(bits) }
 }
 
 function bitsOf(fog: Fog): Uint8Array {
-  return fromB64(fog.covered, byteLength(fog))
+  const out = new Uint8Array(byteLength(fog))
+  out.set((fromBase64(fog.covered) ?? new Uint8Array(0)).subarray(0, out.length))
+  return out
 }
 
 const indexOf = (fog: FogDims, col: number, row: number): number | null => {
@@ -83,7 +62,7 @@ function paint(fog: Fog, grid: Grid, mode: FogMode, inside: (cx: number, cy: num
       else bits[i >> 3] &= ~(1 << (i & 7))
     }
   }
-  return { ...fog, covered: toB64(bits) }
+  return { ...fog, covered: toBase64(bits) }
 }
 
 /** FOG-03: reveals or covers the cells whose centre is within `radius` cells of (x, y). */

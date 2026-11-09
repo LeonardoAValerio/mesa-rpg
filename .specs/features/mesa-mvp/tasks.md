@@ -660,12 +660,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C72] SAVE-01, [C74] SAVE-03, [C75] SAVE-04
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C72] SAVE-01, [C74] SAVE-03, [C75] SAVE-04
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): .mesa scene file`
+**Done**: yes
 
 ---
 

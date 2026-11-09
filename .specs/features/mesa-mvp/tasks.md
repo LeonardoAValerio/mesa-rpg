@@ -223,12 +223,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C8] NET-08, [C10] NET-10, [C12] NET-12
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C8] NET-08, [C10] NET-10, [C12] NET-12
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(client): connect, timeout and reconnect`
+**Done**: yes
 
 ---
 

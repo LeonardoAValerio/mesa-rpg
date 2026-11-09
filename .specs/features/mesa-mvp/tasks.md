@@ -205,11 +205,12 @@ T32
 
 **Done when**:
 
-- [ ] Integration test of the labels; quick gate passes
+- [x] Integration test of the labels; quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(main): list LAN/VPN addresses`
+**Done**: yes
 
 ---
 

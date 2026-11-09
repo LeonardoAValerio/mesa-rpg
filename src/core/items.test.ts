@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canMove, clampWidth, dropPosition, fromOldToken, LOCKED_ITEM, MASTER_ONLY_ITEM, normalizeRotation, snapCentre } from './items'
+import { canMove, clampWidth, dropPosition, fromOldToken, LOCKED_ITEM, MASTER_ONLY_ITEM, normalizeRotation, rotatedExtent, snapCentre } from './items'
 import { DEFAULT_GRID, type Actor } from './types'
 
 const grid = { ...DEFAULT_GRID, cell: 100, offsetX: 0, offsetY: 0 }
@@ -15,7 +15,7 @@ describe('item rules', () => {
     expect(clampWidth(Number.NaN)).toBe(1)
   })
 
-  it('[C12] ITEM-12 a rotation is a multiple of 15 from 0 to 345; other values round to the nearest one modulo 360', () => {
+  it('ITEM-12 a rotation is a multiple of 15 from 0 to 345; other values round to the nearest one modulo 360', () => {
     expect([0, 15, 90, 345].map(normalizeRotation)).toEqual([0, 15, 90, 345])
     expect([7, 8, 22, 23].map(normalizeRotation)).toEqual([0, 15, 15, 30])
     expect([360, 375, -15, -360, 720 + 45].map(normalizeRotation)).toEqual([0, 15, 345, 0, 45])
@@ -28,6 +28,17 @@ describe('item rules', () => {
     expect(snapCentre(grid, 140, 260, 2, 2)).toEqual({ x: 100, y: 300 }) // 2 cells: on a grid crossing
     expect(snapCentre(grid, 140, 260, 1.5, 0.75)).toEqual({ x: 175, y: 237.5 }) // left edge 100, top edge 200
     expect(snapCentre({ ...grid, offsetX: 30, offsetY: 10 }, 140, 260, 1, 1)).toEqual({ x: 180, y: 260 })
+  })
+
+  it('a turned item snaps by its drawn box: 90° swaps the sides, 45° grows both', () => {
+    expect(rotatedExtent(1, 1.5, 0)).toEqual({ w: 1, h: 1.5 })
+    expect(rotatedExtent(1, 1.5, 90)).toEqual({ w: 1.5, h: 1 })
+    expect(rotatedExtent(1, 1.5, 180)).toEqual({ w: 1, h: 1.5 })
+    const d = rotatedExtent(1, 1, 45)
+    expect(d.w).toBeCloseTo(Math.SQRT2, 9)
+    // a 100 x 150 character turned 90° and dropped at (520, 330): its drawn box (150 x 100) snaps to 400 / 300
+    const e = rotatedExtent(1, 1.5, 90)
+    expect(snapCentre(grid, 520, 330, e.w, e.h)).toEqual({ x: 475, y: 350 })
   })
 
   it('a character snaps and an object stays where dropped; Shift at the drop does the opposite', () => {

@@ -47,6 +47,15 @@ export function snapCentre(grid: Grid, x: number, y: number, wCells: number, hCe
   return { x: line(x - halfW, grid.offsetX) + halfW, y: line(y - halfH, grid.offsetY) + halfH }
 }
 
+/** The drawn box of a `w` x `h` item turned by `rotation` degrees, in the same units (what the snap aligns). */
+export function rotatedExtent(w: number, h: number, rotation: number): { w: number; h: number } {
+  const a = (rotation * Math.PI) / 180
+  const cos = Math.abs(Math.cos(a))
+  const sin = Math.abs(Math.sin(a))
+  const round = (v: number): number => Math.round(v * 1e9) / 1e9 // 90° gives exact sides, not 1e-17 leftovers
+  return { w: round(w * cos + h * sin), h: round(w * sin + h * cos) }
+}
+
 /** ITEM-08, ITEM-09: a character snaps and an object stays where dropped; Shift held at the drop does the opposite. */
 export function dropPosition(kind: ItemKind, shift: boolean, grid: Grid, x: number, y: number, wCells: number, hCells: number): { x: number; y: number } {
   const snap = (kind === 'character') !== shift

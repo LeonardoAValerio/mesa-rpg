@@ -97,7 +97,7 @@ export function decodeMesa(
   const tokens: Record<string, Item> = {}
   for (const [id, t] of Object.entries(raw.scene.tokens)) {
     // ITEM-20: older tokens become characters; a version 3 item is kept within its bounds
-    tokens[id] = 'col' in t ? fromOldToken(t, grid) : { ...t, width: clampWidth(t.width), rotation: normalizeRotation(t.rotation), ring: t.kind === 'object' ? null : t.ring }
+    tokens[id] = 'col' in t ? fromOldToken(t, grid) : { ...t, width: clampWidth(t.width), rotation: normalizeRotation(t.rotation), ring: t.kind === 'object' ? null : t.ring, owner: t.kind === 'object' ? null : t.owner }
   }
   const scene: Scene = { map: raw.scene.map, palette: raw.scene.palette, grid, fog, tokens }
   for (const [id, t] of Object.entries(scene.tokens)) if (t.id !== id) return fail

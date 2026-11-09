@@ -119,6 +119,15 @@ describe('.mesa file', () => {
     expect(r.scene.fog!.shapes.every((s) => s.kind === 'rect' && s.mode === 'cover')).toBe(true)
   })
 
+  it('a version 3 object loads with no ring and no owner, whatever the file says', () => {
+    const f = JSON.parse(encodeMesa(scene(), assets()))
+    f.scene.tokens.b.owner = 'Ana'
+    f.scene.tokens.b.ring = 'grupo'
+    const r = decodeMesa(JSON.stringify(f), sha)
+    if ('error' in r) throw new Error(r.error)
+    expect(r.scene.tokens.b).toMatchObject({ kind: 'object', owner: null, ring: null })
+  })
+
   it('[C21] ITEM-21 saving and loading keeps every item field: kind, position, size, rotation, ring, owner, Movimento, hidden', () => {
     const r = decodeMesa(encodeMesa(scene(), assets()), sha)
     if ('error' in r) throw new Error(r.error)

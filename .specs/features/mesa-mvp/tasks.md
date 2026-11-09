@@ -261,12 +261,13 @@ T32
 
 **Done when**:
 
-- [ ] Unit/integration tests named and passing: [C22] MAP-06
-- [ ] Quick gate passes
+- [x] Unit/integration tests named and passing: [C22] MAP-06
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): grid math`
+**Done**: yes
 
 ---
 

@@ -698,12 +698,13 @@ T32
 
 **Done when**:
 
-- [ ] Playwright tests named and passing: [C78] PKG-02
-- [ ] Full gate passes
+- [x] Playwright tests named and passing: [C78] PKG-02
+- [x] Full gate passes
 
 **Tests**: e2e
 **Gate**: full
 **Commit**: `build(mesa): offline csp and final portable exe`
+**Done**: yes
 
 ---
 

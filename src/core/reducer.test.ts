@@ -83,7 +83,7 @@ describe('applyAction', () => {
     expect(applyAction(own, ana, { type: 'token/move', id: 't1', x: 50, y: 50 }, ctx())).toEqual({ ok: false, reason: MASTER_ONLY_ITEM })
   })
 
-  it('[C16] ITEM-16 a Travado item refuses every move and rotation, the master\'s too, with "Item travado"', () => {
+  it('ITEM-16 a Travado item refuses every move and rotation, the master\'s too, with "Item travado"', () => {
     const s = run(scene(), master, { type: 'token/update', id: 't3', movement: 'locked' })
     for (const actor of [master, ana]) {
       expect(applyAction(s, actor, { type: 'token/move', id: 't3', x: 50, y: 50 }, ctx())).toEqual({ ok: false, reason: 'Item travado' })

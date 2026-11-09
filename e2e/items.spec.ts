@@ -100,7 +100,13 @@ test('[C8] ITEM-08 a dropped character snaps its left and top edges to grid line
   await dragItem(master.page, 'Goblin', 240, 260)
   await dragItem(master.page, 'Torre', 520, 330) // 100 x 150: edges at 470/255 snap to 500/300, centre (550, 375)
   await dragItem(master.page, 'Baú', 333, 377)
+  // a character turned 90° snaps by its drawn box (150 x 100): dropped at (520, 330) its edges land on 400 / 300
+  await act(master.page, { type: 'token/place', hash: tall, name: 'Deitada', kind: 'character', x: 150, y: 450, width: 1, ring: null })
+  await act(master.page, { type: 'token/update', id: (await item(master.page, 'Deitada')).id, rotation: 90 })
+  await expect.poll(async () => (await item(master.page, 'Deitada')).rotation).toBe(90)
+  await dragItem(master.page, 'Deitada', 520, 330)
   for (const page of both(master, player)) {
+    await expect.poll(async () => { const t = await item(page, 'Deitada'); return [t.x, t.y] }).toEqual([475, 350])
     await expect.poll(async () => { const t = await item(page, 'Goblin'); return [t.x, t.y] }).toEqual([250, 250])
     await expect.poll(async () => { const t = await item(page, 'Torre'); return [t.x, t.y] }).toEqual([550, 375])
     await expect.poll(async () => { const t = await item(page, 'Baú'); return near(t.x, 333) && near(t.y, 377) }).toBe(true)
@@ -119,7 +125,7 @@ test('[C9] ITEM-09 Shift held at the drop leaves a character free and snaps an o
   }
 })
 
-test('a player moves a Livre item that is not theirs; nobody drags a Travado item (ITEM-14, ITEM-16)', async () => {
+test('[C16] ITEM-16 a Travado item: the server refuses every move and rotation with "Item travado", the master\'s too, and no drag starts', async () => {
   const { master, player, square } = await table()
   await act(master.page, { type: 'token/place', hash: square, name: 'Goblin', kind: 'character', x: 150, y: 150, width: 1, ring: null })
   await act(master.page, { type: 'token/place', hash: square, name: 'Baú', kind: 'object', x: 450, y: 450, width: 1, ring: null })
@@ -138,6 +144,13 @@ test('a player moves a Livre item that is not theirs; nobody drags a Travado ite
   }
   await master.page.waitForTimeout(300)
   for (const page of both(master, player)) expect([(await item(page, 'Baú')).x, (await item(page, 'Baú')).y]).toEqual([450, 450])
+  // what reaches the server from either window is refused with the message
+  const id = (await item(master.page, 'Baú')).id
+  for (const page of both(master, player)) {
+    for (const action of [{ type: 'token/move', id, x: 100, y: 100 }, { type: 'token/rotate', id, rotation: 15 }] as const) {
+      expect(await page.evaluate((a) => window.__mesaTest!.send(a), action)).toEqual({ ok: false, reason: 'Item travado' })
+    }
+  }
 })
 
 test('[C17] ITEM-17 a refused move puts the item back where it was', async () => {
@@ -258,12 +271,17 @@ test('[C6] ITEM-06 Tipo switches an item between Objeto and Personagem in every 
   await expect(master.page.getByTestId('token-ring-label')).toBeVisible()
 })
 
-test('the editor sets Rotação (rounded to 15°), Anel and Movimento in every window (ITEM-12, ITEM-02, ITEM-15, ITEM-16)', async () => {
+test('[C12] ITEM-12 Rotação in the editor takes multiples of 15 from 0 to 345, rounds the rest, and turns the item in every window; Anel and Movimento too', async () => {
   const { master, player, square } = await table()
   await act(master.page, { type: 'token/place', hash: square, name: 'Porta', kind: 'character', x: 300, y: 300, width: 1, ring: null })
   await clickItem(master.page, 'Porta')
   await field(master.page, 'token-rotation', '50')
   await expect(master.page.getByTestId('token-rotation')).toHaveValue('45')
+  for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Porta')).rotation).toBe(45)
+  await field(master.page, 'token-rotation', '345')
+  await expect(master.page.getByTestId('token-rotation')).toHaveValue('345')
+  await field(master.page, 'token-rotation', '-20')
+  await expect(master.page.getByTestId('token-rotation')).toHaveValue('345')
   await field(master.page, 'token-rotation', '370')
   await expect(master.page.getByTestId('token-rotation')).toHaveValue('15')
   for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Porta')).rotation).toBe(15)
@@ -281,4 +299,45 @@ test('the editor sets Rotação (rounded to 15°), Anel and Movimento in every w
   expect(await player.page.evaluate(() => window.__mesaTest!.board()!.dragging)).toBeNull()
   await player.page.mouse.up()
   expect([(await item(master.page, 'Porta')).x, (await item(master.page, 'Porta')).y]).toEqual([300, 300])
+})
+
+test('the resize handle works with the Mover tool only: a fog rectangle drawn from it does not resize the item (ITEM-04)', async () => {
+  const { master, square } = await table()
+  await act(master.page, { type: 'token/place', hash: square, name: 'Goblin', kind: 'character', x: 300, y: 300, width: 1, ring: null })
+  await clickItem(master.page, 'Goblin')
+  await expect.poll(async () => (await snap(master.page)).selection.handle).not.toBeNull()
+  const s = await snap(master.page)
+  const [hx, hy] = s.selection.handle!
+  await master.page.getByTestId('tool-fog-rect').click()
+  expect((await snap(master.page)).selection.handle).toBeNull()
+  const screen = (px: number, py: number) => ({ x: s.canvas.left + px * s.camera.scale + s.camera.x, y: s.canvas.top + py * s.camera.scale + s.camera.y })
+  await master.page.mouse.move(screen(hx, hy).x, screen(hx, hy).y)
+  await master.page.mouse.down()
+  await master.page.mouse.move(screen(hx + 150, hy + 100).x, screen(hx + 150, hy + 100).y, { steps: 5 })
+  await master.page.mouse.up()
+  await master.page.waitForTimeout(300)
+  expect(Math.round((await item(master.page, 'Goblin')).w)).toBe(100)
+  expect((await snap(master.page)).fog.shapes).toBe(1) // the rectangle was drawn
+})
+
+test('the selection clears on an empty click, Esc or another tool, and E then turns nothing (ITEM-13)', async () => {
+  const { master, player, square } = await table()
+  await act(master.page, { type: 'token/place', hash: square, name: 'Porta', kind: 'object', x: 300, y: 300, width: 1, ring: null })
+  const s = await snap(master.page)
+  const clears: Array<[string, () => Promise<void>]> = [
+    ['empty click', async () => { await master.page.mouse.click(s.canvas.left + 650 * s.camera.scale + s.camera.x, s.canvas.top + 500 * s.camera.scale + s.camera.y) }],
+    ['Escape', async () => { await master.page.keyboard.press('Escape') }],
+    ['another tool', async () => { await master.page.getByTestId('tool-ruler').click(); await master.page.getByTestId('tool-select').click() }]
+  ]
+  for (const [how, clear] of clears) {
+    await clickItem(master.page, 'Porta')
+    await expect.poll(async () => (await snap(master.page)).selection.id, how).not.toBeNull()
+    await expect(master.page.getByTestId('token-editor')).toBeVisible()
+    await clear()
+    await expect.poll(async () => (await snap(master.page)).selection.id, how).toBeNull()
+    await expect(master.page.getByTestId('token-editor'), how).toBeHidden()
+    await master.page.keyboard.press('e')
+    await master.page.waitForTimeout(300)
+    for (const page of both(master, player)) expect((await item(page, 'Porta')).rotation, how).toBe(0)
+  }
 })

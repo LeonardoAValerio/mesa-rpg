@@ -83,7 +83,7 @@ export class Selection {
     const line = 2 / this.board.camera.scale
     const c = this.corners(t, this.resize?.width ?? t.width)
     this.outline.poly(c.flat(), true).stroke({ width: line, color: 0xffffff, alpha: 0.9 })
-    if (this.client.you?.role === 'master') {
+    if (this.client.you?.role === 'master' && this.board.tool === 'select') {
       const s = HANDLE_PX / this.board.camera.scale
       this.handle.rect(c[2][0] - s / 2, c[2][1] - s / 2, s, s).fill(0xffffff).stroke({ width: line, color: 0x111827 })
     }
@@ -92,6 +92,7 @@ export class Selection {
   /** ITEM-13: E turns clockwise, Q anticlockwise; nothing when the viewer may not move it (the server says why). */
   private key = (e: KeyboardEvent): void => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return
+    if (e.key === 'Escape') return this.board.deselect()
     const key = e.key.toLowerCase()
     if (key !== 'q' && key !== 'e') return
     const t = this.item()
@@ -108,7 +109,7 @@ export class Selection {
   /** Whether a map point is on the master's resize handle. */
   onHandle(p: { x: number; y: number }): boolean {
     const t = this.item()
-    if (!t || this.client.you?.role !== 'master') return false
+    if (!t || this.client.you?.role !== 'master' || !this.handleActive) return false
     const [, , corner] = this.corners(t, t.width)
     const r = HANDLE_PX / this.board.camera.scale
     return Math.abs(p.x - corner[0]) <= r && Math.abs(p.y - corner[1]) <= r
@@ -122,6 +123,11 @@ export class Selection {
 
   private stageDown = (e: FederatedPointerEvent): void => {
     if (e.button === 0 && !this.resize && this.onHandle(this.board.toWorld(e.global.x, e.global.y))) this.beginResize()
+  }
+
+  /** The handle works with the select tool only, and never while Space pans (MAP-08). */
+  private get handleActive(): boolean {
+    return this.board.tool === 'select' && !this.board.spaceHeld
   }
 
   /** ITEM-04: the width follows the handle's distance from the centre, along the item's own axis. */

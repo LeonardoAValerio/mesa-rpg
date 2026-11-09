@@ -1,6 +1,6 @@
 import 'pixi.js/unsafe-eval' // keeps the CSP free of 'unsafe-eval'
 import { Application, Container, Graphics, Sprite, type FederatedPointerEvent, type Texture } from 'pixi.js'
-import { canMove, dropPosition } from '../../core/items'
+import { canMove, dropPosition, rotatedExtent } from '../../core/items'
 import { DEFAULT_FACTION_COLORS, type FactionColors, type Token, type View } from '../../core/types'
 import type { TableClient } from '../net/table-client'
 import { h } from '../ui/dom'
@@ -20,7 +20,7 @@ export interface BoardOptions {
   textures?: TextureProvider
   colors?: () => FactionColors
   onImportMap?: () => void
-  onSelect?: (id: string) => void
+  onSelect?: (id: string | null) => void
 }
 
 export interface TokenSnapshot {
@@ -144,11 +144,19 @@ export class Board {
     return tex && tex.width > 0 ? tex.height / tex.width : 1
   }
 
-  /** ITEM-08, ITEM-09, ITEM-10: where an item dropped at (x, y) lands; Shift inverts the snap. */
-  dropAt(kind: Token['kind'], hash: string, width: number, x: number, y: number, shift: boolean): { x: number; y: number } {
+  /** ITEM-08, ITEM-09, ITEM-10: where an item dropped at (x, y) lands; Shift inverts the snap; a turned item snaps by its drawn box. */
+  dropAt(kind: Token['kind'], hash: string, width: number, x: number, y: number, shift: boolean, rotation = 0): { x: number; y: number } {
     const grid = this.client.view?.grid
     if (!grid) return { x, y }
-    return dropPosition(kind, shift, grid, x, y, width, width * this.aspect(hash))
+    const box = rotatedExtent(width, width * this.aspect(hash), rotation)
+    return dropPosition(kind, shift, grid, x, y, box.w, box.h)
+  }
+
+  /** Clears the selection: an empty click, Esc or another tool (ITEM-13). */
+  deselect(): void {
+    if (!this.selection.selected) return
+    this.selection.select(null)
+    this.opts.onSelect?.(null)
   }
 
   private bindInput(): void {
@@ -197,6 +205,10 @@ export class Board {
       const w = this.toWorld(e.global.x, e.global.y)
       this.drag.container.position.set(w.x - this.drag.dx, w.y - this.drag.dy)
     })
+    stage.on('pointerdown', (e: FederatedPointerEvent) => {
+      // a click on the empty map clears the selection; a click on an item or the handle never reaches here as the target
+      if (e.target === stage && e.button === 0 && !this.space && this.tool === 'select' && !this.selection.onHandle(this.toWorld(e.global.x, e.global.y))) this.deselect()
+    })
     stage.on('pointerup', (e: FederatedPointerEvent) => void this.endDrag(e.shiftKey))
     stage.on('pointerupoutside', (e: FederatedPointerEvent) => void this.endDrag(e.shiftKey))
   }
@@ -221,7 +233,7 @@ export class Board {
     if (!view || !view.tokens[d.id]) return this.render(true)
     const t = view.tokens[d.id]
     if (!d.moved) return // a click: nothing moves, not even a snap
-    const p = this.dropAt(t.kind, t.hash, t.width, d.container.x, d.container.y, shift)
+    const p = this.dropAt(t.kind, t.hash, t.width, d.container.x, d.container.y, shift, t.rotation)
     d.container.position.set(p.x, p.y)
     if (t.x === p.x && t.y === p.y) return
     const r = await this.client.send({ type: 'token/move', id: d.id, x: p.x, y: p.y })
@@ -238,6 +250,7 @@ export class Board {
   setTool(tool: Tool): void {
     this.tool = tool
     this.app.canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair'
+    if (tool !== 'select') this.deselect()
     for (const fn of this.toolListeners) fn(tool)
   }
 
@@ -334,7 +347,15 @@ export class Board {
     const r = this.app.canvas.getBoundingClientRect()
     const tokens: TokenSnapshot[] = []
     if (view) {
-      const order = [...this.objectLayer.children, ...this.characterLayer.children]
+      // the real drawing order: every item container under the token layer, in the order the renderer walks them
+      const order: unknown[] = []
+      const walk = (c: Container): void => {
+        for (const child of c.children) {
+          if ([...this.sprites.values()].some((s) => s.root === child)) order.push(child)
+          else walk(child as Container)
+        }
+      }
+      walk(this.tokenLayer)
       for (const [id, s] of this.sprites) {
         const t = view.tokens[id]
         if (!t) continue
@@ -343,8 +364,7 @@ export class Board {
           name: t.name,
           kind: t.kind,
           label: s.label,
-          x: s.root.x,
-          y: s.root.y,
+          ...this.drawnCentre(s),
           w: s.body.children[0].width, // measured from the drawn image or placeholder
           h: s.body.children[0].height,
           rotation: Math.round((s.body.rotation * 180) / Math.PI),
@@ -368,6 +388,14 @@ export class Board {
       dragging: this.drag?.id ?? null,
       empty: this.emptyEl.hidden ? null : (this.emptyEl.querySelector('p')?.textContent ?? null)
     }
+  }
+
+  /** The centre of the drawn image, from its bounds on screen, back in map pixels (ITEM-01). */
+  private drawnCentre(s: TokenSprite): { x: number; y: number } {
+    const b = s.body.children[0].getBounds()
+    const p = this.world.toLocal({ x: b.x + b.width / 2, y: b.y + b.height / 2 })
+    const r = (v: number): number => Math.round(v * 1000) / 1000
+    return { x: r(p.x), y: r(p.y) }
   }
 
   private textureSize(hash: string): string {

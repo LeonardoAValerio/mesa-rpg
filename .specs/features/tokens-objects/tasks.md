@@ -248,8 +248,8 @@ Proof: run e2e | ✓ [C10] ITEM-10
 **C11** - The manifest's `tipo`, `tamanho` and `faccao` set kind, width and ring, with fallbacks (ITEM-11, AC 6)
 Proof: run unit | ✓ [C11] ITEM-11
 
-**C12** - Rotação accepts multiples of 15 from 0 to 345 and rounds the rest (ITEM-12, AC 1)
-Proof: run unit | ✓ [C12] ITEM-12
+**C12** - Rotação accepts multiples of 15 from 0 to 345, rounds the rest, and turns the item in every window (ITEM-12, AC 1)
+Proof: run e2e | ✓ [C12] ITEM-12
 
 **C13** - E and Q rotate the selected item 15° in every window (ITEM-13, AC 2)
 Proof: run e2e | ✓ [C13] ITEM-13
@@ -261,7 +261,7 @@ Proof: run unit | ✓ [C14] ITEM-14
 Proof: run unit | ✓ [C15] ITEM-15
 
 **C16** - A Travado item: every move or rotation is refused with "Item travado", the master's too, and no drag starts (ITEM-16, AC 3)
-Proof: run unit | ✓ [C16] ITEM-16
+Proof: run e2e | ✓ [C16] ITEM-16
 
 **C17** - A refused move or rotation puts the item back (ITEM-17, AC 4)
 Proof: run e2e | ✓ [C17] ITEM-17

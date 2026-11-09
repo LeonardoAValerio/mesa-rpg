@@ -25,6 +25,7 @@ jobs:
       - name: Unit tests
         run: npx vitest run
       - name: Build and publish
-        run: npm run release
+        # the release is named after the tag (v<versão>); electron-builder would name it <versão>
+        run: npm run release -- -c.releaseInfo.releaseName=${{ github.ref_name }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

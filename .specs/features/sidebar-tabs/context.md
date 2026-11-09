@@ -17,3 +17,9 @@ Feature C of `.specs/ROADMAP.md`: the sidebar becomes tabs. user (request): "ser
 ## Deferred Ideas
 
 - Ficha and other sections (later features).
+
+## Change of scope (same day, before approval)
+
+- user: "Será que a gente não conseguiria fazer alguma coisa como aqueles editores complexos, como photoshop, e outros, onde você consegue liberar ou esconder as abas e organizar elas dentro da tela?"
+- Answer: docking panels with `dockview-core` (8.9.0, MIT, zero dependencies, vanilla TypeScript); plain tabs would be thrown away later. user: "Direto no estilo Photoshop (Recomendado)" (option: panels Tokens, Mapas, Dados, Chat and Conectados as tabs that are dragged, split, floated, closed and reopened; layout saved per computer with "Restaurar layout"; the starting layout is the tabs right of the table).
+- The earlier answers still hold: Dados and Chat separate with counts; Mapas holds Cena and the fog buttons; a click on an item only highlights Tokens; Sons comes with feature E.

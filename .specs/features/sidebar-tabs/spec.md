@@ -1,5 +1,7 @@
 # Mesa RPG — Painéis encaixáveis
 
+**Approved**: 2026-11-09 - user: "Aprovo"
+
 ## Problem Statement
 
 A barra lateral empilha tudo numa coluna: Conectados, Cena, Mapa e grid, Névoa, Dados e chat juntos, a biblioteca e o editor do item. O mestre rola a barra para achar cada coisa, e dados e chat se misturam. user: "seria importante a gente conseguir dividir as abas, uma aba de tokens, uma de mapas, uma de dados, uma de chat (...)"; e depois: "alguma coisa como aqueles editores complexos, como photoshop, e outros, onde você consegue liberar ou esconder as abas e organizar elas dentro da tela".

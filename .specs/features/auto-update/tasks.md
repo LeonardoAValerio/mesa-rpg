@@ -380,7 +380,7 @@ Proof: run e2e | ✓ [C11] UPD-11
 Proof: run e2e | ✓ [C12] UPD-12
 
 **C13** - Unpackaged, the updater never checks (UPD-13, AC 13)
-Proof: run unit | ✓ [C13] UPD-13
+Proof: run e2e | ✓ [C13] UPD-13
 
 **C14** - The start screen shows "Versão <versão>" (UPD-14, AC 14)
 Proof: run e2e | ✓ [C14] UPD-14

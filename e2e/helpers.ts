@@ -16,13 +16,15 @@ export interface AppHandle {
 const open: AppHandle[] = []
 
 /** Starts one app instance with its own profile, as a second PC would have. */
-export async function launch(opts: { ifaces?: string[]; version?: string } = {}): Promise<AppHandle> {
+export async function launch(opts: { ifaces?: string[]; version?: string; unpackaged?: boolean } = {}): Promise<AppHandle> {
   const userData = mkdtempSync(pathJoin(tmpdir(), 'mesa-e2e-'))
   const env: Record<string, string> = { ...(process.env as Record<string, string>), MESA_TEST: '1', MESA_USER_DATA: userData }
   delete env.ELECTRON_RUN_AS_NODE // set by VS Code terminals; it turns Electron into plain Node
   if (opts.ifaces) env.MESA_TEST_IFACES = JSON.stringify(opts.ifaces)
   if (opts.version) env.MESA_VERSION = opts.version // runs this instance as another app version
   else delete env.MESA_VERSION
+  if (opts.unpackaged) env.MESA_TEST_UNPACKAGED = '1' // the fake updater gets Electron's own isPackaged, as in `npm run dev`
+  else delete env.MESA_TEST_UNPACKAGED
   const app = await electron.launch({ args: [pathJoin(__dirname, '..')], env })
   const page = await app.firstWindow()
   await page.waitForSelector('[data-testid=host]')

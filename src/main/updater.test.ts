@@ -33,7 +33,7 @@ function downloadSequence(u: FakeUpdater): void {
 }
 
 describe('startUpdater', () => {
-  it('[C13] UPD-13 unpackaged, the updater never checks for updates and ignores its events', () => {
+  it('UPD-13 unpackaged, the updater never checks for updates and ignores its events', () => {
     const { updater, states } = setup(false)
     expect(updater.checks).toBe(0)
     downloadSequence(updater)

@@ -38,7 +38,8 @@ function setupUpdater(): void {
   const fake = test ? new FakeUpdater() : null
   if (fake) (globalThis as { __mesaUpdater?: FakeUpdater }).__mesaUpdater = fake
   const updater = startUpdater({
-    isPackaged: test || app.isPackaged,
+    // Tests run the packaged path on the fake, unless MESA_TEST_UNPACKAGED asks for Electron's own answer (UPD-13).
+    isPackaged: test && process.env.MESA_TEST_UNPACKAGED !== '1' ? true : app.isPackaged,
     updater: fake ?? autoUpdater,
     stopServer: stopHost,
     onState: (state) => {

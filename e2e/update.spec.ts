@@ -106,6 +106,14 @@ test('[C8] UPD-08 after the master confirms the restart the player sees "O mestr
   expect(await master.app.evaluate(() => (globalThis as unknown as { __mesaServer: unknown }).__mesaServer)).toBeNull()
 })
 
+test('[C13] UPD-13 an unpackaged app (npm run dev) never checks for updates and shows no bar', async () => {
+  const app = await launch({ unpackaged: true })
+  await emit(app, 'update-available', { version: '0.2.0' })
+  await emit(app, 'update-downloaded', { version: '0.2.0' })
+  expect(await app.app.evaluate(() => (globalThis as unknown as { __mesaUpdater: FakeUpdaterHook }).__mesaUpdater.checks)).toBe(0)
+  await expect(app.page.getByTestId('update-bar')).toBeHidden()
+})
+
 test('[C11] UPD-11 the same or an older version shows no bar', async () => {
   const app = await launch()
   expect(await app.app.evaluate(() => (globalThis as unknown as { __mesaUpdater: FakeUpdaterHook }).__mesaUpdater.checks)).toBe(1)

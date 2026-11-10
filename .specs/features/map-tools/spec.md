@@ -199,5 +199,5 @@ Proof: run e2e | ✓ [C15] MTB-15
 ## Handoff
 
 **Settled mid-build:** steps 2 and 3 went in one commit (the tool column and the fog panel share `src/renderer/ui/map-toolbar.ts`). The fog e2e that started drags at map (10, 10) now start mid-map, since the column covers the map's top-left corner. Letting `pointerup` pass the column was meant to stop a drag sticking there; a mutation showed Pixi ends the drag either way, so that test is only a regression guard. FOGT-01 and FOGT-07 tests (fog-shapes C10, C16) were removed as replaced (AD-008).
-**Dispatched:** Verifier (validate.md) at the proofs commit after the walk
+**Dispatched:** Verifier (validate.md) at 456bace; returned FAIL with F1-F3, closed by 265b9b1
 **Walked:** at 812da94 in Electron (MESA_TEST=1, hosted table with two test addresses, `Florestas Frias.jpg` imported from Mapas): the top bar shows only "Mestre · mestre", "Painéis" and "Encerrar mesa"; the column sits on the map's left edge with five icons; the ruler's tip reads "Régua (R)"; after "Cobrir tudo", N opened the fog panel beside the column, Retângulo and Revelar were picked, Esc closed it and the Névoa button showed the square icon; a drag on the map revealed a rectangle (no preview left over); the Rede tab beside Conectados shows "Porta …", the firewall hint and the addresses with "Copiar".

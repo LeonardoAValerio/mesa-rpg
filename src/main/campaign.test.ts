@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, truncateSync, writeFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -145,5 +145,57 @@ describe('campaign folder', () => {
     expect(await c.addFiles('tokens', [join(src, 'goblin.png'), join(src, 'Goblin.PNG')])).toEqual(['tokens/goblin (2).png', 'tokens/Goblin (3).PNG'])
     expect((await readdir(join(root, 'C', 'tokens'))).sort()).toEqual(['Goblin (3).PNG', 'goblin (2).png', 'goblin.png'])
     expect(c.all.map((e) => e.path).sort()).toEqual(['tokens/Goblin (3).PNG', 'tokens/goblin (2).png', 'tokens/goblin.png'])
+  })
+})
+
+describe('sounds in the campaign folder', () => {
+  const header = (kind: 'wav' | 'ogg' | 'mp3'): Buffer =>
+    kind === 'wav' ? Buffer.from('RIFF\x24\x00\x00\x00WAVEfmt ', 'latin1') : kind === 'ogg' ? Buffer.from('OggS\x00\x02rest', 'latin1') : Buffer.from('ID3\x03\x00\x00rest', 'latin1')
+
+  it('SOM-01 lists musicas/ and efeitos/ by name without extension, subfolders as groups', async () => {
+    const { root, c } = folder()
+    await c.create('Mesa')
+    put(join(root, 'Mesa'), 'musicas/Ambiente/chuva.mp3', header('mp3'))
+    put(join(root, 'Mesa'), 'musicas/batalha.ogg', header('ogg'))
+    put(join(root, 'Mesa'), 'efeitos/espada.wav', header('wav'))
+    await c.open('Mesa')
+    expect(c.sounds.map((s) => [s.section, s.group, s.name, s.path, s.type])).toEqual([
+      ['efeitos', '', 'espada', 'efeitos/espada.wav', 'wav'],
+      ['musicas', '', 'batalha', 'musicas/batalha.ogg', 'ogg'],
+      ['musicas', 'Ambiente', 'chuva', 'musicas/Ambiente/chuva.mp3', 'mp3']
+    ])
+    expect(c.all).toEqual([]) // sounds are not images
+    expect(c.pathOf(c.sounds[0].hash)).toBe('efeitos/espada.wav')
+  })
+
+  it('[C3] SOM-03 files that are not MP3, OGG, WAV or M4A, or over 100 MB, are not listed; exactly 100 MB is', async () => {
+    const { root, c } = folder()
+    await c.create('Mesa')
+    const dir = join(root, 'Mesa')
+    put(dir, 'musicas/ok.wav', header('wav'))
+    put(dir, 'musicas/falso.mp3', png()) // an image renamed
+    put(dir, 'musicas/notas.txt', 'texto')
+    put(dir, 'efeitos/vazio.ogg', '')
+    const big = (name: string, size: number): void => {
+      put(dir, name, header('wav'))
+      truncateSync(join(dir, name), size)
+    }
+    big('musicas/limite.wav', 100 * 1024 * 1024)
+    big('musicas/grande.wav', 100 * 1024 * 1024 + 1)
+    await c.open('Mesa')
+    expect(c.sounds.map((s) => s.path)).toEqual(['musicas/limite.wav', 'musicas/ok.wav'])
+  })
+
+  it('SOM-04 "Adicionar arquivos" copies into musicas/ or efeitos/, a repeat named (2)', async () => {
+    const { root, c } = folder()
+    await c.create('Mesa')
+    await c.open('Mesa')
+    const src = join(mkdtempSync(join(tmpdir(), 'mesa-src-')), 'chuva.wav')
+    writeFileSync(src, header('wav'))
+    expect(await c.addFiles('musicas', [src])).toEqual(['musicas/chuva.wav'])
+    expect(await c.addFiles('musicas', [src])).toEqual(['musicas/chuva (2).wav'])
+    expect(await c.addFiles('efeitos', [src])).toEqual(['efeitos/chuva.wav'])
+    expect(c.sounds.map((s) => s.path).sort()).toEqual(['efeitos/chuva.wav', 'musicas/chuva (2).wav', 'musicas/chuva.wav'])
+    expect(existsSync(join(root, 'Mesa', 'musicas', 'chuva (2).wav'))).toBe(true)
   })
 })

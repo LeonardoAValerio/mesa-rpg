@@ -7,7 +7,7 @@ import type { CampaignInfo, CampaignsResult, HostResult, ImportedImage, PaletteR
 import { join } from 'node:path'
 import { AssetCache } from './asset-cache'
 import { AssetStore, sha256 } from './asset-store'
-import { CampaignFolder, type Section } from './campaign'
+import { CampaignFolder, type Section, type SoundSection } from './campaign'
 import { readImageFile } from './import'
 import { CampaignScenes, type SaveResult } from './scenes'
 import { readSettings, writeSettings } from './settings'
@@ -31,7 +31,7 @@ const settingsFile = (): string => join(app.getPath('userData'), 'settings.json'
 
 async function campaignInfo(): Promise<CampaignInfo | null> {
   if (!folder?.name || !scenes) return null
-  return { name: folder.name, entries: folder.all, scenes: await scenes.list() }
+  return { name: folder.name, entries: folder.all, sounds: folder.sounds, scenes: await scenes.list() }
 }
 
 /** Ends the hosted table; players see "O mestre encerrou a mesa" (NET-13). */
@@ -88,7 +88,12 @@ export function registerIpc(version: string): void {
     await folder!.open(String(campaign))
     await writeSettings(settingsFile(), { lastCampaign: String(campaign) })
     const sender: WebContents = e.sender
-    watcherOff = folder!.onChange(() => void campaignInfo().then((info) => !sender.isDestroyed() && sender.send('mesa:campaign', info)))
+    const effectsOf = (): string[] => folder!.sounds.filter((s) => s.section === 'efeitos').map((s) => s.hash)
+    server.setEffects(effectsOf()) // SOM-17
+    watcherOff = folder!.onChange(() => {
+      server?.setEffects(effectsOf())
+      void campaignInfo().then((info) => !sender.isDestroyed() && sender.send('mesa:campaign', info))
+    })
     exposeForTests()
     return { ok: true, port: server.port, hostToken }
   })
@@ -100,8 +105,9 @@ export function registerIpc(version: string): void {
     else await shell.openPath(dir)
   })
   /** CAMP-14 */
-  ipcMain.handle('mesa:addFiles', async (_e, section: Section): Promise<{ ok: true; added: string[] } | { ok: false; canceled: true }> => {
-    const pick = await dialog.showOpenDialog({ title: 'Adicionar arquivos', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'webp'] }] })
+  ipcMain.handle('mesa:addFiles', async (_e, section: Section | SoundSection): Promise<{ ok: true; added: string[] } | { ok: false; canceled: true }> => {
+    const filter = section === 'musicas' || section === 'efeitos' ? { name: 'Áudio', extensions: ['mp3', 'ogg', 'wav', 'm4a'] } : { name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'webp'] } // SOM-04
+    const pick = await dialog.showOpenDialog({ title: 'Adicionar arquivos', properties: ['openFile', 'multiSelections'], filters: [filter] })
     if (pick.canceled || !pick.filePaths.length) return { ok: false, canceled: true }
     return { ok: true, added: await folder!.addFiles(section, pick.filePaths) }
   })

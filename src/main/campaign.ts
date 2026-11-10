@@ -6,11 +6,25 @@ import type { ItemKind } from '../core/items'
 import { baseName, parseManifest } from '../core/manifest'
 import type { Faction } from '../core/types'
 import type { AssetStore } from './asset-store'
-import { readImageFile } from './import'
+import type { AudioType } from '../core/sound'
+import { readAudioFile, readImageFile } from './import'
 
 export type Section = 'mapas' | 'tokens' | 'objetos'
 export const SECTIONS: Section[] = ['mapas', 'tokens', 'objetos']
+export type SoundSection = 'musicas' | 'efeitos'
+export const SOUND_SECTIONS: SoundSection[] = ['musicas', 'efeitos']
 const IMAGE = /\.(png|jpe?g|webp)$/i
+const AUDIO = /\.(mp3|ogg|oga|wav|m4a)$/i
+
+/** One audio file of `musicas/` or `efeitos/` (SOM-01). */
+export interface SoundEntry {
+  section: SoundSection
+  path: string
+  group: string
+  name: string
+  hash: string
+  type: AudioType
+}
 
 /** One image of the campaign as the panels list it (CAMP-08, CAMP-09). */
 export interface CampaignEntry {
@@ -32,7 +46,7 @@ interface Cached {
   mtimeMs: number
   size: number
   manifest: string | null
-  entry: CampaignEntry | null
+  entry: CampaignEntry | SoundEntry | null
 }
 
 /** CAMP-01..15: the campaigns under `Documentos/Mesa RPG/`, and the open one read into the asset store and watched. */
@@ -42,6 +56,7 @@ export class CampaignFolder {
   private timer: ReturnType<typeof setTimeout> | null = null
   private cache = new Map<string, Cached>()
   private entries: CampaignEntry[] = []
+  private soundEntries: SoundEntry[] = []
   private listeners = new Set<(entries: CampaignEntry[]) => void>()
 
   constructor(readonly root: string, private readonly store: AssetStore, private readonly debounceMs = 300) {}
@@ -110,15 +125,23 @@ export class CampaignFolder {
     return this.entries
   }
 
-  /** The campaign path of an image, if the campaign holds it. */
+  /** SOM-01: the audio files of the last read. */
+  get sounds(): SoundEntry[] {
+    return this.soundEntries
+  }
+
+  /** The campaign path of an image or audio file, if the campaign holds it. */
   pathOf(hash: string): string | undefined {
-    return this.entries.find((e) => e.hash === hash)?.path
+    return (this.entries.find((e) => e.hash === hash) ?? this.soundEntries.find((e) => e.hash === hash))?.path
   }
 
   /** CAMP-08..10, CAMP-15: every readable image of mapas/, tokens/ and objetos/, in their subfolders; others are left out. */
   async scan(): Promise<CampaignEntry[]> {
     const dir = this.dir()
-    if (!dir) return (this.entries = [])
+    if (!dir) {
+      this.soundEntries = []
+      return (this.entries = [])
+    }
     const seen = new Set<string>()
     const out: CampaignEntry[] = []
     for (const section of SECTIONS) {
@@ -130,10 +153,37 @@ export class CampaignFolder {
         if (entry) out.push(entry)
       }
     }
+    const sounds: SoundEntry[] = []
+    for (const section of SOUND_SECTIONS) {
+      for (const file of await walk(join(dir, section))) {
+        if (!AUDIO.test(file)) continue
+        const path = relative(dir, file).split(sep).join('/')
+        seen.add(path)
+        const entry = await this.readSound(file, path, section)
+        if (entry) sounds.push(entry)
+      }
+    }
+    sounds.sort((a, b) => a.section.localeCompare(b.section) || a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
+    this.soundEntries = sounds
     for (const p of this.cache.keys()) if (!seen.has(p)) this.cache.delete(p)
     out.sort((a, b) => a.section.localeCompare(b.section) || a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
     this.entries = out
     return out
+  }
+
+  /** SOM-03: an audio file by its header and size; a bad one is left out. */
+  private async readSound(file: string, path: string, section: SoundSection): Promise<SoundEntry | null> {
+    const st = await stat(file).catch(() => null)
+    if (!st) return null
+    const hit = this.cache.get(path)
+    if (hit && hit.mtimeMs === st.mtimeMs && hit.size === st.size) return hit.entry as SoundEntry | null
+    const audio = await readAudioFile(file)
+    const parts = path.split('/')
+    const entry: SoundEntry | null = audio.ok
+      ? { section, path, group: parts.slice(1, -1).join('/'), name: baseName(parts[parts.length - 1]), hash: this.store.put(audio.bytes), type: audio.type }
+      : null
+    this.cache.set(path, { mtimeMs: st.mtimeMs, size: st.size, manifest: null, entry })
+    return entry
   }
 
   private async read(file: string, path: string, section: Section): Promise<CampaignEntry | null> {
@@ -141,7 +191,7 @@ export class CampaignFolder {
     if (!st) return null
     const manifest = section === 'mapas' ? null : await readFile(file.replace(/\.[^.]+$/, '.json'), 'utf8').catch(() => null)
     const hit = this.cache.get(path)
-    if (hit && hit.mtimeMs === st.mtimeMs && hit.size === st.size && hit.manifest === manifest) return hit.entry
+    if (hit && hit.mtimeMs === st.mtimeMs && hit.size === st.size && hit.manifest === manifest) return hit.entry as CampaignEntry | null
     const img = await readImageFile(file)
     let entry: CampaignEntry | null = null
     if (img.ok) {
@@ -169,7 +219,7 @@ export class CampaignFolder {
   }
 
   /** CAMP-14: copies the files into the section, a repeated name becoming `name (2).ext`; returns the new paths. */
-  async addFiles(section: Section, sources: string[]): Promise<string[]> {
+  async addFiles(section: Section | SoundSection, sources: string[]): Promise<string[]> {
     const dir = this.dir()
     if (!dir) return []
     const target = join(dir, section)
@@ -195,6 +245,7 @@ export class CampaignFolder {
     this.current = null
     this.cache.clear()
     this.entries = []
+    this.soundEntries = []
   }
 }
 

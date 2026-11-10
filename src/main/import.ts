@@ -1,3 +1,4 @@
+import { audioInfo, MAX_AUDIO_BYTES, type AudioType } from '../core/sound'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { imageInfo, INVALID_IMAGE, MAX_IMAGE_BYTES, type ImageInfo } from '../core/image-info'
@@ -15,6 +16,19 @@ export async function readImageFile(path: string): Promise<ImageFile> {
     return info ? { ok: true, bytes, info } : { ok: false, error: INVALID_IMAGE }
   } catch {
     return { ok: false, error: INVALID_IMAGE }
+  }
+}
+
+/** SOM-03: an MP3, OGG, WAV or M4A file of at most 100 MB, by its own header. */
+export async function readAudioFile(path: string): Promise<{ ok: true; bytes: Uint8Array; type: AudioType } | { ok: false }> {
+  try {
+    const st = await stat(path)
+    if (!st.isFile() || st.size > MAX_AUDIO_BYTES) return { ok: false }
+    const bytes = new Uint8Array(await readFile(path))
+    const type = audioInfo(bytes)
+    return type ? { ok: true, bytes, type } : { ok: false }
+  } catch {
+    return { ok: false }
   }
 }
 

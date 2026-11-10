@@ -26,9 +26,19 @@ export interface CampaignEntry {
   w: number
   h: number
 }
+/** One audio file of `musicas/` or `efeitos/` (SOM-01). */
+export interface SoundEntry {
+  section: 'musicas' | 'efeitos'
+  path: string
+  group: string
+  name: string
+  hash: string
+  type: 'mp3' | 'ogg' | 'wav' | 'm4a'
+}
 export interface CampaignInfo {
   name: string
   entries: CampaignEntry[]
+  sounds: SoundEntry[]
   scenes: string[]
 }
 export type CampaignsResult = { list: string[]; last: string | null }
@@ -51,7 +61,7 @@ export interface MesaApi {
   campaign(): Promise<CampaignInfo | null>
   onCampaign(fn: (info: CampaignInfo | null) => void): () => void
   openFolder(): Promise<void>
-  addFiles(section: 'mapas' | 'tokens' | 'objetos'): Promise<{ ok: true; added: string[] } | { ok: false; canceled: true }>
+  addFiles(section: 'mapas' | 'tokens' | 'objetos' | 'musicas' | 'efeitos'): Promise<{ ok: true; added: string[] } | { ok: false; canceled: true }>
   assetBytes(hash: string): Promise<Uint8Array | null>
   saveCena(name: string, replace: boolean): Promise<CenaSaveResult>
   loadCena(name: string): Promise<SceneFileResult>

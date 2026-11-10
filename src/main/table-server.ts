@@ -8,11 +8,13 @@ import { applyAction, type ReducerCtx } from '../core/reducer'
 import { normalizeName, validateJoin } from '../core/session-rules'
 import { versionError } from '../core/version'
 import { imageInfo } from '../core/image-info'
+import { applySound, audioInfo, emptySound, FADE_MS, pruneLayers, type Sound, type SoundAction } from '../core/sound'
 import { emptyScene, type Actor, type LibraryItem, type LogEntry, type Role, type Scene, type View } from '../core/types'
 import { diffViews, viewFor } from '../core/view'
 import { AssetStore, HASH_RE } from './asset-store'
 
 export const MASTER_NAME = 'Mestre'
+const AUDIO_MIME = { mp3: 'audio/mpeg', ogg: 'audio/ogg', wav: 'audio/wav', m4a: 'audio/mp4' } as const
 
 interface Session {
   ws: WebSocket
@@ -49,6 +51,12 @@ export interface TableServer {
   readonly store: AssetStore
   /** Adds token images to the master's library (sent to the master only). */
   addLibrary(items: LibraryItem[]): void
+  /** SOM-17: the campaign's effects, sent to every window to download ahead and served to them. */
+  setEffects(hashes: string[]): void
+  /** The music layers playing (SOM-25). */
+  getSound(): Sound
+  /** A sound action as the master, for scenes (SOM-26, SOM-27). */
+  masterSound(action: SoundAction): { ok: true } | { ok: false; reason: string }
   close(): Promise<void>
 }
 
@@ -62,10 +70,17 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
 
   const store = opts.store ?? new AssetStore()
   let library: LibraryItem[] = []
+  let sound: Sound = emptySound()
+  let effects: string[] = []
+  const pruneTimers = new Set<ReturnType<typeof setTimeout>>()
 
   /** ASSET-06: only images the scene or the library use are served; nothing else on disk is reachable. */
   const referenced = (hash: string): boolean =>
-    scene.map?.hash === hash || Object.values(scene.tokens).some((t) => t.hash === hash) || library.some((l) => l.hash === hash)
+    scene.map?.hash === hash ||
+    Object.values(scene.tokens).some((t) => t.hash === hash) ||
+    library.some((l) => l.hash === hash) ||
+    sound.layers.some((l) => l.hash === hash) || // SOM-14
+    effects.includes(hash) // SOM-17
 
   const http: Server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const m = /^\/asset\/([^/?#]+)$/.exec(req.url ?? '')
@@ -75,9 +90,10 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
       res.writeHead(404).end()
       return
     }
-    const type = imageInfo(bytes)?.type ?? 'png'
+    const audio = audioInfo(bytes)
+    const type = audio ? AUDIO_MIME[audio] : `image/${imageInfo(bytes)?.type ?? 'png'}`
     // the window that fetches it may be on another origin (the dev server at http://localhost:5173)
-    res.writeHead(200, { 'Content-Type': `image/${type}`, 'Content-Length': bytes.length, 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' })
+    res.writeHead(200, { 'Content-Type': type, 'Content-Length': bytes.length, 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' })
     res.end(Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength))
   })
   const wss = new WebSocketServer({ server: http, maxPayload: 1024 * 1024 })
@@ -94,7 +110,7 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
   const broadcastViews = (): void => {
     const players = names()
     for (const s of sessions) {
-      const next = viewFor(scene, actorOf(s), players)
+      const next = viewFor(scene, actorOf(s), players, sound)
       const ops = s.last ? diffViews(s.last, next) : []
       s.last = next
       if (ops.length) send(s, { t: 'patch', ops, serverNow: Date.now() })
@@ -113,7 +129,37 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     for (const x of sessions) if (x !== s) send(x, { t: 'ephemeral', from: s.name, e })
   }
 
+  /** A layer turned off leaves the state when its 2-second fade is over. */
+  const schedulePrune = (): void => {
+    const t = setTimeout(() => {
+      pruneTimers.delete(t)
+      const next = pruneLayers(sound, Date.now())
+      if (next !== sound) {
+        sound = next
+        broadcastViews()
+      }
+    }, FADE_MS + 20)
+    pruneTimers.add(t)
+  }
+  /** SOM-06..11, SOM-16, SOM-19: sound actions; files must be in the store, effects go to every window. */
+  const runSound = (actor: Actor, action: SoundAction): { ok: true } | { ok: false; reason: string } => {
+    const hashes = action.type === 'sound/set' ? action.layers.map((l) => l.hash) : action.type === 'sound/toggle' || action.type === 'sound/effect' ? [action.hash] : []
+    if (actor.role === 'master' && hashes.some((x) => !store.has(x))) return { ok: false, reason: 'Arquivo desconhecido' }
+    const r = applySound(sound, actor, action, Date.now())
+    if (!r.ok) return r
+    sound = r.sound
+    if (r.effect) for (const x of sessions) send(x, { t: 'effect', hash: r.effect.hash, at: r.effect.at })
+    if (sound.layers.some((l) => l.stoppingAt !== null)) schedulePrune()
+    broadcastViews()
+    return { ok: true }
+  }
+
   const handleAction = (s: Session, id: string, action: Action): void => {
+    if (action.type.startsWith('sound/')) {
+      const r = runSound(actorOf(s), action as SoundAction)
+      send(s, r.ok ? { t: 'ack', id } : { t: 'reject', id, reason: r.reason })
+      return
+    }
     if ((action.type === 'map/set' || action.type === 'token/place') && !store.has(action.hash)) {
       send(s, { t: 'reject', id, reason: 'Arquivo desconhecido' })
       return
@@ -161,10 +207,11 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
       strokes: new Set()
     }
     sessions.add(session)
-    const view = viewFor(scene, actorOf(session), names())
+    const view = viewFor(scene, actorOf(session), names(), sound)
     session.last = view
     send(session, { t: 'welcome', you: { role: session.role, name }, view, log: log.slice(-200), version: opts.version, serverNow: Date.now() })
     if (session.role === 'master') send(session, { t: 'library', items: library })
+    send(session, { t: 'effects', hashes: effects }) // SOM-17
     broadcastViews()
     return session
   }
@@ -227,6 +274,12 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
       library = [...library, ...items.filter((i) => !known.has(i.hash) && known.add(i.hash))]
       for (const s of sessions) if (s.role === 'master') send(s, { t: 'library', items: library })
     },
+    setEffects: (hashes) => {
+      effects = [...new Set(hashes)]
+      for (const s of sessions) send(s, { t: 'effects', hashes: effects })
+    },
+    getSound: () => pruneLayers(sound, Date.now()),
+    masterSound: (action) => runSound({ role: 'master', name: MASTER_NAME }, action),
     getScene: () => scene,
     setScene: (next) => {
       scene = next
@@ -234,6 +287,7 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     },
     close: async () => {
       clearInterval(heartbeat)
+      for (const t of pruneTimers) clearTimeout(t)
       for (const s of sessions) send(s, { t: 'closed' })
       for (const ws of wss.clients) ws.close(1001, 'closed')
       await new Promise<void>((resolve) => wss.close(() => resolve()))

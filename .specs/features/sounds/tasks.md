@@ -97,12 +97,13 @@ T3 → T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Integration tests: audio files listed with groups and names, a bad or 100 MB + 1 byte file skipped; an effect broadcast reaches master and player with `at`; a player gets the effects list on join and the audio bytes from the route; a player's sound action refused
-- [ ] Quick gate passes
+- [x] Integration tests: audio files listed with groups and names, a bad or 100 MB + 1 byte file skipped; an effect broadcast reaches master and player with `at`; a player gets the effects list on join and the audio bytes from the route; a player's sound action refused
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(main): serve and list the campaign's music and effects`
+**Done**: yes
 
 ---
 

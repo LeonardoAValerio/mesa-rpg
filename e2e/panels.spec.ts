@@ -62,14 +62,19 @@ test('[C12] MTB-12 Rede holds the port, the firewall hint and each address with 
 test('[C15] MTB-15 a layout saved by 0.5.0 gives the starting layout, with Rede', async () => {
   const first = await launch()
   await host(first.page, await freePort())
-  await first.page.getByTestId('close-chat').click() // a real saved layout, without Chat
-  await expect.poll(async () => (await layout(first.page)).groups.flatMap((g) => g.panels)).not.toContain('chat')
+  // a layout like 0.5.0's: no Rede, and Chat closed so it would show if it were used
+  await first.page.getByTestId('close-rede').click()
+  await first.page.getByTestId('close-chat').click()
+  await expect.poll(async () => (await layout(first.page)).groups.flatMap((g) => g.panels)).toEqual(['mesa', 'conectados', 'tokens', 'mapas', 'dados'])
   await first.page.getByTestId('stop-host').click()
-  // put it where 0.5.0 kept it
-  await first.page.evaluate(() => {
-    localStorage.setItem('mesa-layout-v1-master', localStorage.getItem('mesa-layout-v2-master')!)
+  const old = await first.page.evaluate(() => localStorage.getItem('mesa-layout-v2-master'))
+  expect(old).toContain('conectados')
+  expect(old).not.toContain('"rede"')
+  // where 0.5.0 kept it
+  await first.page.evaluate((v) => {
+    localStorage.setItem('mesa-layout-v1-master', v!)
     localStorage.removeItem('mesa-layout-v2-master')
-  })
+  }, old)
   await host(first.page, await freePort())
   await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels)).toEqual(STARTING)
 })

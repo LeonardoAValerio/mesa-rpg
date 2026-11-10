@@ -53,6 +53,10 @@ export function mapToolbar(host: HTMLElement, board: Board, fogOptions: HTMLElem
   const root = h('div', { class: 'map-toolbar' }, column, flyout)
   // MTB-07: presses on the column and the panel never reach the map; a release still does, so a drag that ends here ends
   for (const e of ['pointerdown', 'click', 'wheel', 'contextmenu'] as const) root.addEventListener(e, (ev) => ev.stopPropagation())
+  // a clicked button does not keep the focus, so Space (pan, MAP-08) never presses it again; the radius field still takes focus
+  root.addEventListener('mousedown', (ev) => {
+    if ((ev.target as Element).closest('button')) ev.preventDefault()
+  })
   host.append(root)
 
   const pick = (tool: Tool | 'fog'): void => {
@@ -79,11 +83,11 @@ export function mapToolbar(host: HTMLElement, board: Board, fogOptions: HTMLElem
 
   /** MTB-04, MTB-05: letters pick tools unless the focus is in a field; Esc closes the fog panel (MTB-11). */
   const key = (e: KeyboardEvent): void => {
-    if (e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return
     if (e.key === 'Escape') {
-      flyout.hidden = true
+      flyout.hidden = true // also from the panel's own radius field (MTB-11)
       return
     }
+    if (e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return
     const k = e.key.toUpperCase()
     const def = TOOLS.find((d) => d.key === k)
     if (def) pick(def.tool)

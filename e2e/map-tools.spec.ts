@@ -166,6 +166,34 @@ test('[C11] MTB-11 Esc, a press outside or another tool closes the fog panel; sh
   await expect(fly).toBeVisible()
   await master.page.getByTestId('tool-ruler').click()
   await expect(fly).toBeHidden()
+  // Esc closes it with the focus in its own radius field too
+  await master.page.getByTestId('tool-fog').click()
+  await master.page.getByTestId('tool-fog-brush').click()
+  await master.page.getByTestId('fog-radius').click()
+  await master.page.keyboard.press('Escape')
+  await expect(fly).toBeHidden()
+})
+
+test('Space after clicking Névoa and closing its panel does not open it again (MAP-08, MTB-11)', async () => {
+  const { master } = await table()
+  const fly = master.page.getByTestId('fog-flyout')
+  await master.page.getByTestId('tool-fog').click()
+  await expect(fly).toBeVisible()
+  await master.page.keyboard.press('Escape')
+  await expect(fly).toBeHidden()
+  await master.page.keyboard.press('Space') // the pan key; the Névoa button must not have kept the focus
+  await master.page.waitForTimeout(200)
+  await expect(fly).toBeHidden()
+  // and after a Space + drag pan, releasing Space does not open it either
+  const box = (await master.page.getByTestId('board').boundingBox())!
+  await master.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await master.page.keyboard.down('Space')
+  await master.page.mouse.down()
+  await master.page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 30, { steps: 4 })
+  await master.page.mouse.up()
+  await master.page.keyboard.up('Space')
+  await master.page.waitForTimeout(200)
+  await expect(fly).toBeHidden()
 })
 
 test('an item dragged and released over the tool column ends its drag (MTB-07)', async () => {

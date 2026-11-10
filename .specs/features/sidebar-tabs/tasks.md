@@ -139,12 +139,13 @@ T3 → T4
 
 **Done when**:
 
-- [ ] e2e: selecting with Chat visible keeps Chat and dots Tokens; opening Tokens clears it and shows the item's editor; clearing the selection first clears it
-- [ ] Phase gate passes
+- [x] e2e: selecting with Chat visible keeps Chat and dots Tokens; opening Tokens clears it and shows the item's editor; clearing the selection first clears it
+- [x] Phase gate passes
 
 **Tests**: e2e
 **Gate**: phase
 **Commit**: `feat(ui): selecting an item dots the Tokens tab`
+**Done**: yes
 
 ---
 
@@ -211,7 +212,7 @@ Proof: run e2e | ✓ [C19] PANEL-19
 
 ## Handoff
 
-**Settled mid-build:** dockview only uses the custom tab renderer through `defaultTabComponent`, and passes the panel in `init`; the e2e that use controls in a closed panel first open it with `showPanel` (tokens, library, log, offline). Found in T2: at 300 px the fourth tab sat under dockview's overflow button (unreachable): the right column starts at 340 px with compact tabs, with a test; floated groups cascaded (they used to open on top of each other); dockview's HTML5 drags need human-paced moves in tests (`humanMove`), and the default DnD strategy is kept (with `dndStrategy: 'pointer'` the floating move lost its pointer capture). Phase 1 gate: unit 142, e2e 103.
+**Settled mid-build:** dockview only uses the custom tab renderer through `defaultTabComponent`, and passes the panel in `init`; the e2e that use controls in a closed panel first open it with `showPanel` (tokens, library, log, offline). Found in T2: at 300 px the fourth tab sat under dockview's overflow button (unreachable): the right column starts at 340 px with compact tabs, with a test; floated groups cascaded (they used to open on top of each other); dockview's HTML5 drags need human-paced moves in tests (`humanMove`), and the default DnD strategy is kept (with `dndStrategy: 'pointer'` the floating move lost its pointer capture). Phase 1 gate: unit 142, e2e 103. Phase 2 gate: unit 142, e2e 108.
 **Dispatched:** none
 **Walked:** none
 

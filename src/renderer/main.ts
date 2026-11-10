@@ -43,7 +43,10 @@ onSession(async ({ client, screen }) => {
   const board = await Board.create(screen.board, client, {
     textures,
     onImportMap: () => void panel?.importMap(),
-    onSelect: (id) => editor?.select(id)
+    onSelect: (id) => {
+      editor?.select(id)
+      layout.selected(id)
+    }
   })
   const stopSync = syncAssets(client, textures, screen.board)
   const overlays = new Overlays(board, client)

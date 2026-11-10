@@ -351,3 +351,50 @@ test('[C17] PANEL-17 the count disappears when its panel is shown, also when sho
   await player.page.getByTestId('close-dados').click()
   await expect(player.page.getByTestId('tab-count-chat')).toBeHidden() // Chat is the group's only panel now, so visible
 })
+
+async function clickMap(page: Page, x: number, y: number): Promise<void> {
+  const s = await page.evaluate(() => window.__mesaTest!.board()!)
+  await page.mouse.click(s.canvas.left + x * s.camera.scale + s.camera.x, s.canvas.top + y * s.camera.scale + s.camera.y)
+}
+async function withGoblin(): Promise<{ master: AppHandle; player: AppHandle }> {
+  const t = await table()
+  const tok = await putAsset(t.master.app, solidPng(64, 64, [200, 30, 30]))
+  await act(t.master.page, { type: 'token/place', hash: tok, name: 'Goblin', kind: 'character', x: 350, y: 350, width: 1, ring: null })
+  await expect.poll(async () => (await t.master.page.evaluate(() => window.__mesaTest!.board()!.tokens.length))).toBe(1)
+  return t
+}
+
+test('[C18] PANEL-18 selecting an item while Tokens is hidden keeps the visible panels and dots the Tokens tab', async () => {
+  const { master } = await withGoblin()
+  await showPanel(master.page, 'chat')
+  await expect(master.page.getByTestId('tab-dot-tokens')).toBeHidden()
+  await clickMap(master.page, 350, 350)
+  await expect(master.page.getByTestId('tab-dot-tokens')).toBeVisible()
+  const l = await layout(master.page)
+  expect(groupOf(l, 'chat').active).toBe('chat')
+  await expect(master.page.getByTestId('panel-chat')).toBeVisible()
+  expect(l.visible).not.toContain('tokens')
+  // with Tokens on screen, a selection does not dot it
+  await showPanel(master.page, 'tokens')
+  await master.page.keyboard.press('Escape')
+  await clickMap(master.page, 350, 350)
+  await master.page.waitForTimeout(200)
+  await expect(master.page.getByTestId('tab-dot-tokens')).toBeHidden()
+})
+
+test('[C19] PANEL-19 showing Tokens clears the dot and shows the item\'s editor; clearing the selection first clears it too', async () => {
+  const { master } = await withGoblin()
+  await showPanel(master.page, 'chat')
+  await clickMap(master.page, 350, 350)
+  await expect(master.page.getByTestId('tab-dot-tokens')).toBeVisible()
+  await showPanel(master.page, 'tokens')
+  await expect(master.page.getByTestId('tab-dot-tokens')).toBeHidden()
+  await expect(master.page.getByTestId('token-editor').locator('h3')).toHaveText('Personagem: Goblin')
+  // selected again while hidden, then the selection is cleared (Esc): the dot goes
+  await showPanel(master.page, 'chat')
+  await master.page.keyboard.press('Escape')
+  await clickMap(master.page, 350, 350)
+  await expect(master.page.getByTestId('tab-dot-tokens')).toBeVisible()
+  await master.page.keyboard.press('Escape')
+  await expect(master.page.getByTestId('tab-dot-tokens')).toBeHidden()
+})

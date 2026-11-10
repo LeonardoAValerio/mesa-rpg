@@ -32,6 +32,7 @@ export class Layout {
   private readonly tabs = new Map<string, Tab>()
   private restoring = false
   private readonly counts = new Map<PanelId, number>()
+  private dotted = false
   private readonly changeListeners = new Set<() => void>()
 
   constructor(
@@ -180,6 +181,7 @@ export class Layout {
         })
         this.tabs.set(id, { element, count, dot })
         this.drawCount(id as PanelId)
+        if (id === 'tokens') this.drawDot()
       }
     }
   }
@@ -212,8 +214,23 @@ export class Layout {
     this.drawCount(id)
   }
 
-  /** PANEL-17: a panel on screen has nothing unseen. */
+  /** PANEL-18, PANEL-19: a selection made while Tokens is not on screen dots its tab; clearing the selection undots it. */
+  selected(id: string | null): void {
+    this.dotted = id !== null && !this.isVisible('tokens')
+    this.drawDot()
+  }
+
+  private drawDot(): void {
+    const tab = this.tabs.get('tokens')
+    if (tab) tab.dot.hidden = !this.dotted
+  }
+
+  /** PANEL-17, PANEL-19: a panel on screen has nothing unseen. */
   private clearSeen(): void {
+    if (this.dotted && this.isVisible('tokens')) {
+      this.dotted = false
+      this.drawDot()
+    }
     for (const id of [...this.counts.keys()]) {
       if (!this.isVisible(id)) continue
       this.counts.delete(id)

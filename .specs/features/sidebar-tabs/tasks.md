@@ -213,8 +213,8 @@ Proof: run e2e | ✓ [C19] PANEL-19
 ## Handoff
 
 **Settled mid-build:** dockview only uses the custom tab renderer through `defaultTabComponent`, and passes the panel in `init`; the e2e that use controls in a closed panel first open it with `showPanel` (tokens, library, log, offline). Found in T2: at 300 px the fourth tab sat under dockview's overflow button (unreachable): the right column starts at 340 px with compact tabs, with a test; floated groups cascaded (they used to open on top of each other); dockview's HTML5 drags need human-paced moves in tests (`humanMove`), and the default DnD strategy is kept (with `dndStrategy: 'pointer'` the floating move lost its pointer capture). Phase 1 gate: unit 142, e2e 103. Phase 2 gate: unit 142, e2e 108.
-**Dispatched:** none
-**Walked:** none
+**Dispatched:** Verifier (validate.md) at the proofs commit after the walk
+**Walked:** at 1902434 in Electron (MESA_TEST=1, a hosted table, `Florestas Frias.jpg` imported from the Mapas panel): the starting layout shows the map left and, on the right, Conectados above Tokens · Mapas · Dados · Chat on Mapas; dragging Chat to the right part of its group made a new group; "⇱" on Tokens floated Tokens with Dados over the table; × on Mapas closed it; the app was closed and a new table hosted with the same profile showed the same arrangement (Tokens and Dados floating, Chat on the right, Mapas closed) and the board's own "Importar mapa" with Mapas closed.
 
 ---
 

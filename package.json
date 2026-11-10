@@ -1,7 +1,7 @@
 {
   "name": "mesa-rpg",
   "productName": "MesaRPG",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Mesa virtual de RPG para jogar em LAN",
   "private": true,
   "main": "out/main/index.js",

@@ -4,7 +4,8 @@ import { h } from './dom'
 /** NET-03: the master's IPv4 addresses, labelled, each with "Copiar" for IP:porta. */
 export function hostInfo(addresses: LanAddress[], port: number, copy: (text: string) => void): HTMLElement {
   return h('div', { class: 'host-info', testid: 'host-info' },
-    h('span', { class: 'hint' }, `Porta ${port} · Se o Windows perguntar, permita o acesso à rede.`),
+    h('p', { class: 'hint', testid: 'host-port-info' }, `Porta ${port}`),
+    h('p', { class: 'hint', testid: 'firewall-hint' }, 'Se o Windows perguntar, permita o acesso à rede.'),
     ...addresses.map((a) =>
       h('div', { class: 'address', testid: 'address' },
         h('span', { class: 'label', testid: 'address-label' }, a.label),

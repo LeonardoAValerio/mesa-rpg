@@ -1,5 +1,7 @@
 # Mesa RPG — Ferramentas no mapa e painel Rede
 
+**Approved**: 2026-11-09 - user: "Sim"
+
 ## Problem Statement
 
 As ferramentas do mapa (Mover, Régua, Ping, Desenho e as três de névoa, mais Cobrir/Revelar e o raio) ocupam a barra de cima como botões de texto, longe do mapa em que agem, e as informações de rede do mestre (porta, aviso do firewall, IPs) ocupam o resto dela. user: "daria pra deixar um painel separado chamado 'Rede', onde nele tem aquelas questões de rede que tem na parte superior do mestre"; "os botões de mover, régua e etc, deveria estar dentro da box do Mapa (...) podemos utilizar icones para representar, e talvez o de névoa ele tem um 'dropdown' e aparece qual tipo de pintura ele quer e consegue configurar o tamanho da névoa".

@@ -80,7 +80,7 @@ export async function act(page: Page, action: Action): Promise<void> {
   expect(r, JSON.stringify(action)).toEqual({ ok: true })
 }
 /** Brings a docked panel to the front by clicking its tab (PANEL-03). */
-export async function showPanel(page: Page, id: 'conectados' | 'tokens' | 'mapas' | 'dados' | 'chat'): Promise<void> {
+export async function showPanel(page: Page, id: 'conectados' | 'rede' | 'tokens' | 'mapas' | 'dados' | 'chat'): Promise<void> {
   await page.getByTestId(`tab-${id}`).click()
   await expect(page.getByTestId(`panel-${id}`)).toBeVisible()
 }

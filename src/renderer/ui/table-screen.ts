@@ -33,6 +33,7 @@ export function renderTableScreen(root: HTMLElement, client: TableClient, host: 
   const panel = (id: PanelId, ...children: HTMLElement[]): HTMLElement => h('div', { class: 'dock-panel', testid: `panel-${id}` }, ...children)
   const panels: Record<PanelId, HTMLElement> = {
     conectados: panel('conectados', players),
+    rede: panel('rede', ...(host ? [h('h3', {}, 'Rede'), hostInfo(host.addresses, host.port, host.copy)] : [])), // MTB-12
     tokens: panel('tokens'),
     mapas: panel('mapas'),
     dados: panel('dados'),
@@ -44,7 +45,6 @@ export function renderTableScreen(root: HTMLElement, client: TableClient, host: 
   const you = client.you
   const topbar = h('header', { class: 'topbar' },
     h('strong', { testid: 'you' }, `${you?.name ?? ''} · ${you?.role === 'master' ? 'mestre' : 'jogador'}`),
-    host ? hostInfo(host.addresses, host.port, host.copy) : null,
     toolbar,
     actions,
     host

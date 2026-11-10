@@ -26,10 +26,58 @@ test('the four tabs of the master fit in the starting width: none is hidden behi
   }
 })
 
+test('[C13] MTB-13 the master starts with Rede as a tab beside Conectados, Conectados open', async () => {
+  const { master } = await table()
+  const l = await layout(master.page)
+  expect(groupOf(l, 'rede').panels).toEqual(['conectados', 'rede'])
+  expect(groupOf(l, 'rede').active).toBe('conectados')
+  expect(l.visible).not.toContain('rede')
+})
+
+test('[C14] MTB-14 a player has no Rede, in the layout or in "Painéis"', async () => {
+  const { player } = await table()
+  expect((await layout(player.page)).groups.flatMap((g) => g.panels)).not.toContain('rede')
+  await player.page.getByTestId('panels-button').click()
+  await expect(player.page.getByTestId('panels-menu-rede')).toHaveCount(0)
+  await expect(player.page.getByTestId('panels-menu-dados')).toBeVisible()
+})
+
+test('[C12] MTB-12 Rede holds the port, the firewall hint and each address with "Copiar"; the top bar does not', async () => {
+  const port = await freePort()
+  const master = await launch({ ifaces: ['25.1.2.3', '26.4.5.6'] })
+  await host(master.page, port)
+  const top = master.page.locator('header.topbar')
+  await expect(top.getByTestId('address')).toHaveCount(0)
+  await expect(top).not.toContainText('Porta')
+  await expect(top.getByTestId('host-info')).toHaveCount(0)
+  await showPanel(master.page, 'rede')
+  const rede = master.page.getByTestId('panel-rede')
+  await expect(rede.getByTestId('host-port-info')).toHaveText(`Porta ${port}`)
+  await expect(rede.getByTestId('firewall-hint')).toHaveText('Se o Windows perguntar, permita o acesso à rede.')
+  await expect(rede.getByTestId('address-label')).toHaveText(['Hamachi', 'Radmin'])
+  await rede.getByTestId('copy').first().click()
+  await expect.poll(() => master.app.evaluate(({ clipboard }) => clipboard.readText())).toBe(`25.1.2.3:${port}`)
+})
+
+test('[C15] MTB-15 a layout saved by 0.5.0 gives the starting layout, with Rede', async () => {
+  const first = await launch()
+  await host(first.page, await freePort())
+  await first.page.getByTestId('close-chat').click() // a real saved layout, without Chat
+  await expect.poll(async () => (await layout(first.page)).groups.flatMap((g) => g.panels)).not.toContain('chat')
+  await first.page.getByTestId('stop-host').click()
+  // put it where 0.5.0 kept it
+  await first.page.evaluate(() => {
+    localStorage.setItem('mesa-layout-v1-master', localStorage.getItem('mesa-layout-v2-master')!)
+    localStorage.removeItem('mesa-layout-v2-master')
+  })
+  await host(first.page, await freePort())
+  await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels)).toEqual(STARTING)
+})
+
 test('[C1] PANEL-01 the master starts with the table in the centre and, on its right, Conectados above Tokens · Mapas · Dados · Chat with Mapas open', async () => {
   const { master } = await table()
   const l = await layout(master.page)
-  expect(l.groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['tokens', 'mapas', 'dados', 'chat']])
+  expect(l.groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados', 'rede'], ['tokens', 'mapas', 'dados', 'chat']])
   const mesa = groupOf(l, 'mesa')
   const con = groupOf(l, 'conectados')
   const tabs = groupOf(l, 'mapas')
@@ -123,7 +171,7 @@ test('[C6] PANEL-06 a tab dropped on another group moves there; dropped on a gro
   // Chat onto the middle of Conectados: same group
   const con = await groupBox(master.page, 'conectados')
   await dragTo(master.page, 'tab-chat', con.x + con.width / 2, con.y + con.height / 2 + 10)
-  await expect.poll(async () => groupOf(await layout(master.page), 'chat').panels.sort()).toEqual(['chat', 'conectados'])
+  await expect.poll(async () => groupOf(await layout(master.page), 'chat').panels.sort()).toEqual(['chat', 'conectados', 'rede'])
   // Dados onto the bottom part of its own group (not the window's edge): a new group below
   const tabs = await groupBox(master.page, 'dados')
   await dragTo(master.page, 'tab-dados', tabs.x + tabs.width / 2, tabs.y + tabs.height * 0.85)
@@ -213,7 +261,7 @@ test('[C9] PANEL-09 a closed panel leaves the screen and shows unmarked in "Pain
   await expect(master.page.getByTestId('tab-tokens')).toHaveCount(0)
 })
 
-const STARTING = [['mesa'], ['conectados'], ['tokens', 'mapas', 'dados', 'chat']]
+const STARTING = [['mesa'], ['conectados', 'rede'], ['tokens', 'mapas', 'dados', 'chat']]
 
 test('[C10] PANEL-10 "Restaurar layout" brings back the starting layout', async () => {
   const { master } = await table()
@@ -268,7 +316,7 @@ test('[C11] PANEL-11 the layout is saved per role on the computer and comes back
 test('[C12] PANEL-12 an unreadable saved layout, or one with another role\'s panels, gives the starting layout', async () => {
   const first = await launch()
   for (const bad of ['{ não é json', JSON.stringify({ grid: 1 }), 'null']) {
-    await first.page.evaluate((v) => localStorage.setItem('mesa-layout-v1-master', v), bad)
+    await first.page.evaluate((v) => localStorage.setItem('mesa-layout-v2-master', v), bad)
     await host(first.page, await freePort())
     await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels), bad).toEqual(STARTING)
     await first.page.getByTestId('stop-host').click()
@@ -279,9 +327,9 @@ test('[C12] PANEL-12 an unreadable saved layout, or one with another role\'s pan
   await first.page.getByTestId('close-chat').click() // a real, readable master layout is saved
   await expect.poll(async () => (await layout(first.page)).groups.flatMap((g) => g.panels)).not.toContain('chat')
   await first.page.getByTestId('stop-host').click()
-  const saved = await first.page.evaluate(() => localStorage.getItem('mesa-layout-v1-master'))
+  const saved = await first.page.evaluate(() => localStorage.getItem('mesa-layout-v2-master'))
   expect(saved).toContain('tokens')
-  await first.page.evaluate((m) => localStorage.setItem('mesa-layout-v1-player', m!), saved)
+  await first.page.evaluate((m) => localStorage.setItem('mesa-layout-v2-player', m!), saved)
   const masterApp = await launch()
   const port = await freePort()
   await host(masterApp.page, port)
@@ -298,7 +346,7 @@ test('[C14] PANEL-14 text typed in a panel stays when it is moved, floated, clos
   await master.page.getByTestId('dice-input').fill('3d6+2')
   const con = await groupBox(master.page, 'conectados')
   await dragTo(master.page, 'tab-dados', con.x + con.width / 2, con.y + con.height / 2 + 10)
-  await expect.poll(async () => groupOf(await layout(master.page), 'dados').panels.sort()).toEqual(['conectados', 'dados'])
+  await expect.poll(async () => groupOf(await layout(master.page), 'dados').panels.sort()).toEqual(['conectados', 'dados', 'rede'])
   await expect(master.page.getByTestId('dice-input')).toHaveValue('3d6+2')
   await master.page.getByTestId('float-dados').click()
   await expect.poll(async () => groupOf(await layout(master.page), 'dados').floating).toBe(true)

@@ -3,14 +3,16 @@ import 'dockview/dist/styles/dockview.css'
 import type { Role } from '../../core/types'
 import { h } from './dom'
 
-export type PanelId = 'conectados' | 'tokens' | 'mapas' | 'dados' | 'chat'
-export const PANEL_TITLES: Record<PanelId, string> = { conectados: 'Conectados', tokens: 'Tokens', mapas: 'Mapas', dados: 'Dados', chat: 'Chat' }
+export type PanelId = 'conectados' | 'rede' | 'tokens' | 'mapas' | 'dados' | 'chat'
+export const PANEL_TITLES: Record<PanelId, string> = { conectados: 'Conectados', rede: 'Rede', tokens: 'Tokens', mapas: 'Mapas', dados: 'Dados', chat: 'Chat' }
 /** PANEL-01, PANEL-02: the panels of each role, in the order of the starting tabs. */
-export const ROLE_PANELS: Record<Role, PanelId[]> = { master: ['conectados', 'tokens', 'mapas', 'dados', 'chat'], player: ['conectados', 'dados', 'chat'] }
+export const ROLE_PANELS: Record<Role, PanelId[]> = { master: ['conectados', 'rede', 'tokens', 'mapas', 'dados', 'chat'], player: ['conectados', 'dados', 'chat'] }
+/** Panels that start as tabs beside Conectados (MTB-13). */
+const BESIDE_CONECTADOS: PanelId[] = ['rede']
 const STARTING_ACTIVE: Record<Role, PanelId> = { master: 'mapas', player: 'dados' }
 const TABLE = 'mesa'
 /** PANEL-11: where each role's layout is saved on this computer. */
-export const LAYOUT_KEY: Record<Role, string> = { master: 'mesa-layout-v1-master', player: 'mesa-layout-v1-player' }
+export const LAYOUT_KEY: Record<Role, string> = { master: 'mesa-layout-v2-master', player: 'mesa-layout-v2-player' } // v2: 0.5.0 layouts have no Rede (MTB-15)
 
 export interface LayoutSnapshot {
   groups: Array<{ panels: string[]; active: string | null; floating: boolean; header: boolean; left: number; top: number; width: number; height: number }>
@@ -200,10 +202,13 @@ export class Layout {
     this.api.addPanel({ id: TABLE, component: TABLE, title: 'Mesa' })
     this.lockTable()
     this.api.addPanel({ id: 'conectados', component: 'conectados', title: PANEL_TITLES.conectados, position: { referencePanel: TABLE, direction: 'right' }, initialWidth: 340 })
-    const [first, ...rest] = ROLE_PANELS[this.role].filter((p) => p !== 'conectados')
+    const roles = ROLE_PANELS[this.role]
+    for (const id of BESIDE_CONECTADOS.filter((p) => roles.includes(p))) this.api.addPanel({ id, component: id, title: PANEL_TITLES[id], position: { referencePanel: 'conectados', direction: 'within' }, inactive: true })
+    const [first, ...rest] = roles.filter((p) => p !== 'conectados' && !BESIDE_CONECTADOS.includes(p))
     this.api.addPanel({ id: first, component: first, title: PANEL_TITLES[first], position: { referencePanel: 'conectados', direction: 'below' } })
     for (const id of rest) this.api.addPanel({ id, component: id, title: PANEL_TITLES[id], position: { referencePanel: first, direction: 'within' } })
     this.api.getPanel('conectados')?.group.api.setSize({ height: 140 })
+    this.api.getPanel('conectados')?.api.setActive()
     this.api.getPanel(STARTING_ACTIVE[this.role])?.api.setActive()
   }
 

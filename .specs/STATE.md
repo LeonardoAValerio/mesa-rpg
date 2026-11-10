@@ -57,3 +57,11 @@
 - **Scope**: modelo de token, reducer, view, `.mesa`, board, editor; processo de testes.
 - **Date**: 2026-11-09
 - **Status**: active
+
+### AD-008
+- **Decision**: As ferramentas do mapa ficam numa coluna de ícones (Lucide) na borda esquerda do mapa, com atalhos V/R/P/D/N; a névoa é um botão com painel próprio (forma, modo, raio); as informações de rede do mestre ficam no painel "Rede"; a barra de cima fica com nome, "Painéis" e "Encerrar mesa"/"Sair". O layout salvo muda de chave (v2).
+- **Reason**: user: "os botões de mover, régua e etc, deveria estar dentro da box do Mapa"; "um painel separado chamado 'Rede'"; spec aprovada: "Sim".
+- **Trade-off**: Substitui FOGT-01 e FOGT-07 de fog-shapes; os layouts salvos pela 0.5.0 são ignorados uma vez.
+- **Scope**: `src/renderer/ui/layout.ts`, table screen, toolbar, fog tools.
+- **Date**: 2026-11-09
+- **Status**: active

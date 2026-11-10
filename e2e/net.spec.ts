@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { closeAll, freePort, host, join, launch, masterAndPlayer } from './helpers'
+import { closeAll, freePort, host, join, launch, masterAndPlayer, showPanel } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -26,6 +26,7 @@ test('[C3] NET-03 hosting lists 25.x as "Hamachi" and 26.x as "Radmin" and "Copi
   const port = await freePort()
   const { app, page } = await launch({ ifaces: ['25.1.2.3', '26.4.5.6', '192.168.0.5'] })
   await host(page, port)
+  await showPanel(page, 'rede')
   const rows = page.getByTestId('address')
   await expect(rows).toHaveCount(3)
   await expect(rows.nth(0).getByTestId('address-label')).toHaveText('Hamachi')

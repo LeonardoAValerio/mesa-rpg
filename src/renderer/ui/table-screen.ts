@@ -35,7 +35,8 @@ export function renderTableScreen(root: HTMLElement, client: TableClient, host: 
     tokens: panel('tokens'),
     mapas: panel('mapas'),
     dados: panel('dados'),
-    chat: panel('chat')
+    chat: panel('chat'),
+    sons: panel('sons')
   }
   const dock = h('div', { class: 'dock', testid: 'dock' })
   const actions = h('div', { class: 'topbar-actions' })

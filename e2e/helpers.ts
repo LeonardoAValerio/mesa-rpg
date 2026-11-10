@@ -119,7 +119,7 @@ export async function openFog(page: Page): Promise<void> {
   await expect(page.getByTestId('fog-flyout')).toBeVisible()
 }
 /** Brings a docked panel to the front by clicking its tab (PANEL-03). */
-export async function showPanel(page: Page, id: 'conectados' | 'rede' | 'tokens' | 'mapas' | 'dados' | 'chat'): Promise<void> {
+export async function showPanel(page: Page, id: 'conectados' | 'rede' | 'tokens' | 'mapas' | 'dados' | 'chat' | 'sons'): Promise<void> {
   await page.getByTestId(`tab-${id}`).click()
   await expect(page.getByTestId(`panel-${id}`)).toBeVisible()
 }

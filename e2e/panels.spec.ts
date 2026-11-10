@@ -17,9 +17,9 @@ async function table(): Promise<{ master: AppHandle; player: AppHandle }> {
   return { master, player }
 }
 
-test('the four tabs of the master fit in the starting width: none is hidden behind the overflow menu (PANEL-01)', async () => {
+test('the five tabs of the master fit in the starting width: none is hidden behind the overflow menu (PANEL-01, SOM-05)', async () => {
   const { master } = await table()
-  for (const id of ['tokens', 'mapas', 'dados', 'chat']) {
+  for (const id of ['tokens', 'mapas', 'dados', 'chat', 'sons']) {
     const b = (await master.page.getByTestId(`tab-${id}`).boundingBox())!
     const hit = await master.page.evaluate(([x, y]) => (document.elementFromPoint(x, y) as HTMLElement).closest('[data-testid^="tab-"]')?.getAttribute('data-testid') ?? null, [b.x + b.width / 2, b.y + b.height / 2])
     expect(hit, id).toBe(`tab-${id}`)
@@ -65,15 +65,15 @@ test('[C15] MTB-15 a layout saved by 0.5.0 gives the starting layout, with Rede'
   // a layout like 0.5.0's: no Rede, and Chat closed so it would show if it were used
   await first.page.getByTestId('close-rede').click()
   await first.page.getByTestId('close-chat').click()
-  await expect.poll(async () => (await layout(first.page)).groups.flatMap((g) => g.panels)).toEqual(['mesa', 'conectados', 'tokens', 'mapas', 'dados'])
+  await expect.poll(async () => (await layout(first.page)).groups.flatMap((g) => g.panels)).toEqual(['mesa', 'conectados', 'tokens', 'mapas', 'dados', 'sons'])
   await first.page.getByTestId('stop-host').click()
-  const old = await first.page.evaluate(() => localStorage.getItem('mesa-layout-v2-master'))
+  const old = await first.page.evaluate(() => localStorage.getItem('mesa-layout-v3-master'))
   expect(old).toContain('conectados')
   expect(old).not.toContain('"rede"')
   // where 0.5.0 kept it
   await first.page.evaluate((v) => {
     localStorage.setItem('mesa-layout-v1-master', v!)
-    localStorage.removeItem('mesa-layout-v2-master')
+    localStorage.removeItem('mesa-layout-v3-master')
   }, old)
   await host(first.page, await freePort())
   await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels)).toEqual(STARTING)
@@ -82,7 +82,7 @@ test('[C15] MTB-15 a layout saved by 0.5.0 gives the starting layout, with Rede'
 test('[C1] PANEL-01 the master starts with the table in the centre and, on its right, Conectados above Tokens · Mapas · Dados · Chat with Mapas open', async () => {
   const { master } = await table()
   const l = await layout(master.page)
-  expect(l.groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados', 'rede'], ['tokens', 'mapas', 'dados', 'chat']])
+  expect(l.groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados', 'rede'], ['tokens', 'mapas', 'dados', 'chat', 'sons']])
   const mesa = groupOf(l, 'mesa')
   const con = groupOf(l, 'conectados')
   const tabs = groupOf(l, 'mapas')
@@ -100,7 +100,7 @@ test('[C1] PANEL-01 the master starts with the table in the centre and, on its r
 test('[C2] PANEL-02 a player starts with Conectados above Dados · Chat with Dados open, and no Tokens or Mapas', async () => {
   const { player } = await table()
   const l = await layout(player.page)
-  expect(l.groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['dados', 'chat']])
+  expect(l.groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['dados', 'chat', 'sons']])
   expect(groupOf(l, 'dados').active).toBe('dados')
   expect(groupOf(l, 'dados').top).toBeGreaterThan(groupOf(l, 'conectados').top)
   await expect(player.page.getByTestId('tab-tokens')).toHaveCount(0)
@@ -185,7 +185,7 @@ test('[C6] PANEL-06 a tab dropped on another group moves there; dropped on a gro
   const l = await layout(master.page)
   expect(groupOf(l, 'dados').top).toBeGreaterThan(groupOf(l, 'mapas').top)
   expect(groupOf(l, 'dados').left).toBe(groupOf(l, 'mapas').left)
-  expect(groupOf(l, 'mapas').panels).toEqual(['tokens', 'mapas'])
+  expect(groupOf(l, 'mapas').panels).toEqual(['tokens', 'mapas', 'sons'])
 })
 
 test('[C7] PANEL-07 dragging the divider between the table and the panels resizes both, and the table fits', async () => {
@@ -267,7 +267,7 @@ test('[C9] PANEL-09 a closed panel leaves the screen and shows unmarked in "Pain
   await expect(master.page.getByTestId('tab-tokens')).toHaveCount(0)
 })
 
-const STARTING = [['mesa'], ['conectados', 'rede'], ['tokens', 'mapas', 'dados', 'chat']]
+const STARTING = [['mesa'], ['conectados', 'rede'], ['tokens', 'mapas', 'dados', 'chat', 'sons']]
 
 test('[C10] PANEL-10 "Restaurar layout" brings back the starting layout', async () => {
   const { master } = await table()
@@ -304,7 +304,7 @@ test('[C11] PANEL-11 the layout is saved per role on the computer and comes back
   await first.page.getByTestId('stop-host').click()
   // the same computer as player: arrange it differently (Dados floating)
   await joinAs(first.page, port, 'Ana')
-  await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['dados', 'chat']])
+  await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['dados', 'chat', 'sons']])
   await first.page.getByTestId('float-dados').click()
   await expect.poll(async () => groupOf(await layout(first.page), 'dados').floating).toBe(true)
   const playerShape = await shape(first.page)
@@ -322,7 +322,7 @@ test('[C11] PANEL-11 the layout is saved per role on the computer and comes back
 test('[C12] PANEL-12 an unreadable saved layout, or one with another role\'s panels, gives the starting layout', async () => {
   const first = await launch()
   for (const bad of ['{ não é json', JSON.stringify({ grid: 1 }), 'null']) {
-    await first.page.evaluate((v) => localStorage.setItem('mesa-layout-v2-master', v), bad)
+    await first.page.evaluate((v) => localStorage.setItem('mesa-layout-v3-master', v), bad)
     await host(first.page, await freePort())
     await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels), bad).toEqual(STARTING)
     await first.page.getByTestId('stop-host').click()
@@ -333,9 +333,9 @@ test('[C12] PANEL-12 an unreadable saved layout, or one with another role\'s pan
   await first.page.getByTestId('close-chat').click() // a real, readable master layout is saved
   await expect.poll(async () => (await layout(first.page)).groups.flatMap((g) => g.panels)).not.toContain('chat')
   await first.page.getByTestId('stop-host').click()
-  const saved = await first.page.evaluate(() => localStorage.getItem('mesa-layout-v2-master'))
+  const saved = await first.page.evaluate(() => localStorage.getItem('mesa-layout-v3-master'))
   expect(saved).toContain('tokens')
-  await first.page.evaluate((m) => localStorage.setItem('mesa-layout-v2-player', m!), saved)
+  await first.page.evaluate((m) => localStorage.setItem('mesa-layout-v3-player', m!), saved)
   const masterApp = await launch()
   const port = await freePort()
   await host(masterApp.page, port)
@@ -343,7 +343,7 @@ test('[C12] PANEL-12 an unreadable saved layout, or one with another role\'s pan
   await first.page.getByTestId('join-port').fill(String(port))
   await first.page.getByTestId('join-name').fill('Ana')
   await first.page.getByTestId('join').click()
-  await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['dados', 'chat']])
+  await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['dados', 'chat', 'sons']])
 })
 
 test('[C14] PANEL-14 text typed in a panel stays when it is moved, floated, closed and reopened', async () => {

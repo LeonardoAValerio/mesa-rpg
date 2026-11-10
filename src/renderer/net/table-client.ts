@@ -59,6 +59,10 @@ export class TableClient {
   log: LogEntry[] = []
   library: LibraryItem[] = []
   you: { role: Role; name: string } | null = null
+  /** SOM-17: the campaign's effects, to download ahead. */
+  effects: string[] = []
+  /** The master's clock minus this one's, from the last welcome or patch (SOM-12, SOM-13). */
+  private clockOffset = 0
 
   private ws: WebSocket | null = null
   private everJoined = false
@@ -72,7 +76,14 @@ export class TableClient {
     view: new Set<Listener<View>>(),
     log: new Set<Listener<LogEntry>>(),
     ephemeral: new Set<Listener<{ from: string; e: Ephemeral }>>(),
-    library: new Set<Listener<LibraryItem[]>>()
+    library: new Set<Listener<LibraryItem[]>>(),
+    effect: new Set<Listener<{ hash: string; at: number }>>(),
+    effects: new Set<Listener<string[]>>()
+  }
+
+  /** The master's clock now (ms). */
+  serverNow(): number {
+    return Date.now() + this.clockOffset
   }
 
   constructor(private readonly opts: ConnectOptions) {}
@@ -168,6 +179,7 @@ export class TableClient {
           return
         }
         this.everJoined = true
+        this.clockOffset = msg.serverNow - Date.now()
         this.you = msg.you
         this.view = msg.view
         this.log = msg.log
@@ -240,6 +252,7 @@ export class TableClient {
   private handle(msg: ServerMsg): void {
     switch (msg.t) {
       case 'patch':
+        this.clockOffset = msg.serverNow - Date.now()
         if (!this.view) return
         this.view = applyOps(this.view, msg.ops)
         for (const fn of this.listeners.view) fn(this.view)
@@ -262,6 +275,13 @@ export class TableClient {
       case 'library':
         this.library = msg.items
         for (const fn of this.listeners.library) fn(msg.items)
+        return
+      case 'effect':
+        for (const fn of this.listeners.effect) fn({ hash: msg.hash, at: msg.at })
+        return
+      case 'effects':
+        this.effects = msg.hashes
+        for (const fn of this.listeners.effects) fn(msg.hashes)
         return
       case 'closed':
         this.stopped = true

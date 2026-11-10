@@ -137,13 +137,14 @@ T3 → T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Unit tests (fake audio context and clock): start offset, 2 s ramps, no ramp when joining, a late effect skipped and an on-time one played, bus gains from the sliders and mute
-- [ ] e2e: a player joining mid-layer plays it within 1 s of the master; personal volume changes one window only and survives a restart; mute; end of table stops everything; Sons in the layout and in "Painéis", a 0.7.0 layout reset
-- [ ] Task e2e gate passes
+- [x] Unit tests (fake audio context and clock): start offset, 2 s ramps, no ramp when joining, a late effect skipped and an on-time one played, bus gains from the sliders and mute
+- [x] e2e: a player joining mid-layer plays it within 1 s of the master; personal volume changes one window only and survives a restart; mute; end of table stops everything; Sons in the layout and in "Painéis", a 0.7.0 layout reset
+- [x] Task e2e gate passes
 
 **Tests**: unit, e2e
 **Gate**: task e2e
 **Commit**: `feat(ui): play the table's sounds with personal volume`
+**Done**: yes
 
 ---
 
@@ -278,7 +279,7 @@ Proof: run e2e | ✓ [C29] SOM-29
 
 ## Handoff
 
-**Settled mid-build:** none
+**Settled mid-build:** T4 widened the starting panel column from 340 to 380 px so the five tabs (with Sons) fit without dockview's overflow menu (PANEL-01).
 **Dispatched:** none
 **Walked:** none
 

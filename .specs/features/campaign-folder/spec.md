@@ -1,5 +1,7 @@
 # Mesa RPG — Pasta da campanha
 
+**Approved**: 2026-11-10 - user: "Aprovo"
+
 ## Problem Statement
 
 Cada mapa e cada token entra por uma janela de "abrir arquivo", e uma cena salva é um `.mesa` com todas as imagens embutidas, onde o mestre escolher. Não há um lugar onde a campanha mora. user: "o aplicativo criar uma pasta para ele (...) e nessa pasta quando você tenta buscar um token, ou mapa, ele já mostra os que estão salvos dentro dele"; "deixar os efeitos sonoros e musicas separadas"; "criar uma pasta do RPG, e dentro dela eu coloco tudo dele, daí ali eu posso deixar configurados cenas já com tokens".

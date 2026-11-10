@@ -79,6 +79,11 @@ export async function act(page: Page, action: Action): Promise<void> {
   const r = await page.evaluate((a) => window.__mesaTest!.send(a), action)
   expect(r, JSON.stringify(action)).toEqual({ ok: true })
 }
+/** Brings a docked panel to the front by clicking its tab (PANEL-03). */
+export async function showPanel(page: Page, id: 'conectados' | 'tokens' | 'mapas' | 'dados' | 'chat'): Promise<void> {
+  await page.getByTestId(`tab-${id}`).click()
+  await expect(page.getByTestId(`panel-${id}`)).toBeVisible()
+}
 /** Whether the fog drawn in this window hides each map point (read from the fog texture). */
 export async function fogSample(page: Page, points: Array<[number, number]>): Promise<boolean[]> {
   return page.evaluate((p) => window.__mesaTest!.fogSample(p), points)

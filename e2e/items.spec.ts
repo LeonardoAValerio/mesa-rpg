@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { act, closeAll, masterAndPlayer, putAsset, snap, solidPng, type AppHandle } from './helpers'
+import { act, closeAll, showPanel, masterAndPlayer, putAsset, snap, solidPng, type AppHandle } from './helpers'
 import type { TokenSnapshot } from '../src/renderer/board/board'
 
 test.afterEach(closeAll)
@@ -11,6 +11,7 @@ async function table(): Promise<{ master: AppHandle; player: AppHandle; tall: st
   const tall = await putAsset(master.app, solidPng(512, 768, [200, 180, 40]))
   const square = await putAsset(master.app, solidPng(64, 64, [90, 90, 200]))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  await showPanel(master.page, 'tokens') // the item editor lives there
   return { master, player, tall, square }
 }
 async function item(page: Page, name: string): Promise<TokenSnapshot> {

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { act, closeAll, freePort, host, join as joinTable, launch, putAsset, snap, solidPng } from './helpers'
+import { act, closeAll, freePort, host, join as joinTable, launch, putAsset, snap, solidPng, showPanel } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -38,6 +38,7 @@ test("[C78] PKG-02 the build loads nothing from an external http(s) URL and the 
   await expect.poll(async () => (await snap(player.page)).map?.textured, { timeout: 10000 }).toBe(true)
   await player.page.getByTestId('dice-input').fill('1d20')
   await player.page.getByTestId('dice-roll').click()
+  await showPanel(master.page, 'dados')
   await expect(master.page.getByTestId('log-entry')).toHaveCount(1)
   expect(external).toEqual([])
   expect(cspErrors).toEqual([])

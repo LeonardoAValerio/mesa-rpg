@@ -2,13 +2,19 @@ import type { LanAddress } from '../../preload/api'
 import type { TableClient } from '../net/table-client'
 import { clear, h } from './dom'
 import { hostInfo } from './host-info'
+import type { PanelId } from './layout'
 import { statusOverlay } from './status-overlay'
 
 export interface TableScreen {
   root: HTMLElement
   board: HTMLElement
-  sidebar: HTMLElement
+  /** Where the docking layout lives: the table and the panels around it. */
+  dock: HTMLElement
+  /** The content of each panel, built once (PANEL-14). */
+  panels: Record<PanelId, HTMLElement>
   toolbar: HTMLElement
+  /** The top bar's right end, before "Encerrar mesa" / "Sair". */
+  actions: HTMLElement
   destroy(): void
 }
 
@@ -19,23 +25,33 @@ export interface HostDetails {
   stop(): void
 }
 
-/** The table: top bar, board area, sidebar with the players list (NET-06), status overlay. */
+/** The table: top bar, the docking area with the board and the panels (the players list is "Conectados", NET-06), status overlay. */
 export function renderTableScreen(root: HTMLElement, client: TableClient, host: HostDetails | null, backHome: () => void): TableScreen {
   const players = h('ul', { class: 'players', testid: 'players' })
   const board = h('main', { class: 'board', testid: 'board' })
   const toolbar = h('div', { class: 'toolbar', testid: 'toolbar' })
-  const sidebar = h('aside', { class: 'sidebar' }, h('h3', {}, 'Conectados'), players)
+  const panel = (id: PanelId, ...children: HTMLElement[]): HTMLElement => h('div', { class: 'dock-panel', testid: `panel-${id}` }, ...children)
+  const panels: Record<PanelId, HTMLElement> = {
+    conectados: panel('conectados', players),
+    tokens: panel('tokens'),
+    mapas: panel('mapas'),
+    dados: panel('dados'),
+    chat: panel('chat')
+  }
+  const dock = h('div', { class: 'dock', testid: 'dock' })
+  const actions = h('div', { class: 'topbar-actions' })
   const overlaySlot = h('div', {})
   const you = client.you
   const topbar = h('header', { class: 'topbar' },
     h('strong', { testid: 'you' }, `${you?.name ?? ''} · ${you?.role === 'master' ? 'mestre' : 'jogador'}`),
     host ? hostInfo(host.addresses, host.port, host.copy) : null,
     toolbar,
+    actions,
     host
       ? h('button', { testid: 'stop-host', onclick: host.stop }, 'Encerrar mesa')
       : h('button', { testid: 'leave', onclick: backHome }, 'Sair')
   )
-  const screen = h('div', { class: 'table', testid: 'table' }, topbar, board, sidebar, overlaySlot)
+  const screen = h('div', { class: 'table', testid: 'table' }, topbar, dock, overlaySlot)
   root.replaceChildren(screen)
 
   const drawPlayers = (): void => {
@@ -54,8 +70,10 @@ export function renderTableScreen(root: HTMLElement, client: TableClient, host: 
   return {
     root: screen,
     board,
-    sidebar,
+    dock,
+    panels,
     toolbar,
+    actions,
     destroy: () => {
       offView()
       offStatus()

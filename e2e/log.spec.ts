@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test'
-import { closeAll, masterAndPlayer } from './helpers'
+import { closeAll, masterAndPlayer, showPanel } from './helpers'
 
 test.afterEach(closeAll)
 
 test('[C55] CHAT-01 Ana sends "olá" and both windows show "Ana: olá"', async () => {
   const { master, player } = await masterAndPlayer('Ana')
+  await showPanel(master.page, 'dados')
   await player.page.getByTestId('chat-input').fill('olá')
   await player.page.getByTestId('chat-send').click()
   for (const page of [master.page, player.page]) await expect(page.getByTestId('log-entry').last()).toHaveText('Ana: olá')
@@ -13,6 +14,7 @@ test('[C55] CHAT-01 Ana sends "olá" and both windows show "Ana: olá"', async (
 
 test('[C58] CHAT-04 `<b>oi</b>` shows the angle brackets as text, with no `b` element', async () => {
   const { master, player } = await masterAndPlayer('Ana')
+  await showPanel(master.page, 'dados')
   await player.page.getByTestId('chat-input').fill('<b>oi</b><img src=x onerror=alert(1)>')
   await player.page.getByTestId('chat-input').press('Enter')
   for (const page of [master.page, player.page]) {
@@ -23,6 +25,7 @@ test('[C58] CHAT-04 `<b>oi</b>` shows the angle brackets as text, with no `b` el
 
 test('a roll shows each die, the dropped one marked, and the total in both windows (DICE-01, DICE-03)', async () => {
   const { master, player } = await masterAndPlayer('Ana')
+  await showPanel(master.page, 'dados')
   await player.page.getByTestId('dice-input').fill('2d20kh1+5')
   await player.page.getByTestId('dice-roll').click()
   for (const page of [master.page, player.page]) {
@@ -47,6 +50,7 @@ test('invalid notation shows "Notação inválida: 2d" and adds nothing to the l
 
 test('an empty or 501-character message is not sent (CHAT-02)', async () => {
   const { master, player } = await masterAndPlayer('Ana')
+  await showPanel(master.page, 'dados')
   await player.page.getByTestId('chat-input').fill('   ')
   await player.page.getByTestId('chat-send').click()
   await player.page.getByTestId('chat-input').evaluate((el: HTMLInputElement) => {

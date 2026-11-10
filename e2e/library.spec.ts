@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { textFile, tokenFolder } from './fixtures'
-import { act, closeAll, masterAndPlayer, nextOpenDialog, putAsset, snap, solidPng, type AppHandle } from './helpers'
+import { act, closeAll, showPanel, masterAndPlayer, nextOpenDialog, putAsset, snap, solidPng, type AppHandle } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -11,6 +11,7 @@ async function withMap(master: AppHandle): Promise<void> {
 }
 
 async function importKit(master: AppHandle): Promise<void> {
+  await showPanel(master.page, 'tokens')
   const dir = tokenFolder(`kit-${Date.now()}`, {
     'goblin.png': solidPng(64, 64, [200, 30, 30]),
     'goblin.json': JSON.stringify({ faccao: 'inimigo', tamanho: 1 }),

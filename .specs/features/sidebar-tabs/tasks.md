@@ -9,8 +9,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: inline - the Design section below
-**Status**: Draft
-**Approved**: pending
+**Status**: In Progress
+**Approved**: 2026-11-09 - user: "aprovo as tarefas"
 **Build**: `scripts/with-node npm run build`; `scripts/with-node npm run typecheck`; `scripts/with-node npm run lint`
 **Run unit**: `scripts/with-node npx vitest run --reporter=verbose`
 **Run e2e**: `scripts/with-node npm run build && scripts/with-node npx playwright test --reporter=list`
@@ -79,12 +79,13 @@ T3 → T4
 
 **Done when**:
 
-- [ ] e2e: master and player starting layouts with the exact tabs and active panel; clicking each tab shows its panel; Tokens and Mapas hold their controls; the table has no tab and cannot be dragged
-- [ ] Task e2e gate passes
+- [x] e2e: master and player starting layouts with the exact tabs and active panel; clicking each tab shows its panel; Tokens and Mapas hold their controls; the table has no tab and cannot be dragged
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(ui): docking panels around the table`
+**Done**: yes
 
 ---
 
@@ -208,7 +209,7 @@ Proof: run e2e | ✓ [C19] PANEL-19
 
 ## Handoff
 
-**Settled mid-build:** none
+**Settled mid-build:** dockview only uses the custom tab renderer through `defaultTabComponent`, and passes the panel in `init`; the e2e that use controls in a closed panel first open it with `showPanel` (tokens, library, log, offline).
 **Dispatched:** none
 **Walked:** none
 

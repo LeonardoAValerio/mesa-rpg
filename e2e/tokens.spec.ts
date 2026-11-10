@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { act, closeAll, masterAndPlayer, putAsset, screenOf, snap, solidPng, type AppHandle } from './helpers'
+import { act, closeAll, showPanel, masterAndPlayer, putAsset, screenOf, snap, solidPng, type AppHandle } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -17,6 +17,7 @@ async function table(): Promise<{ master: AppHandle; player: AppHandle; id: (nam
     await expect.poll(async () => (await snap(page)).tokens.every((t) => t.textured) && (await snap(page)).map?.textured).toBe(true)
   }
   const id = async (name: string): Promise<string> => (await snap(master.page)).tokens.find((t) => t.name === name)!.id
+  await showPanel(master.page, 'tokens') // the item editor lives there
   return { master, player, id }
 }
 async function click(page: Page, x: number, y: number): Promise<void> {

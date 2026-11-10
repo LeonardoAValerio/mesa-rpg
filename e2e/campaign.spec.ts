@@ -27,7 +27,7 @@ test('[C2] CAMP-02 "Nova campanha" creates the campaign with its six folders and
   await expect(app.page.getByTestId('host')).toBeEnabled()
 })
 
-test('a bad or existing campaign name shows the message and creates nothing (CAMP-03)', async () => {
+test('[C3] CAMP-03 a bad or existing campaign name shows the message and creates nothing', async () => {
   const app = await launch()
   for (const [name, msg] of [['', 'Nome inválido'], ['a/b', 'Nome inválido'], ['teste', 'Campanha já existe']]) {
     await app.page.getByTestId('new-campaign-name').fill(name)

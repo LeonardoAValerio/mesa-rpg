@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { existsSync, readFileSync, readdirSync, renameSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { act, campaignDir, closeAll, masterAndPlayer, nextOpenDialog, putAsset, putFile, showPanel, snap, solidPng, type AppHandle } from './helpers'
-import { tokenFolder } from './fixtures'
+import { gridMap, tokenFolder } from './fixtures'
 
 test.afterEach(closeAll)
 
@@ -60,11 +60,11 @@ test('[C11] CAMP-11 files added, renamed and removed outside the app show in the
   await showPanel(master.page, 'tokens')
   const dir = campaignDir(master)
   putFile(master, 'tokens/goblin.png', solidPng(32, 32))
-  await expect(names(master.page, 'tokens')).toHaveText(['goblin'], { timeout: 2500 })
+  await expect(names(master.page, 'tokens')).toHaveText(['goblin'], { timeout: 2000 })
   renameSync(join(dir, 'tokens', 'goblin.png'), join(dir, 'tokens', 'orc.png'))
-  await expect(names(master.page, 'tokens')).toHaveText(['orc'], { timeout: 2500 })
+  await expect(names(master.page, 'tokens')).toHaveText(['orc'], { timeout: 2000 })
   rmSync(join(dir, 'tokens', 'orc.png'))
-  await expect(names(master.page, 'tokens')).toHaveCount(0, { timeout: 2500 })
+  await expect(names(master.page, 'tokens')).toHaveCount(0, { timeout: 2000 })
 })
 
 test('[C12] CAMP-12 a token or object dragged from the list lands on the map in every window, an object as an object', async () => {
@@ -72,26 +72,32 @@ test('[C12] CAMP-12 a token or object dragged from the list lands on the map in 
   const map = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
   putFile(master, 'objetos/bau.png', solidPng(64, 32, [120, 80, 20]))
+  putFile(master, 'tokens/goblin.png', solidPng(64, 64, [200, 30, 30]))
   await showPanel(master.page, 'tokens')
   await expect(names(master.page, 'objetos')).toHaveText(['bau'], { timeout: 5000 })
+  await expect(names(master.page, 'tokens')).toHaveText(['goblin'], { timeout: 5000 })
   const s = await snap(master.page)
-  await master.page.getByTestId('library-item').filter({ hasText: 'bau' }).dragTo(master.page.getByTestId('board-canvas'), { targetPosition: { x: 433 * s.camera.scale + s.camera.x, y: 211 * s.camera.scale + s.camera.y } })
+  const at = (x: number, y: number) => ({ x: x * s.camera.scale + s.camera.x, y: y * s.camera.scale + s.camera.y })
+  await master.page.getByTestId('library-item').filter({ hasText: 'bau' }).dragTo(master.page.getByTestId('board-canvas'), { targetPosition: at(433, 211) })
+  await master.page.getByTestId('library-item').filter({ hasText: 'goblin' }).dragTo(master.page.getByTestId('board-canvas'), { targetPosition: at(240, 360) })
   for (const page of [master.page, player.page]) {
-    await expect.poll(async () => (await snap(page)).tokens.map((t) => t.kind)).toEqual(['object'])
-    const t = (await snap(page)).tokens[0]
-    expect(Math.abs(t.x - 433)).toBeLessThan(1.5) // an object stays where dropped
-    expect(t.name).toBe('bau')
+    await expect.poll(async () => (await snap(page)).tokens.map((t) => [t.name, t.kind]).sort()).toEqual([['bau', 'object'], ['goblin', 'character']])
+    const bau = (await snap(page)).tokens.find((t) => t.name === 'bau')!
+    expect(Math.abs(bau.x - 433)).toBeLessThan(1.5) // an object stays where dropped
+    const goblin = (await snap(page)).tokens.find((t) => t.name === 'goblin')!
+    expect([goblin.x, goblin.y]).toEqual([250, 350]) // a character snaps to its cell
   }
-  await expect.poll(async () => (await snap(player.page)).tokens[0]?.textured).toBe(true) // the player downloads it
+  await expect.poll(async () => (await snap(player.page)).tokens.every((t) => t.textured)).toBe(true) // the player downloads them
 })
 
 test('[C13] CAMP-13 a map clicked in the list loads in every window, with its grid detected', async () => {
   const { master, player } = await masterAndPlayer()
-  putFile(master, 'mapas/Florestas.png', solidPng(800, 600, [40, 90, 40]))
+  putFile(master, 'mapas/Florestas.png', readFileSync(gridMap('florestas-grid.png', 800, 600, 16, 12))) // 50 px cells
   await showPanel(master.page, 'mapas')
   await master.page.getByTestId('map-item').filter({ hasText: 'Florestas' }).click({ timeout: 5000 })
   for (const page of [master.page, player.page]) {
     await expect.poll(async () => (await snap(page)).map).toMatchObject({ width: 800, height: 600 })
+    expect(Math.abs((await snap(page)).grid!.cell - 50)).toBeLessThan(1) // detected, not the 70 px fallback
   }
   await expect.poll(async () => (await snap(player.page)).map?.textured, { timeout: 10_000 }).toBe(true)
 })

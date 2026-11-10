@@ -19,7 +19,7 @@ function scene(): Scene {
 const paths: Record<string, string> = { [MAP]: 'mapas/Florestas Frias.jpg', [TOK]: 'tokens/Goblins/goblin.png' }
 
 describe('campaign names', () => {
-  it('[C3] CAMP-03 a name of 1 to 60 characters with none of \\ / : * ? " < > | and no edge spaces, not already used, is valid; otherwise the message', () => {
+  it('CAMP-03 a name of 1 to 60 characters with none of \\ / : * ? " < > | and no edge spaces, not already used, is valid; otherwise the message', () => {
     expect(nameError('Florestas Frias', [])).toBeNull()
     expect(nameError('a'.repeat(60), [])).toBeNull()
     expect(nameError('Ação & Magia (2)', [])).toBeNull()
@@ -74,7 +74,7 @@ describe('.cena files', () => {
     }
   })
 
-  it('[C20] CAMP-20 a changed file\'s new hash replaces the old one in the map and in every item that uses it', () => {
+  it('CAMP-20 a changed file\'s new hash replaces the old one in the map and in every item that uses it', () => {
     const NEW = 'c'.repeat(64)
     const s = remapHashes(scene(), { [TOK]: NEW })
     expect(s.tokens.g.hash).toBe(NEW)

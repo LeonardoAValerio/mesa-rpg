@@ -70,7 +70,7 @@ describe('campaign scenes', () => {
     expect(MISSING_FILE('x')).toBe('Arquivo não encontrado: x')
   })
 
-  it('a file changed since the scene was saved loads as it is now (CAMP-20)', async () => {
+  it('[C20] CAMP-20 a file changed since the scene was saved loads as it is now', async () => {
     const { dir, scenes, store } = await campaign()
     await scenes.save('Emboscada', sceneWith(hashOf(png(40, 40, 30)), hashOf(png(200))), false)
     writeFileSync(join(dir, 'tokens', 'Goblins', 'goblin.png'), png(90)) // the master redrew the goblin

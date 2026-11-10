@@ -195,7 +195,7 @@ Proof: run e2e | ✓ [C1] CAMP-01
 Proof: run e2e | ✓ [C2] CAMP-02
 
 **C3** - A bad or existing name shows "Nome inválido" or "Campanha já existe" and creates nothing (CAMP-03, AC 3)
-Proof: run unit | ✓ [C3] CAMP-03
+Proof: run e2e | ✓ [C3] CAMP-03
 
 **C4** - "Hospedar" is disabled with no campaign selected (CAMP-04, AC 4)
 Proof: run e2e | ✓ [C4] CAMP-04

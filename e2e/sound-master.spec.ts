@@ -84,15 +84,18 @@ test('[C4] SOM-04 "Adicionar arquivos" copies into Músicas or Efeitos, a repeat
 test('[C6] SOM-06 a click on a music starts it looping in every window, rising from silence over 2 s, and marks it playing', async () => {
   const { master, ana, hash } = await table({ [RAIN]: toneWav(30) })
   await item(master.page, 'chuva').click()
+  const t0 = Date.now()
   await expect(item(master.page, 'chuva')).toHaveAttribute('data-playing', 'true')
-  for (const page of [master.page, ana.page]) {
-    await expect.poll(async () => (await layerOf(page, hash[RAIN]))?.playing, { timeout: 5000 }).toBe(true)
-    expect((await layerOf(page, hash[RAIN]))!.gain).toBeLessThan(0.9) // still rising
-  }
-  await master.page.waitForTimeout(2300)
+  for (const page of [master.page, ana.page]) await expect.poll(async () => (await layerOf(page, hash[RAIN]))?.playing, { timeout: 900, intervals: [50] }).toBe(true)
+  // halfway through the rise: about half its volume in both windows
+  await master.page.waitForTimeout(1000 - (Date.now() - t0))
+  const mid = await Promise.all([layerOf(master.page, hash[RAIN]), layerOf(ana.page, hash[RAIN])])
+  for (const l of mid) expect(l!.gain).toBeGreaterThan(0.2)
+  for (const l of mid) expect(l!.gain).toBeLessThan(0.8)
+  await master.page.waitForTimeout(2300 - (Date.now() - t0))
   for (const page of [master.page, ana.page]) {
     const l = (await layerOf(page, hash[RAIN]))!
-    expect(l.gain).toBeGreaterThan(0.99) // risen to its volume
+    expect(l.gain).toBeGreaterThan(0.99) // risen to its volume at 2 s
     expect(l.position).toBeGreaterThan(2)
   }
 })
@@ -100,18 +103,18 @@ test('[C6] SOM-06 a click on a music starts it looping in every window, rising f
 test('[C7] SOM-07 a second click fades the music out over 2 s and stops it in every window; the mark goes', async () => {
   const { master, ana, hash } = await table({ [RAIN]: toneWav(30) })
   await item(master.page, 'chuva').click()
-  await expect.poll(async () => (await layerOf(ana.page, hash[RAIN]))?.playing, { timeout: 5000 }).toBe(true)
-  await master.page.waitForTimeout(2200)
+  for (const page of [master.page, ana.page]) await expect.poll(async () => (await layerOf(page, hash[RAIN]))?.gain, { timeout: 6000 }).toBeGreaterThan(0.99)
   await item(master.page, 'chuva').click()
+  const t0 = Date.now()
   await expect(item(master.page, 'chuva')).toHaveAttribute('data-playing', 'false')
-  for (const page of [master.page, ana.page]) {
-    await expect.poll(async () => (await layerOf(page, hash[RAIN]))?.stopping).toBe(true)
-    const g = (await layerOf(page, hash[RAIN]))?.gain ?? 0
-    expect(g).toBeLessThan(0.99) // fading
-  }
-  await master.page.waitForTimeout(1000)
-  expect((await layerOf(ana.page, hash[RAIN]))?.playing).toBe(true) // still fading 1 s in
+  // halfway through the fade: about half its volume in both windows, still playing
+  await master.page.waitForTimeout(1000 - (Date.now() - t0))
+  const mid = await Promise.all([layerOf(master.page, hash[RAIN]), layerOf(ana.page, hash[RAIN])])
+  for (const l of mid) expect(l).toMatchObject({ playing: true, stopping: true })
+  for (const l of mid) expect(l!.gain).toBeGreaterThan(0.2)
+  for (const l of mid) expect(l!.gain).toBeLessThan(0.8)
   for (const page of [master.page, ana.page]) await expect.poll(async () => (await sound(page)).layers, { timeout: 2500, intervals: [100] }).toEqual([])
+  expect(Date.now() - t0).toBeLessThan(3200)
 })
 
 test('[C8] SOM-08 the master sees each playing layer with its name and a 0..100 volume starting at 100', async () => {
@@ -150,23 +153,36 @@ test('[C10] SOM-10 with 8 layers playing another music shows "Máximo de 8 camad
 })
 
 test('[C11] SOM-11 "Parar tudo" fades every layer out over 2 s and stops it in every window', async () => {
-  const { master, ana, hash } = await table({ [RAIN]: toneWav(30), 'musicas/taverna.wav': toneWav(30, 523) })
+  const { master, ana } = await table({ [RAIN]: toneWav(30), 'musicas/taverna.wav': toneWav(30, 523) })
   await item(master.page, 'chuva').click()
   await item(master.page, 'taverna').click()
-  await expect.poll(async () => (await sound(ana.page)).layers.filter((l) => l.playing).length, { timeout: 6000 }).toBe(2)
+  for (const page of [master.page, ana.page]) await expect.poll(async () => (await sound(page)).layers.filter((l) => l.gain > 0.99).length, { timeout: 6000 }).toBe(2)
   await master.page.getByTestId('stop-all').click()
-  for (const page of [master.page, ana.page]) await expect.poll(async () => (await sound(page)).layers.every((l) => l.stopping)).toBe(true)
-  expect((await layerOf(ana.page, hash[RAIN]))?.playing).toBe(true) // fading, not cut
-  for (const page of [master.page, ana.page]) await expect.poll(async () => (await sound(page)).layers, { timeout: 2600, intervals: [100] }).toEqual([])
+  const t0 = Date.now()
+  await master.page.waitForTimeout(1000)
+  const mid = await Promise.all([sound(master.page), sound(ana.page)])
+  for (const s of mid) {
+    expect(s.layers).toHaveLength(2)
+    for (const l of s.layers) {
+      expect(l.stopping).toBe(true)
+      expect(l.gain).toBeGreaterThan(0.2) // halfway, not cut
+      expect(l.gain).toBeLessThan(0.8)
+    }
+  }
+  for (const page of [master.page, ana.page]) await expect.poll(async () => (await sound(page)).layers, { timeout: 2500, intervals: [100] }).toEqual([])
+  expect(Date.now() - t0).toBeLessThan(3200)
   await expect(master.page.getByTestId('playing-list')).toHaveText('Nenhuma música tocando')
 })
 
 test('[C16] SOM-16 an effect clicked plays once in every window, two clicks overlapping', async () => {
-  const { master, ana, hash } = await table({ [SWORD]: toneWav(1.5) })
+  const { master, ana, hash } = await table({ [SWORD]: toneWav(2.5) })
   await item(master.page, 'espada').click()
   await item(master.page, 'espada').click()
+  // both strikes sound at the same time in each window: the second does not cut the first
+  for (const page of [master.page, ana.page]) await expect.poll(async () => (await sound(page)).effectsPlaying, { timeout: 2000, intervals: [50] }).toBe(2)
   for (const page of [master.page, ana.page]) {
-    await expect.poll(async () => (await sound(page)).effects.filter((e) => e.hash === hash[SWORD]).map((e) => e.played), { timeout: 4000 }).toEqual([true, true])
+    expect((await sound(page)).effects.filter((e) => e.hash === hash[SWORD]).map((e) => e.played)).toEqual([true, true])
+    await expect.poll(async () => (await sound(page)).effectsPlaying, { timeout: 4000 }).toBe(0) // once each, no loop
   }
   expect((await sound(ana.page)).layers).toEqual([]) // an effect is not a layer
 })

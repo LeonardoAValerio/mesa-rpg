@@ -14,7 +14,7 @@ export interface Personal {
 export const DEFAULT_PERSONAL: Personal = { music: 80, effects: 80, muted: false }
 
 /** The part of Web Audio the engine uses, so tests can hand it a fake. */
-export type AudioCtx = Pick<AudioContext, 'currentTime' | 'destination' | 'createGain' | 'createBufferSource' | 'decodeAudioData' | 'close'>
+export type AudioCtx = Pick<AudioContext, 'currentTime' | 'destination' | 'createGain' | 'createBufferSource' | 'createAnalyser' | 'decodeAudioData' | 'close'>
 
 export interface SoundDeps {
   ctx: AudioCtx
@@ -48,6 +48,11 @@ export interface SoundSnapshot {
   muted: boolean
   musicBus: number
   effectsBus: number
+  /** RMS of what leaves the music and the effects bus right now: what this window really plays (SOM-21..23). */
+  musicLevel: number
+  effectsLevel: number
+  /** Effects sounding right now (SOM-16: overlapping). */
+  effectsPlaying: number
 }
 
 /**
@@ -60,14 +65,22 @@ export class SoundEngine {
   private readonly effectLog: SoundSnapshot['effects'] = []
   private readonly musicBus: GainNode
   private readonly effectsBus: GainNode
+  private readonly musicMeter: AnalyserNode
+  private readonly effectsMeter: AnalyserNode
+  private effectsPlaying = 0
   private personal: Personal = { ...DEFAULT_PERSONAL }
   private closed = false
 
   constructor(private readonly deps: SoundDeps) {
     this.musicBus = deps.ctx.createGain()
     this.effectsBus = deps.ctx.createGain()
-    this.musicBus.connect(deps.ctx.destination)
-    this.effectsBus.connect(deps.ctx.destination)
+    // each bus goes through a meter to the speakers, so what is measured is what is heard
+    this.musicMeter = deps.ctx.createAnalyser()
+    this.effectsMeter = deps.ctx.createAnalyser()
+    this.musicBus.connect(this.musicMeter)
+    this.effectsBus.connect(this.effectsMeter)
+    this.musicMeter.connect(deps.ctx.destination)
+    this.effectsMeter.connect(deps.ctx.destination)
     this.applyPersonal()
   }
 
@@ -141,7 +154,8 @@ export class SoundEngine {
     const p: Playing = { hash: l.hash, volume: l.volume, startedAt: l.startedAt, gain, source: null, duration: 0, startCtx: 0, offset: 0, stopping: false, stopTimer: null, riseEnd: 0 }
     this.playing.set(l.hash, p)
     void this.buffer(l.hash).then((buffer) => {
-      if (!buffer || this.closed || this.playing.get(l.hash) !== p || p.stopping) return
+      // a layer turned off while its file was coming still gets its source (silent): clicked again, it can rise (F6)
+      if (!buffer || this.closed || this.playing.get(l.hash) !== p) return
       const ctx = this.deps.ctx
       const t = ctx.currentTime
       const elapsed = this.deps.serverNow() - p.startedAt
@@ -154,6 +168,7 @@ export class SoundEngine {
       p.startCtx = t
       p.source = source
       source.start(0, p.offset)
+      if (p.stopping) return // fading out from silence; the stop timer ends it
       if (elapsed < FADE_MS) {
         // SOM-06: the rest of the 2-second rise, from where the master's is
         const from = (p.volume / 100) * Math.max(0, elapsed / FADE_MS)
@@ -198,7 +213,11 @@ export class SoundEngine {
     const source = this.deps.ctx.createBufferSource()
     source.buffer = buffer
     source.connect(this.effectsBus)
-    source.onended = () => source.disconnect()
+    this.effectsPlaying++
+    source.onended = () => {
+      this.effectsPlaying--
+      source.disconnect()
+    }
     source.start()
     rec.played = true
   }
@@ -229,7 +248,10 @@ export class SoundEngine {
       effectsVolume: this.personal.effects,
       muted: this.personal.muted,
       musicBus: this.musicBus.gain.value,
-      effectsBus: this.effectsBus.gain.value
+      effectsBus: this.effectsBus.gain.value,
+      musicLevel: rms(this.musicMeter),
+      effectsLevel: rms(this.effectsMeter),
+      effectsPlaying: this.effectsPlaying
     }
   }
 }
@@ -245,4 +267,12 @@ function ramp(param: AudioParam, to: number, t: number, seconds: number): void {
   param.cancelScheduledValues(t)
   param.setValueAtTime(from, t)
   param.linearRampToValueAtTime(to, t + Math.max(0.001, seconds))
+}
+
+function rms(meter: AnalyserNode): number {
+  const data = new Float32Array(meter.fftSize)
+  meter.getFloatTimeDomainData(data)
+  let sum = 0
+  for (const v of data) sum += v * v
+  return Math.sqrt(sum / data.length)
 }

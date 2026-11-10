@@ -16,8 +16,15 @@ class FakeParam {
 }
 class FakeNode {
   gain = new FakeParam()
-  connect(): void {}
+  to: unknown[] = []
+  fftSize = 32
+  connect(target: unknown): void {
+    this.to.push(target)
+  }
   disconnect(): void {}
+  getFloatTimeDomainData(a: Float32Array): void {
+    a.fill(0)
+  }
 }
 class FakeSource extends FakeNode {
   buffer: { duration: number } | null = null
@@ -45,6 +52,7 @@ function fakeCtx(): AudioCtx & { currentTime: number; sources: FakeSource[]; gai
       gains.push(g)
       return g as unknown as GainNode
     },
+    createAnalyser: () => new FakeNode() as unknown as AnalyserNode,
     createBufferSource: () => {
       const s = new FakeSource()
       sources.push(s)
@@ -165,10 +173,42 @@ describe('SoundEngine', () => {
     expect(e.snapshot().effects.map((x) => x.played)).toEqual([false, true])
   })
 
-  it('SOM-16 the same effect twice plays twice, overlapping', async () => {
+  it('SOM-16 the same effect twice plays twice, overlapping: the first is not cut', async () => {
     const { e, ctx } = engine()
     await Promise.all([e.playEffect(SWORD, clock), e.playEffect(SWORD, clock)])
     expect(ctx.sources.filter((s) => s.started)).toHaveLength(2)
+    expect(ctx.sources.some((s) => s.stopped)).toBe(false)
+    expect(e.snapshot().effectsPlaying).toBe(2)
+    ctx.sources[0].onended?.()
+    expect(e.snapshot().effectsPlaying).toBe(1)
+  })
+
+  it('SOM-21, SOM-22 layers go through the music bus and effects through the effects bus, each bus to the speakers through its meter', async () => {
+    const { e, ctx } = engine()
+    const [music, effects] = ctx.gains
+    e.setLayers([layer()])
+    await e.playEffect(SWORD, clock)
+    expect(ctx.gains[2].to).toEqual([music]) // the layer's gain
+    expect(ctx.sources[0].to).toEqual([ctx.gains[2]])
+    expect(ctx.sources[1].to).toEqual([effects]) // the effect
+    expect((music.to[0] as FakeNode).to).toEqual([ctx.destination])
+    expect((effects.to[0] as FakeNode).to).toEqual([ctx.destination])
+    expect(music.to[0]).not.toBe(effects.to[0])
+  })
+
+  it('a layer turned off before its file came, and clicked again during the fade, rises once the file is here', async () => {
+    let arrive: (b: Uint8Array) => void = () => {}
+    const { e, ctx } = engine(() => new Promise((r) => (arrive = r)))
+    const start = clock - 60_000
+    e.setLayers([layer({ startedAt: start })])
+    e.setLayers([layer({ startedAt: start, stoppingAt: clock })])
+    arrive(new Uint8Array([30])) // the file arrives during the fade
+    await settle()
+    e.setLayers([layer({ startedAt: start })]) // clicked again
+    expect(ctx.sources).toHaveLength(1)
+    expect(ctx.sources[0].stopped).toBe(false)
+    expect(ctx.gains[2].gain.ramps.at(-1)).toEqual({ to: 1, at: 102 })
+    expect(e.snapshot().layers[0]).toMatchObject({ playing: true, stopping: false })
   })
 
   it('SOM-20..23 the buses follow "Música", "Efeitos" and "Mudo", starting at 80', () => {

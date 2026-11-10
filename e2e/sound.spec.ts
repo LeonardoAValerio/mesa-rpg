@@ -46,9 +46,15 @@ test('[C12] SOM-12 someone joining while a layer plays hears it from the master\
   expect(Math.abs(m!.position - a!.position)).toBeLessThanOrEqual(1)
 })
 
-test('[C13] SOM-13 two windows play a layer at most 1 s apart, for as long as it plays', async () => {
+test('[C13] SOM-13 two windows play a layer at most 1 s apart, even when the player\'s computer clock is 7 s off', async () => {
   const { master, port, rain } = await masterWithMusic()
-  const ana = await player(port)
+  const ana = await launch()
+  // another computer: its clock runs 7 s ahead of the master's
+  await ana.page.evaluate(() => {
+    const real = Date.now.bind(Date)
+    Date.now = () => real() + 7000
+  })
+  await join(ana.page, port, 'Ana')
   await send(master.page, { type: 'sound/toggle', hash: rain })
   await expect.poll(async () => (await layerOf(ana.page, rain))?.playing, { timeout: 10_000 }).toBe(true)
   for (let i = 0; i < 4; i++) {
@@ -59,13 +65,26 @@ test('[C13] SOM-13 two windows play a layer at most 1 s apart, for as long as it
   }
 })
 
-test('[C15] SOM-15 when the master ends the table the player\'s window stops every sound', async () => {
-  const { master, port, rain } = await masterWithMusic()
-  const ana = await player(port)
-  await send(master.page, { type: 'sound/toggle', hash: rain })
-  await expect.poll(async () => (await layerOf(ana.page, rain))?.playing, { timeout: 10_000 }).toBe(true)
-  await master.page.getByTestId('stop-host').click()
-  await expect.poll(async () => (await sound(ana.page)).layers, { timeout: 5000 }).toEqual([])
+test('[C15] SOM-15 a window stops every sound when the master ends the table, and when its connection is lost', async () => {
+  // the master ends the table
+  {
+    const { master, port, rain } = await masterWithMusic()
+    const ana = await player(port)
+    await send(master.page, { type: 'sound/toggle', hash: rain })
+    await expect.poll(async () => (await layerOf(ana.page, rain))?.playing, { timeout: 10_000 }).toBe(true)
+    await master.page.getByTestId('stop-host').click()
+    await expect.poll(async () => (await sound(ana.page)).layers, { timeout: 5000 }).toEqual([])
+  }
+  // the connection drops with no goodbye: the master's app dies
+  {
+    const { master, port, rain } = await masterWithMusic()
+    const ana = await player(port, 'Bia')
+    await send(master.page, { type: 'sound/toggle', hash: rain })
+    await expect.poll(async () => (await layerOf(ana.page, rain))?.playing, { timeout: 10_000 }).toBe(true)
+    master.app.process().kill('SIGKILL')
+    await expect.poll(async () => (await sound(ana.page)).layers, { timeout: 5000 }).toEqual([])
+    expect((await sound(ana.page)).musicLevel).toBeLessThan(0.001)
+  }
 })
 
 test('[C20] SOM-20 every window has "Música" and "Efeitos" from 0 to 100 at 80 and "Mudo" off', async () => {
@@ -86,39 +105,57 @@ test('[C20] SOM-20 every window has "Música" and "Efeitos" from 0 to 100 at 80 
   }
 })
 
-test('[C21] SOM-21 "Música" scales every layer in that window only', async () => {
+test('[C21] SOM-21 "Música" scales every layer in that window only, in what it really plays', async () => {
   const { master, port, rain } = await masterWithMusic()
   const ana = await player(port)
   await send(master.page, { type: 'sound/toggle', hash: rain })
-  await expect.poll(async () => (await layerOf(ana.page, rain))?.playing, { timeout: 10_000 }).toBe(true)
+  for (const page of [master.page, ana.page]) await expect.poll(async () => (await layerOf(page, rain))?.gain, { timeout: 10_000 }).toBeGreaterThan(0.99)
+  const before = await Promise.all([sound(master.page), sound(ana.page)])
+  expect(before[0].musicLevel).toBeGreaterThan(0.01) // the tone is heard
+  expect(before[1].musicLevel / before[0].musicLevel).toBeCloseTo(1, 1)
   await showPanel(ana.page, 'sons')
   await ana.page.getByTestId('sound-music').fill('20')
-  await expect.poll(async () => (await sound(ana.page)).musicBus).toBeCloseTo(0.2)
-  expect((await sound(ana.page)).effectsBus).toBeCloseTo(0.8)
-  expect((await sound(master.page)).musicBus).toBeCloseTo(0.8) // the master's window is untouched
-  expect((await layerOf(ana.page, rain))!.playing).toBe(true)
+  // Ana plays at 20 / 80 of the master's level; the master is unchanged
+  await expect.poll(async () => {
+    const [m, a] = await Promise.all([sound(master.page), sound(ana.page)])
+    return a.musicLevel / m.musicLevel
+  }).toBeCloseTo(0.25, 1)
+  expect((await sound(master.page)).musicLevel).toBeCloseTo(before[0].musicLevel, 2)
 })
 
-test('[C22] SOM-22 "Efeitos" scales effects in that window only', async () => {
+test('[C22] SOM-22 "Efeitos" scales effects in that window only, in what it really plays', async () => {
   const { master, port } = await masterWithMusic()
+  putFile(master, 'efeitos/vento.wav', toneWav(4, 330))
+  let wind = ''
+  await expect.poll(async () => (wind = (await master.page.evaluate(() => window.mesa.campaign()))?.sounds.find((s) => s.path === 'efeitos/vento.wav')?.hash ?? '')).not.toBe('')
   const ana = await player(port)
   await showPanel(ana.page, 'sons')
   await ana.page.getByTestId('sound-effects').fill('50')
   await expect.poll(async () => (await sound(ana.page)).effectsBus).toBeCloseTo(0.5)
-  expect((await sound(ana.page)).musicBus).toBeCloseTo(0.8)
-  expect((await sound(master.page)).effectsBus).toBeCloseTo(0.8)
+  await send(master.page, { type: 'sound/effect', hash: wind })
+  for (const page of [master.page, ana.page]) await expect.poll(async () => (await sound(page)).effectsLevel, { timeout: 3000 }).toBeGreaterThan(0.01)
+  const [m, a] = await Promise.all([sound(master.page), sound(ana.page)])
+  expect(a.effectsLevel / m.effectsLevel).toBeCloseTo(0.625, 1) // 50 / 80
+  expect(a.musicLevel).toBeLessThan(0.001) // no music playing: only effects moved
 })
 
-test('[C23] SOM-23 "Mudo" silences the window and turning it off brings the volumes back', async () => {
-  const { port } = await masterWithMusic()
+test('[C23] SOM-23 "Mudo" silences what the window plays and turning it off brings the volumes back', async () => {
+  const { master, port, rain } = await masterWithMusic()
   const ana = await player(port)
+  await send(master.page, { type: 'sound/toggle', hash: rain })
+  for (const page of [master.page, ana.page]) await expect.poll(async () => (await layerOf(page, rain))?.gain, { timeout: 10_000 }).toBeGreaterThan(0.99)
   await showPanel(ana.page, 'sons')
   await ana.page.getByTestId('sound-music').fill('30')
   await ana.page.getByTestId('sound-effects').fill('60')
   await ana.page.getByTestId('sound-mute').check()
-  await expect.poll(async () => [(await sound(ana.page)).musicBus, (await sound(ana.page)).effectsBus]).toEqual([0, 0])
+  await expect.poll(async () => (await sound(ana.page)).musicLevel).toBeLessThan(0.0005)
+  expect([(await sound(ana.page)).musicBus, (await sound(ana.page)).effectsBus]).toEqual([0, 0])
+  expect((await sound(master.page)).musicLevel).toBeGreaterThan(0.01) // the master still hears it
   await ana.page.getByTestId('sound-mute').uncheck()
-  await expect.poll(async () => (await sound(ana.page)).musicBus).toBeCloseTo(0.3)
+  await expect.poll(async () => {
+    const [m, a] = await Promise.all([sound(master.page), sound(ana.page)])
+    return a.musicLevel / m.musicLevel
+  }).toBeCloseTo(0.375, 1) // 30 / 80
   expect((await sound(ana.page)).effectsBus).toBeCloseTo(0.6)
 })
 

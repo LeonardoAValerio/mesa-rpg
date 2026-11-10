@@ -178,12 +178,13 @@ T3 → T4 → T5 → T6
 
 **Done when**:
 
-- [ ] e2e: save "Taverna" with a layer at 60, change the layers, load: the other fades out and the layer is back at 60 in both windows; a scene without sound stops all; a deleted audio file blocks the load; "Importar .mesa" keeps the layers
-- [ ] Phase gate passes
+- [x] e2e: save "Taverna" with a layer at 60, change the layers, load: the other fades out and the layer is back at 60 in both windows; a scene without sound stops all; a deleted audio file blocks the load; "Importar .mesa" keeps the layers
+- [x] Phase gate passes
 
 **Tests**: e2e
 **Gate**: phase
 **Commit**: `test(e2e): scenes bring their sound back`
+**Done**: yes
 
 ---
 
@@ -280,7 +281,7 @@ Proof: run e2e | ✓ [C29] SOM-29
 
 ## Handoff
 
-**Settled mid-build:** T4 widened the starting panel column from 340 to 380 px so the five tabs (with Sons) fit without dockview's overflow menu (PANEL-01). T5 put "Tocando" after the lists, held at the panel's foot, so a layer starting never moves a row under the pointer.
+**Settled mid-build:** T4 widened the starting panel column from 340 to 380 px so the five tabs (with Sons) fit without dockview's overflow menu (PANEL-01). T5 put "Tocando" after the lists, held at the panel's foot, so a layer starting never moves a row under the pointer. Phase 2 gate: NET-02 failed once in a full run and passed alone and in the full rerun (166); it must bind 47800, which lies in Linux's ephemeral range (32768-60999), so a parallel worker's outgoing connection can briefly hold it.
 **Dispatched:** none
 **Walked:** none
 

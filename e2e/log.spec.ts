@@ -5,7 +5,8 @@ test.afterEach(closeAll)
 
 test('[C55] CHAT-01 Ana sends "olá" and both windows show "Ana: olá"', async () => {
   const { master, player } = await masterAndPlayer('Ana')
-  await showPanel(master.page, 'dados')
+  await showPanel(master.page, 'chat')
+  await showPanel(player.page, 'chat')
   await player.page.getByTestId('chat-input').fill('olá')
   await player.page.getByTestId('chat-send').click()
   for (const page of [master.page, player.page]) await expect(page.getByTestId('log-entry').last()).toHaveText('Ana: olá')
@@ -14,12 +15,13 @@ test('[C55] CHAT-01 Ana sends "olá" and both windows show "Ana: olá"', async (
 
 test('[C58] CHAT-04 `<b>oi</b>` shows the angle brackets as text, with no `b` element', async () => {
   const { master, player } = await masterAndPlayer('Ana')
-  await showPanel(master.page, 'dados')
+  await showPanel(master.page, 'chat')
+  await showPanel(player.page, 'chat')
   await player.page.getByTestId('chat-input').fill('<b>oi</b><img src=x onerror=alert(1)>')
   await player.page.getByTestId('chat-input').press('Enter')
   for (const page of [master.page, player.page]) {
     await expect(page.getByTestId('log-entry').last()).toHaveText('Ana: <b>oi</b><img src=x onerror=alert(1)>')
-    await expect(page.getByTestId('log').locator('b, img')).toHaveCount(0)
+    await expect(page.getByTestId('chat-log').locator('b, img')).toHaveCount(0)
   }
 })
 
@@ -50,7 +52,8 @@ test('invalid notation shows "Notação inválida: 2d" and adds nothing to the l
 
 test('an empty or 501-character message is not sent (CHAT-02)', async () => {
   const { master, player } = await masterAndPlayer('Ana')
-  await showPanel(master.page, 'dados')
+  await showPanel(master.page, 'chat')
+  await showPanel(player.page, 'chat')
   await player.page.getByTestId('chat-input').fill('   ')
   await player.page.getByTestId('chat-send').click()
   await player.page.getByTestId('chat-input').evaluate((el: HTMLInputElement) => {

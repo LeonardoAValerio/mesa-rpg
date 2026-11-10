@@ -11,7 +11,7 @@ import { gridPanel } from './ui/grid-panel'
 import { Layout, type LayoutSnapshot } from './ui/layout'
 import { panelsMenu } from './ui/panels-menu'
 import { libraryPanel } from './ui/library'
-import { logPanel } from './ui/log-panel'
+import { chatPanel, dicePanel } from './ui/log-panel'
 import { sceneMenu } from './ui/scene-menu'
 import { tokenEditor } from './ui/token-editor'
 import { toolbar } from './ui/toolbar'
@@ -50,8 +50,10 @@ onSession(async ({ client, screen }) => {
   const stopToolbar = toolbar(screen.toolbar, board, master ? [{ tool: 'fog-brush', label: 'Pincel de névoa' }, { tool: 'fog-rect', label: 'Retângulo de névoa' }, { tool: 'fog-poly', label: 'Polígono de névoa' }] : [])
   const fog = master ? new FogTools(board, client, screen.toolbar) : null
   if (fog) screen.panels.mapas.append(fog.panel)
-  const log = logPanel(client)
-  screen.panels.dados.append(log.root)
+  const dice = dicePanel(client, (id) => layout.arrived(id))
+  screen.panels.dados.append(dice.root)
+  const chat = chatPanel(client, (id) => layout.arrived(id))
+  screen.panels.chat.append(chat.root)
   const library = master ? libraryPanel(client, board, screen.board) : null
   if (library) screen.panels.tokens.append(library.root)
   if (editor) screen.panels.tokens.append(editor.root)
@@ -62,7 +64,8 @@ onSession(async ({ client, screen }) => {
     stopToolbar()
     overlays.destroy()
     fog?.destroy()
-    log.destroy()
+    dice.destroy()
+    chat.destroy()
     library?.destroy()
     editor?.destroy()
     panel?.destroy()

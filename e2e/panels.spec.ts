@@ -282,3 +282,72 @@ test('[C14] PANEL-14 text typed in a panel stays when it is moved, floated, clos
   await showPanel(master.page, 'dados')
   await expect(master.page.getByTestId('dice-input')).toHaveValue('3d6+2')
 })
+
+async function say(page: Page, text: string): Promise<void> {
+  await page.getByTestId('chat-input').fill(text)
+  await page.getByTestId('chat-input').press('Enter')
+  await expect(page.getByTestId('chat-input')).toHaveValue('') // sent: the input clears when the server accepts it
+}
+async function roll(page: Page, expr: string): Promise<void> {
+  await page.getByTestId('dice-input').fill(expr)
+  await page.getByTestId('dice-input').press('Enter')
+}
+
+test('[C15] PANEL-15 Dados holds the roller and only the rolls; Chat only the messages and the input', async () => {
+  const { master, player } = await table()
+  await roll(player.page, '1d6') // the player starts on Dados
+  await showPanel(player.page, 'chat')
+  await say(player.page, 'olá')
+  for (const page of [master.page, player.page]) {
+    await showPanel(page, 'dados')
+    const dados = page.getByTestId('panel-dados')
+    await expect(dados.getByTestId('log-entry')).toHaveCount(1)
+    await expect(dados.getByTestId('log-entry')).toContainText('Ana rolou 1d6')
+    await expect(dados.getByTestId('dice-input')).toBeVisible()
+    await expect(dados.getByTestId('chat-input')).toHaveCount(0)
+    await showPanel(page, 'chat')
+    const chat = page.getByTestId('panel-chat')
+    await expect(chat.getByTestId('log-entry')).toHaveText(['Ana: olá'])
+    await expect(chat.getByTestId('chat-input')).toBeVisible()
+    await expect(chat.getByTestId('dice-input')).toHaveCount(0)
+  }
+})
+
+test('[C16] PANEL-16 a hidden Dados or Chat tab shows how many entries arrived, up to "9+"', async () => {
+  const { master, player } = await table()
+  // the player is on Dados; the master's messages count on the player's Chat tab
+  await showPanel(master.page, 'chat')
+  await expect(player.page.getByTestId('tab-count-chat')).toBeHidden()
+  await say(master.page, 'um')
+  await expect(player.page.getByTestId('tab-count-chat')).toHaveText('1')
+  await say(master.page, 'dois')
+  await expect(player.page.getByTestId('tab-count-chat')).toHaveText('2')
+  for (let i = 3; i <= 10; i++) await say(master.page, `m${i}`)
+  await expect(player.page.getByTestId('tab-count-chat')).toHaveText('9+')
+  // the master is on Chat: rolls count on the master's Dados tab, not on the visible Chat
+  await roll(player.page, '1d4')
+  await roll(player.page, '1d4')
+  await expect(master.page.getByTestId('tab-count-dados')).toHaveText('2')
+  await expect(master.page.getByTestId('tab-count-chat')).toBeHidden()
+  // the player sees Dados: their own rolls do not count there
+  await expect(player.page.getByTestId('tab-count-dados')).toBeHidden()
+})
+
+test('[C17] PANEL-17 the count disappears when its panel is shown, also when shown by floating it', async () => {
+  const { master, player } = await table()
+  await showPanel(master.page, 'chat')
+  await say(master.page, 'um')
+  await expect(player.page.getByTestId('tab-count-chat')).toHaveText('1')
+  await showPanel(player.page, 'chat')
+  await expect(player.page.getByTestId('tab-count-chat')).toBeHidden()
+  // a new message while Chat is shown adds nothing
+  await say(master.page, 'dois')
+  await player.page.waitForTimeout(300)
+  await expect(player.page.getByTestId('tab-count-chat')).toBeHidden()
+  // hidden again, then shown by floating its group
+  await showPanel(player.page, 'dados')
+  await say(master.page, 'três')
+  await expect(player.page.getByTestId('tab-count-chat')).toHaveText('1')
+  await player.page.getByTestId('close-dados').click()
+  await expect(player.page.getByTestId('tab-count-chat')).toBeHidden() // Chat is the group's only panel now, so visible
+})

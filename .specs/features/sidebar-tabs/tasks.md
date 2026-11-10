@@ -119,12 +119,13 @@ T3 → T4
 
 **Done when**:
 
-- [ ] e2e: rolls only in Dados and messages only in Chat; counts 1, 2 ... "9+" while hidden, cleared when shown, in the master's and the player's windows
-- [ ] Task e2e gate passes
+- [x] e2e: rolls only in Dados and messages only in Chat; counts 1, 2 ... "9+" while hidden, cleared when shown, in the master's and the player's windows
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(ui): dice and chat in their own panels with unread counts`
+**Done**: yes
 
 ---
 

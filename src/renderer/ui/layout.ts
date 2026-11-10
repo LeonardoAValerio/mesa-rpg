@@ -31,6 +31,7 @@ export class Layout {
   readonly api: DockviewApi
   private readonly tabs = new Map<string, Tab>()
   private restoring = false
+  private readonly counts = new Map<PanelId, number>()
   private readonly changeListeners = new Set<() => void>()
 
   constructor(
@@ -51,8 +52,11 @@ export class Layout {
     this.restoring = false
     this.api.onDidLayoutChange(() => {
       if (!this.restoring) this.save()
+      this.clearSeen()
       for (const fn of this.changeListeners) fn()
     })
+    this.api.onDidActivePanelChange(() => this.clearSeen())
+    this.api.onDidActiveGroupChange(() => this.clearSeen())
   }
 
   /** PANEL-11, PANEL-12: the saved layout of this role, if it reads back with the table and only this role's panels. */
@@ -175,6 +179,7 @@ export class Layout {
           api.close()
         })
         this.tabs.set(id, { element, count, dot })
+        this.drawCount(id as PanelId)
       }
     }
   }
@@ -198,6 +203,30 @@ export class Layout {
     for (const id of rest) this.api.addPanel({ id, component: id, title: PANEL_TITLES[id], position: { referencePanel: first, direction: 'within' } })
     this.api.getPanel('conectados')?.group.api.setSize({ height: 140 })
     this.api.getPanel(STARTING_ACTIVE[this.role])?.api.setActive()
+  }
+
+  /** PANEL-16: one more entry for a panel; counted only while the panel is not visible. */
+  arrived(id: PanelId): void {
+    if (this.isVisible(id)) return
+    this.counts.set(id, (this.counts.get(id) ?? 0) + 1)
+    this.drawCount(id)
+  }
+
+  /** PANEL-17: a panel on screen has nothing unseen. */
+  private clearSeen(): void {
+    for (const id of [...this.counts.keys()]) {
+      if (!this.isVisible(id)) continue
+      this.counts.delete(id)
+      this.drawCount(id)
+    }
+  }
+
+  private drawCount(id: PanelId): void {
+    const tab = this.tabs.get(id)
+    if (!tab) return
+    const n = this.counts.get(id) ?? 0
+    tab.count.hidden = n === 0
+    tab.count.textContent = n > 9 ? '9+' : String(n)
   }
 
   isVisible(id: PanelId): boolean {

@@ -48,6 +48,7 @@ export function applyOps(view: View, ops: PatchOp[]): View {
     else if (o.op === 'fog') next.fog = o.fog
     else if (o.op === 'players') next.players = o.players
     else if (o.op === 'palette') next.palette = o.palette
+    else if (o.op === 'sound') next.sound = o.sound
   }
   return next
 }

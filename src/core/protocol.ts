@@ -55,7 +55,12 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('fog/revealAll') }),
   z.object({ type: z.literal('palette/set'), palette: z.record(faction, z.string().regex(/^#[0-9a-fA-F]{6}$/)) }),
   z.object({ type: z.literal('roll'), expr: z.string().max(200) }),
-  z.object({ type: z.literal('chat'), text: z.string().max(2000) })
+  z.object({ type: z.literal('chat'), text: z.string().max(2000) }),
+  z.object({ type: z.literal('sound/toggle'), hash }),
+  z.object({ type: z.literal('sound/volume'), hash, volume: num }),
+  z.object({ type: z.literal('sound/stopAll') }),
+  z.object({ type: z.literal('sound/set'), layers: z.array(z.object({ hash, volume: num })).max(64) }),
+  z.object({ type: z.literal('sound/effect'), hash })
 ])
 export type Action = z.infer<typeof actionSchema>
 
@@ -75,15 +80,20 @@ const clientMsgSchema = z.discriminatedUnion('t', [
 export type ClientMsg = z.infer<typeof clientMsgSchema>
 
 export type ServerMsg =
-  | { t: 'welcome'; you: { role: Role; name: string }; view: View; log: LogEntry[]; version?: string }
+  /** `serverNow`: the master's clock (ms), so each window keeps its offset for the music layers (SOM-12, SOM-13). */
+  | { t: 'welcome'; you: { role: Role; name: string }; view: View; log: LogEntry[]; version?: string; serverNow: number }
   | { t: 'join-error'; reason: string }
-  | { t: 'patch'; ops: PatchOp[] }
+  | { t: 'patch'; ops: PatchOp[]; serverNow: number }
   | { t: 'ack'; id: string }
   | { t: 'reject'; id: string; reason: string }
   | { t: 'log'; entry: LogEntry }
   | { t: 'ephemeral'; from: string; e: Ephemeral }
   | { t: 'library'; items: LibraryItem[] }
   | { t: 'closed' }
+  /** SOM-16: an effect the master played at `at` (server clock). */
+  | { t: 'effect'; hash: string; at: number }
+  /** SOM-17: the campaign's effects, for every window to download ahead. */
+  | { t: 'effects'; hashes: string[] }
 
 /** Parses one message from a client; anything that is not a known, well-formed message is null. */
 export function parseClientMsg(raw: string): ClientMsg | null {

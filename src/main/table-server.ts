@@ -97,7 +97,7 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
       const next = viewFor(scene, actorOf(s), players)
       const ops = s.last ? diffViews(s.last, next) : []
       s.last = next
-      if (ops.length) send(s, { t: 'patch', ops })
+      if (ops.length) send(s, { t: 'patch', ops, serverNow: Date.now() })
     }
   }
 
@@ -163,7 +163,7 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
     sessions.add(session)
     const view = viewFor(scene, actorOf(session), names())
     session.last = view
-    send(session, { t: 'welcome', you: { role: session.role, name }, view, log: log.slice(-200), version: opts.version })
+    send(session, { t: 'welcome', you: { role: session.role, name }, view, log: log.slice(-200), version: opts.version, serverNow: Date.now() })
     if (session.role === 'master') send(session, { t: 'library', items: library })
     broadcastViews()
     return session

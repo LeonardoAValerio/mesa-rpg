@@ -38,3 +38,15 @@ describe('parseClientMsg (NET-15)', () => {
     })
   })
 })
+
+describe('sound actions on the wire (SOM-06..11, SOM-16)', () => {
+  const hash = 'b'.repeat(64)
+  const msg = (action: unknown): string => JSON.stringify({ t: 'action', id: '1', action })
+  it('parses each sound action and refuses a bad hash or a non-number volume', () => {
+    for (const a of [{ type: 'sound/toggle', hash }, { type: 'sound/volume', hash, volume: 30 }, { type: 'sound/stopAll' }, { type: 'sound/set', layers: [{ hash, volume: 60 }] }, { type: 'sound/effect', hash }]) {
+      expect(parseClientMsg(msg(a)), a.type).not.toBeNull()
+    }
+    expect(parseClientMsg(msg({ type: 'sound/toggle', hash: '../x' }))).toBeNull()
+    expect(parseClientMsg(msg({ type: 'sound/volume', hash, volume: '30' }))).toBeNull()
+  })
+})

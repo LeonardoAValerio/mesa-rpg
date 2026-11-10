@@ -1,3 +1,4 @@
+import type { Sound } from './sound'
 import type { Item, ItemKind } from './items'
 
 export type Faction = 'grupo' | 'inimigo' | 'npc' | 'neutro'
@@ -83,6 +84,8 @@ export interface View {
   fog: Fog | null
   palette: FactionColors | null
   players: string[]
+  /** SOM-06..13: the music layers playing; the same for everyone. */
+  sound: Sound
 }
 
 export interface LibraryItem {
@@ -101,6 +104,7 @@ export type PatchOp =
   | { op: 'fog'; fog: Fog | null }
   | { op: 'players'; players: string[] }
   | { op: 'palette'; palette: FactionColors | null }
+  | { op: 'sound'; sound: Sound }
 
 export const DEFAULT_GRID: Grid = { cell: 70, offsetX: 0, offsetY: 0, color: '#000000', opacity: 0.5 }
 

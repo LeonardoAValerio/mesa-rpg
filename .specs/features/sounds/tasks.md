@@ -9,8 +9,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: inline - the Design section below
-**Status**: Draft
-**Approved**: pending
+**Status**: In Progress
+**Approved**: 2026-11-10 - user: "Pode seguir"
 **Build**: `scripts/with-node npm run build`; `scripts/with-node npm run typecheck`; `scripts/with-node npm run lint`
 **Run unit**: `scripts/with-node npx vitest run --reporter=verbose`
 **Run e2e**: `scripts/with-node npm run build && scripts/with-node npx playwright test --reporter=list`
@@ -77,12 +77,13 @@ T3 → T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Unit tests: each audio header and a non-audio file; toggle on, off, again while stopping; the 9th layer refused; volume 0..100 and out of range; stop all; a player refused for each sound action; position at 0, inside the loop and after several loops
-- [ ] Quick gate passes
+- [x] Unit tests: each audio header and a non-audio file; toggle on, off, again while stopping; the 9th layer refused; volume 0..100 and out of range; stop all; a player refused for each sound action; position at 0, inside the loop and after several loops
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): sound layers, effects and audio file rules`
+**Done**: yes
 
 ---
 

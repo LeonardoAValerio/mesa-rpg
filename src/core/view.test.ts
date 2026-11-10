@@ -43,7 +43,8 @@ describe('viewFor', () => {
       tokens: {},
       fog: null,
       palette: null,
-      players: ['Mestre', 'Ana']
+      players: ['Mestre', 'Ana'],
+      sound: { layers: [] }
     })
   })
 })
@@ -69,5 +70,18 @@ describe('diffViews', () => {
       { op: 'grid', grid: c.grid },
       { op: 'players', players: ['Ana', 'Bia'] }
     ])
+  })
+})
+
+describe('sound in the view (SOM-06, SOM-12)', () => {
+  it('every viewer gets the same layers, and a change of layers is one sound op', () => {
+    const sound = { layers: [{ hash: 'a'.repeat(64), volume: 100, startedAt: 5, stoppingAt: null }] }
+    const s = emptyScene()
+    expect(viewFor(s, ana, [], sound).sound).toEqual(sound)
+    expect(viewFor(s, master, [], sound).sound).toEqual(sound)
+    const before = viewFor(s, ana, [])
+    expect(before.sound).toEqual({ layers: [] })
+    expect(diffViews(before, viewFor(s, ana, [], sound))).toEqual([{ op: 'sound', sound }])
+    expect(diffViews(viewFor(s, ana, [], sound), viewFor(s, ana, [], sound))).toEqual([])
   })
 })

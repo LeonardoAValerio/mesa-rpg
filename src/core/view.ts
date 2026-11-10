@@ -1,4 +1,5 @@
 import { tokenCovered } from './fog'
+import { emptySound, type Sound } from './sound'
 import type { Actor, PatchOp, Scene, Token, View } from './types'
 
 /** Whether a viewer may see a token: players never see hidden tokens (PERM-05) nor others' tokens whose centre is under the fog (FOGS-06). */
@@ -10,10 +11,10 @@ export function canSee(scene: Scene, viewer: Actor, token: Token): boolean {
 }
 
 /** The part of the scene one viewer is allowed to see. Anything left out never leaves the server. */
-export function viewFor(scene: Scene, viewer: Actor, players: string[]): View {
+export function viewFor(scene: Scene, viewer: Actor, players: string[], sound: Sound = emptySound()): View {
   const tokens: Record<string, Token> = {}
   for (const t of Object.values(scene.tokens)) if (canSee(scene, viewer, t)) tokens[t.id] = t
-  return { role: viewer.role, map: scene.map, grid: scene.grid, tokens, fog: scene.fog, palette: scene.palette, players }
+  return { role: viewer.role, map: scene.map, grid: scene.grid, tokens, fog: scene.fog, palette: scene.palette, players, sound }
 }
 
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b)
@@ -26,6 +27,7 @@ export function diffViews(prev: View, next: View): PatchOp[] {
   if (!same(prev.fog, next.fog)) ops.push({ op: 'fog', fog: next.fog })
   if (!same(prev.players, next.players)) ops.push({ op: 'players', players: next.players })
   if (!same(prev.palette, next.palette)) ops.push({ op: 'palette', palette: next.palette })
+  if (!same(prev.sound, next.sound)) ops.push({ op: 'sound', sound: next.sound })
   for (const id of Object.keys(prev.tokens)) if (!next.tokens[id]) ops.push({ op: 'token/remove', id })
   for (const t of Object.values(next.tokens)) if (!same(prev.tokens[t.id], t)) ops.push({ op: 'token/upsert', token: t })
   return ops

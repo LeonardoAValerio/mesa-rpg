@@ -150,6 +150,17 @@ test('[C7] PANEL-07 dragging the divider between the table and the panels resize
   expect(groupOf(after, 'mapas').width).toBeGreaterThan(right.width + 150)
   // the table's canvas follows its new size
   await expect.poll(async () => Math.round((await master.page.evaluate(() => window.__mesaTest!.board()!.canvas.width)))).toBe(groupOf(after, 'mesa').width)
+  // the divider between two groups: Conectados and the tab group share the height differently
+  const con = groupOf(after, 'conectados')
+  const tabs = groupOf(after, 'mapas')
+  const sx = con.left + con.width / 2
+  const sy = con.top + con.height
+  await master.page.mouse.move(sx, sy)
+  await master.page.mouse.down()
+  await humanMove(master.page, sx, sy, sx, sy + 150)
+  await master.page.mouse.up()
+  await expect.poll(async () => groupOf(await layout(master.page), 'conectados').height).toBeGreaterThan(con.height + 120)
+  expect(groupOf(await layout(master.page), 'mapas').height).toBeLessThan(tabs.height - 120)
 })
 
 test('[C8] PANEL-08 a floated group shows over the table and moves; with the right column empty the table takes its space', async () => {
@@ -217,28 +228,41 @@ test('[C10] PANEL-10 "Restaurar layout" brings back the starting layout', async 
   expect(groupOf(l, 'mapas').active).toBe('mapas')
 })
 
+async function joinAs(page: Page, port: number, name: string): Promise<void> {
+  await page.getByTestId('join-ip').fill('127.0.0.1')
+  await page.getByTestId('join-port').fill(String(port))
+  await page.getByTestId('join-name').fill(name)
+  await page.getByTestId('join').click()
+}
+const shape = async (page: Page): Promise<string[]> => (await layout(page)).groups.map((g) => g.panels.join(',') + (g.floating ? '*' : '')).sort()
+
 test('[C11] PANEL-11 the layout is saved per role on the computer and comes back at the next table', async () => {
+  const masterApp = await launch()
+  const port = await freePort()
+  await host(masterApp.page, port)
+  // this computer as master: close Chat and float Mapas
   const first = await launch()
   await host(first.page, await freePort())
   await first.page.getByTestId('close-chat').click()
   await first.page.getByTestId('float-mapas').click()
   await expect.poll(async () => groupOf(await layout(first.page), 'mapas').floating).toBe(true)
+  const masterShape = await shape(first.page)
+  await first.page.getByTestId('stop-host').click()
+  // the same computer as player: arrange it differently (Dados floating)
+  await joinAs(first.page, port, 'Ana')
+  await expect.poll(async () => (await layout(first.page)).groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['dados', 'chat']])
+  await first.page.getByTestId('float-dados').click()
+  await expect.poll(async () => groupOf(await layout(first.page), 'dados').floating).toBe(true)
+  const playerShape = await shape(first.page)
   await first.app.close()
-  // the next table on this computer, as master: the same arrangement
+  // next time, each role finds its own arrangement
   const again = await launch({ userData: first.userData })
   await host(again.page, await freePort())
-  await expect.poll(async () => groupOf(await layout(again.page), 'mapas').floating).toBe(true)
-  expect((await layout(again.page)).groups.flatMap((g) => g.panels)).not.toContain('chat')
-  const port = await freePort()
+  await expect.poll(() => shape(again.page)).toEqual(masterShape)
   await again.page.getByTestId('stop-host').click()
-  // as a player on the same computer: the player's own (starting) layout
-  const masterApp = await launch()
-  await host(masterApp.page, port)
-  await again.page.getByTestId('join-ip').fill('127.0.0.1')
-  await again.page.getByTestId('join-port').fill(String(port))
-  await again.page.getByTestId('join-name').fill('Ana')
-  await again.page.getByTestId('join').click()
-  await expect.poll(async () => (await layout(again.page)).groups.map((g) => g.panels)).toEqual([['mesa'], ['conectados'], ['dados', 'chat']])
+  await joinAs(again.page, port, 'Bia')
+  await expect.poll(() => shape(again.page)).toEqual(playerShape)
+  expect(playerShape).not.toEqual(masterShape)
 })
 
 test('[C12] PANEL-12 an unreadable saved layout, or one with another role\'s panels, gives the starting layout', async () => {
@@ -250,14 +274,17 @@ test('[C12] PANEL-12 an unreadable saved layout, or one with another role\'s pan
     await first.page.getByTestId('stop-host').click()
     await expect(first.page.getByTestId('host')).toBeVisible()
   }
-  // a player's saved layout holding the master's Tokens is not used
+  // a player's saved layout holding the master's Tokens and Mapas is not used
+  await host(first.page, await freePort())
+  await first.page.getByTestId('close-chat').click() // a real, readable master layout is saved
+  await expect.poll(async () => (await layout(first.page)).groups.flatMap((g) => g.panels)).not.toContain('chat')
+  await first.page.getByTestId('stop-host').click()
+  const saved = await first.page.evaluate(() => localStorage.getItem('mesa-layout-v1-master'))
+  expect(saved).toContain('tokens')
+  await first.page.evaluate((m) => localStorage.setItem('mesa-layout-v1-player', m!), saved)
   const masterApp = await launch()
   const port = await freePort()
   await host(masterApp.page, port)
-  await first.page.evaluate(() => {
-    const m = localStorage.getItem('mesa-layout-v1-master')!
-    localStorage.setItem('mesa-layout-v1-player', m)
-  })
   await first.page.getByTestId('join-ip').fill('127.0.0.1')
   await first.page.getByTestId('join-port').fill(String(port))
   await first.page.getByTestId('join-name').fill('Ana')
@@ -322,7 +349,9 @@ test('[C16] PANEL-16 a hidden Dados or Chat tab shows how many entries arrived, 
   await expect(player.page.getByTestId('tab-count-chat')).toHaveText('1')
   await say(master.page, 'dois')
   await expect(player.page.getByTestId('tab-count-chat')).toHaveText('2')
-  for (let i = 3; i <= 10; i++) await say(master.page, `m${i}`)
+  for (let i = 3; i <= 9; i++) await say(master.page, `m${i}`)
+  await expect(player.page.getByTestId('tab-count-chat')).toHaveText('9')
+  await say(master.page, 'm10')
   await expect(player.page.getByTestId('tab-count-chat')).toHaveText('9+')
   // the master is on Chat: rolls count on the master's Dados tab, not on the visible Chat
   await roll(player.page, '1d4')
@@ -333,7 +362,7 @@ test('[C16] PANEL-16 a hidden Dados or Chat tab shows how many entries arrived, 
   await expect(player.page.getByTestId('tab-count-dados')).toBeHidden()
 })
 
-test('[C17] PANEL-17 the count disappears when its panel is shown, also when shown by floating it', async () => {
+test('[C17] PANEL-17 the count disappears when its panel is shown, by its tab or by closing the panel in front of it', async () => {
   const { master, player } = await table()
   await showPanel(master.page, 'chat')
   await say(master.page, 'um')

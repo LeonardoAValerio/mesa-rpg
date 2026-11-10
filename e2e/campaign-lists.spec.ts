@@ -138,6 +138,8 @@ async function saveAs(page: Page, name: string): Promise<void> {
   await page.getByTestId('scene-name').fill(name)
   await page.getByTestId('scene-name-ok').click()
 }
+const placed = async (page: Page): Promise<string[]> =>
+  (await snap(page)).tokens.map((t) => `${t.name} ${Math.round(t.x)},${Math.round(t.y)} r${t.rotation}`).sort()
 const items = async (page: Page): Promise<string[]> => (await snap(page)).tokens.map((t) => t.name).sort()
 
 test('[C18] CAMP-18 Mapas lists the scenes and a pick loads it in every window, asking first when the table has items', async () => {
@@ -145,9 +147,11 @@ test('[C18] CAMP-18 Mapas lists the scenes and a pick loads it in every window, 
   await saveAs(master.page, 'Emboscada')
   await expect(master.page.getByTestId('scene-item')).toHaveText(['Emboscada'], { timeout: 5000 })
   expect(readdirSync(join(campaignDir(master), 'cenas'))).toEqual(['Emboscada.cena']) // CAMP-16 on disk
+  const saved = await placed(master.page)
   // change the table: remove the chest, move the goblin
   const now = await snap(master.page)
   await act(master.page, { type: 'token/remove', id: now.tokens.find((t) => t.name === 'bau')!.id })
+  await act(master.page, { type: 'token/move', id: now.tokens.find((t) => t.name === 'goblin')!.id, x: 650, y: 450 })
   await expect.poll(() => items(player.page)).toEqual(['goblin'])
   await master.page.getByTestId('scene-item').filter({ hasText: 'Emboscada' }).click()
   await expect(master.page.getByTestId('confirm-message')).toHaveText('Substituir a cena atual?') // SAVE-05
@@ -156,6 +160,7 @@ test('[C18] CAMP-18 Mapas lists the scenes and a pick loads it in every window, 
   await master.page.getByTestId('scene-item').filter({ hasText: 'Emboscada' }).click()
   await master.page.getByTestId('confirm-yes').click()
   for (const page of [master.page, player.page]) await expect.poll(() => items(page)).toEqual(['bau', 'goblin'])
+  for (const page of [master.page, player.page]) expect(await placed(page), 'each item back where it was saved').toEqual(saved)
   await expect.poll(async () => (await snap(player.page)).map?.textured, { timeout: 10_000 }).toBe(true)
 })
 

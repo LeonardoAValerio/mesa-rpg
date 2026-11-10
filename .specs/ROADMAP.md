@@ -8,6 +8,7 @@ user: "Sim, nessa ordem (Recomendado)".
 | A | Névoa em formas livres, com ferramentas claras | `.specs/features/fog-shapes/` | Done - v0.3.0 |
 | B | Tokens e objetos: PNG no tamanho natural, anel de facção opcional, tipo Objeto | `.specs/features/tokens-objects/` | Done - v0.4.0 |
 | C | Painéis encaixáveis (estilo Photoshop): Conectados, Tokens, Mapas, Dados, Chat; Sons vem com E | `.specs/features/sidebar-tabs/` | Done - v0.5.0 |
+| C2 | Ferramentas do mapa em coluna de ícones, névoa num botão, painel Rede (pedido entre C e D) | `.specs/features/map-tools/` | Done - v0.6.0 |
 | D | Pasta da campanha em `Documentos/Mesa RPG/<Campanha>/` com mapas, tokens, objetos, músicas, efeitos e cenas; as abas listam o que está nela | - | Pending |
 | E | Sons: músicas e efeitos tocados pelo mestre, sincronizados com os jogadores, volume por pessoa | - | Pending |
 

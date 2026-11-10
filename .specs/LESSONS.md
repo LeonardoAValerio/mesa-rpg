@@ -122,6 +122,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: F1, F2 (e2e)
 - last seen: 2026-11-10T00:50:09Z
 
+### L-019 - Keyboard shortcuts and clickable toolbars are tested with the focus where a user leaves it: in the toolbar's own field, and on the button just clicked (Space/Enter re-press it).
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `renderer` · harmful: 0
+- features: map-tools
+- evidence: F1, F3 (renderer)
+- last seen: 2026-11-10T01:51:10Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

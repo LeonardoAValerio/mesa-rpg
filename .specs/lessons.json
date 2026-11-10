@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 19,
+  "next_id": 20,
   "lessons": [
     {
       "id": "L-001",
@@ -328,6 +328,24 @@
       ],
       "created": "2026-11-10T00:50:09Z",
       "last_seen": "2026-11-10T00:50:09Z"
+    },
+    {
+      "id": "L-019",
+      "key": "ac_gap::keyboard shortcuts and clickable toolbars are tested with the focus where a user leaves it in the toolbar s own field and on the button just clicked space enter re press it",
+      "text": "Keyboard shortcuts and clickable toolbars are tested with the focus where a user leaves it: in the toolbar's own field, and on the button just clicked (Space/Enter re-press it).",
+      "signal": "ac_gap",
+      "scope": "renderer",
+      "status": "candidate",
+      "features": [
+        "map-tools"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F1, F3 (renderer)"
+      ],
+      "created": "2026-11-10T01:51:10Z",
+      "last_seen": "2026-11-10T01:51:10Z"
     }
   ]
 }

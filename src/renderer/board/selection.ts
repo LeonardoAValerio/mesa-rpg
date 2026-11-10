@@ -25,8 +25,11 @@ export class Selection {
   private readonly outline = new Graphics()
   private readonly handle = new Graphics()
   private resize: { width: number } | null = null
-  /** The last rotation sent, so quick key presses add up before the server answers. */
-  private sent: { id: string; rotation: number } | null = null
+  /**
+   * The last rotation sent, so quick key presses add up before the view has it. The server acks before it sends the
+   * patch, so it is dropped on the first view after the ack of the last one, not on the ack itself.
+   */
+  private sent: { id: string; rotation: number; acked: boolean } | null = null
   private readonly offs: Array<() => void> = []
 
   constructor(private readonly board: Board, private readonly client: TableClient) {
@@ -43,7 +46,10 @@ export class Selection {
       () => stage.off('pointerup', this.endResize),
       () => stage.off('pointerupoutside', this.endResize),
       () => window.removeEventListener('keydown', this.key),
-      client.on('view', () => this.draw())
+      client.on('view', () => {
+        if (this.sent?.acked) this.sent = null
+        this.draw()
+      })
     )
   }
 
@@ -100,9 +106,12 @@ export class Selection {
     if (!t || !you || !canMove(t, you).ok) return
     const from = this.sent?.id === t.id ? this.sent.rotation : t.rotation
     const rotation = normalizeRotation(from + (key === 'e' ? ROTATION_STEP : -ROTATION_STEP))
-    this.sent = { id: t.id, rotation }
+    const sent = { id: t.id, rotation, acked: false }
+    this.sent = sent
     void this.client.send({ type: 'token/rotate', id: t.id, rotation }).then((r) => {
-      if (!r.ok || this.sent?.rotation === rotation) this.sent = null // refused, or the last one is in
+      if (this.sent !== sent) return // a later press is on its way
+      if (r.ok) sent.acked = true // the patch with it is next
+      else this.sent = null
     })
   }
 

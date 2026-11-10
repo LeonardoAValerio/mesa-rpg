@@ -1,6 +1,6 @@
 # campaign-folder proofs
 
-**HEAD**: 9e59f68
+**HEAD**: ff1a90d
 **Tree**: clean
 **Shell**: /bin/sh
 **Result**: 25 pass, 1 fail
@@ -39,37 +39,37 @@
 `Run e2e` - exit 1
 
 ```
-    > 61 |   await expect(page.getByTestId('table')).toBeVisible()
-         |                                           ^
-      62 | }
-      63 |
-      64 | export async function join(page: Page, port: number, name: string): Promise<void> {
-        at host (/home/usuario/Projects/basement-tabletop/mesa-rpg/e2e/helpers.ts:61:43)
-        at masterAndPlayer (/home/usuario/Projects/basement-tabletop/mesa-rpg/e2e/helpers.ts:76:3)
-        at table (/home/usuario/Projects/basement-tabletop/mesa-rpg/e2e/tokens.spec.ts:8:30)
-        at /home/usuario/Projects/basement-tabletop/mesa-rpg/e2e/tokens.spec.ts:30:30
 
-    Error Context: test-results/tokens--C43-PERM-01-the-ma-4f4e2-ws-Ana-in-the-master-window/error-context.md
+      189 |   await master.page.keyboard.press('q')
+      190 |   await master.page.keyboard.press('q')
+    > 191 |   for (const page of both(master, player)) await expect.poll(async () => (await item(page, 'Porta')).rotation).toBe(345)
+          |                                                                                                                ^
+      192 |   expect((await item(master.page, 'Ponte')).rotation).toBe(0) // only the selected one
+      193 |   // a player rotates a Livre item, not a "Só mestre" one
+      194 |   await clickItem(player.page, 'Ponte')
+        at /home/usuario/Projects/basement-tabletop/mesa-rpg/e2e/items.spec.ts:191:112
+
+    Error Context: test-results/items--C13-ITEM-13-E-and-Q-3a114-ticlockwise-in-every-window/error-context.md
 
   1 failed
-    e2e/tokens.spec.ts:29:1 › [C43] PERM-01 the master picks "Ana" as owner of the Guerreira and the token shows "Ana" in the master window 
-  140 passed (2.5m)
+    e2e/items.spec.ts:181:1 › [C13] ITEM-13 E and Q rotate the selected item 15° clockwise and anticlockwise, in every window 
+  140 passed (2.6m)
 ```
 
 `Run unit` - exit 0
 
 ```
- ✓ src/main/table-server.actions.test.ts > TableServer actions > [C11] NET-11 Ana reconnecting with the same name still owns her token and can move it 61ms
- ✓ src/core/grid-detect.test.ts > detectGrid > [C20] MAP-04 an image with no grid falls back to a 70 px cell and "Grid não detectado — ajuste manualmente" 1580ms
- ✓ src/core/grid-detect.test.ts > detectGrid > a detected grid produces no warning 0ms
+ ✓ src/main/table-server.actions.test.ts > TableServer actions > [C11] NET-11 Ana reconnecting with the same name still owns her token and can move it 59ms
+ ✓ src/core/grid-detect.test.ts > detectGrid > [C20] MAP-04 an image with no grid falls back to a 70 px cell and "Grid não detectado — ajuste manualmente" 1550ms
+ ✓ src/core/grid-detect.test.ts > detectGrid > a detected grid produces no warning 1ms
 
  Test Files  34 passed (34)
       Tests  161 passed (161)
-   Start at  09:24:05
-   Duration  3.98s (tests 61%, import 31%, transform 5%, worker 2%)
+   Start at  09:30:13
+   Duration  3.92s (tests 61%, import 32%, transform 5%, worker 2%)
 
-    Isolate  34 workers spawned · ~222ms startup each (spawn + environment, per file)
-             at least ~281ms faster with isolate: false — reuses workers across files instead of one per file
+    Isolate  34 workers spawned · ~226ms startup each (spawn + environment, per file)
+             at least ~286ms faster with isolate: false — reuses workers across files instead of one per file
 
 (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
   - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { textFile, tokenFolder } from './fixtures'
-import { act, closeAll, showPanel, masterAndPlayer, nextOpenDialog, putAsset, snap, solidPng, type AppHandle } from './helpers'
+import { textFile } from './fixtures'
+import { act, closeAll, showPanel, masterAndPlayer, nextOpenDialog, putAsset, putFile, snap, solidPng, type AppHandle } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -10,18 +10,14 @@ async function withMap(master: AppHandle): Promise<void> {
   await act(master.page, { type: 'fog/revealAll' }) // a no-op since FOGD-01 (a new map has no fog); kept so the board is open either way
 }
 
+/** The kit in the campaign's tokens/ and objetos/ folders, as the master copies it with the file manager. */
 async function importKit(master: AppHandle): Promise<void> {
+  putFile(master, 'tokens/goblin.png', solidPng(64, 64, [200, 30, 30]))
+  putFile(master, 'tokens/goblin.json', JSON.stringify({ faccao: 'inimigo', tamanho: 1 }))
+  putFile(master, 'tokens/elfa.png', solidPng(64, 64, [30, 30, 200]))
+  putFile(master, 'objetos/bau.png', solidPng(64, 32, [120, 80, 20]))
   await showPanel(master.page, 'tokens')
-  const dir = tokenFolder(`kit-${Date.now()}`, {
-    'goblin.png': solidPng(64, 64, [200, 30, 30]),
-    'goblin.json': JSON.stringify({ faccao: 'inimigo', tamanho: 1 }),
-    'elfa.png': solidPng(64, 64, [30, 30, 200]),
-    'bau.png': solidPng(64, 32, [120, 80, 20]),
-    'bau.json': JSON.stringify({ tipo: 'objeto', tamanho: 1 })
-  })
-  await nextOpenDialog(master.app, [dir])
-  await master.page.getByTestId('import-tokens').click()
-  await expect(master.page.getByTestId('library-name')).toHaveText(['bau', 'elfa', 'goblin'])
+  await expect(master.page.getByTestId('library-name')).toHaveText(['elfa', 'goblin', 'bau'], { timeout: 5000 })
 }
 
 test('[C10] ITEM-10 a library drop puts the item\'s centre under the cursor, snapping a character, in both windows', async () => {

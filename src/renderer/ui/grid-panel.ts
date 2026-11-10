@@ -9,6 +9,8 @@ export interface GridPanel {
   root: HTMLElement
   /** MAP-02, MAP-03, MAP-04, MAP-09: pick an image, detect its grid and make it the scene map. */
   importMap(): Promise<void>
+  /** CAMP-13: makes a campaign map (already in the store) the scene map, as "Importar mapa" does. */
+  loadMap(hash: string, width: number, height: number): Promise<void>
   destroy(): void
 }
 
@@ -52,6 +54,19 @@ export function gridPanel(client: TableClient, textures: TextureStore): GridPane
   fill()
   const off = client.on('view', fill)
 
+  /** MAP-02..04: detect the grid of the image and make it the scene map. */
+  const setMap = async (hash: string, width: number, height: number, bytes: Uint8Array): Promise<void> => {
+    const bitmap = await decodeImage(bytes)
+    if (!bitmap) {
+      message.textContent = INVALID_IMAGE
+      return
+    }
+    const { grid, warning } = gridFromDetection(detectGrid(pixelsOf(bitmap), bitmap.width, bitmap.height), client.view?.grid)
+    textures.add(hash, bitmap)
+    const r = await client.send({ type: 'map/set', hash, width, height, grid })
+    if (!r.ok) message.textContent = r.reason
+    else if (warning) message.textContent = warning
+  }
   const importMap = async (): Promise<void> => {
     message.textContent = ''
     const res = await window.mesa.importMap()
@@ -59,16 +74,16 @@ export function gridPanel(client: TableClient, textures: TextureStore): GridPane
       if ('error' in res) message.textContent = res.error
       return
     }
-    const bitmap = await decodeImage(res.bytes)
-    if (!bitmap) {
+    await setMap(res.hash, res.width, res.height, res.bytes)
+  }
+  const loadMap = async (hash: string, width: number, height: number): Promise<void> => {
+    message.textContent = ''
+    const bytes = await window.mesa.assetBytes(hash)
+    if (!bytes) {
       message.textContent = INVALID_IMAGE
       return
     }
-    const { grid, warning } = gridFromDetection(detectGrid(pixelsOf(bitmap), bitmap.width, bitmap.height), client.view?.grid)
-    textures.add(res.hash, bitmap)
-    const r = await client.send({ type: 'map/set', hash: res.hash, width: res.width, height: res.height, grid })
-    if (!r.ok) message.textContent = r.reason
-    else if (warning) message.textContent = warning
+    await setMap(hash, width, height, bytes)
   }
 
   const root = h('section', { class: 'panel', testid: 'grid-panel' },
@@ -79,5 +94,5 @@ export function gridPanel(client: TableClient, textures: TextureStore): GridPane
     h('div', { class: 'row' }, h('label', {}, 'Deslocamento X', offX), h('label', {}, 'Deslocamento Y', offY)),
     h('div', { class: 'row' }, h('label', {}, 'Cor', color), h('label', {}, 'Opacidade (%)', opacity))
   )
-  return { root, importMap, destroy: off }
+  return { root, importMap, loadMap, destroy: off }
 }

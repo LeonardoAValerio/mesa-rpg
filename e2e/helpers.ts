@@ -86,6 +86,16 @@ export async function act(page: Page, action: Action): Promise<void> {
   const r = await page.evaluate((a) => window.__mesaTest!.send(a), action)
   expect(r, JSON.stringify(action)).toEqual({ ok: true })
 }
+/** The folder of the test's "Teste" campaign (AD-009). */
+export function campaignDir(app: AppHandle): string {
+  return pathJoin(app.userData, 'Documentos', 'Mesa RPG', 'Teste')
+}
+/** Writes a file into the campaign, as the master would with the file manager. */
+export function putFile(app: AppHandle, rel: string, data: Buffer | string): void {
+  const p = pathJoin(campaignDir(app), ...rel.split('/'))
+  mkdirSync(pathJoin(p, '..'), { recursive: true })
+  writeFileSync(p, data)
+}
 /** Picks a map tool from the tool column; a fog shape opens the Névoa panel first (MTB-08). */
 export async function pickTool(page: Page, tool: string): Promise<void> {
   if (tool.startsWith('fog-')) await openFog(page)

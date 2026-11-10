@@ -156,12 +156,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] e2e: files written into the campaign by the test show in their groups within 2 s and disappear when deleted; thumbnails drawn; an object dragged in is an object; a map clicked loads in both windows; "Adicionar arquivos" copies with `(2)`
-- [ ] Task e2e gate passes
+- [x] e2e: files written into the campaign by the test show in their groups within 2 s and disappear when deleted; thumbnails drawn; an object dragged in is an object; a map clicked loads in both windows; "Adicionar arquivos" copies with `(2)`
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(ui): the campaign's maps, tokens and objects in the panels`
+**Done**: yes
 
 ---
 

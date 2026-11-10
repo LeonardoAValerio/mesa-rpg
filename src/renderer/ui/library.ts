@@ -1,31 +1,14 @@
 import type { LibraryItem } from '../../core/types'
 import type { Board } from '../board/board'
 import type { TableClient } from '../net/table-client'
-import { clear, h } from './dom'
+import { h } from './dom'
 
-const DRAG_TYPE = 'application/x-mesa-token'
+/** What a token row carries when dragged onto the board (CAMP-12, ITEM-10). */
+export const DRAG_TYPE = 'application/x-mesa-token'
 
-/** Master-only token library: import the kit folder, load the palette, drag a token onto the map (TOK-01, TOK-04). */
+/** Master-only: the palette, and the board taking a token or object dragged from the campaign lists (CAMP-12, ITEM-10). */
 export function libraryPanel(client: TableClient, board: Board, dropZone: HTMLElement): { root: HTMLElement; destroy(): void } {
-  const list = h('ul', { class: 'library', testid: 'library' })
   const message = h('p', { class: 'hint', testid: 'library-message' })
-
-  const draw = (items: LibraryItem[]): void => {
-    clear(list)
-    for (const item of items) {
-      const li = h('li', { testid: 'library-item', draggable: 'true', title: `${item.kind === 'object' ? 'objeto' : (item.ring ?? 'personagem')} · ${item.width}` },
-        h('span', { testid: 'library-name' }, item.name),
-        h('small', {}, ` ${item.kind === 'object' ? 'objeto' : (item.ring ?? 'personagem')} · ${item.width}`)
-      )
-      li.addEventListener('dragstart', (e) => {
-        e.dataTransfer?.setData(DRAG_TYPE, JSON.stringify(item))
-        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy'
-      })
-      list.append(li)
-    }
-  }
-  draw(client.library)
-  const off = client.on('library', draw)
 
   const onDragOver = (e: DragEvent): void => {
     if (e.dataTransfer?.types.includes(DRAG_TYPE)) e.preventDefault()
@@ -46,7 +29,7 @@ export function libraryPanel(client: TableClient, board: Board, dropZone: HTMLEl
   dropZone.addEventListener('drop', dropListener)
 
   const root = h('section', { class: 'panel', testid: 'library-panel' },
-    h('h3', {}, 'Tokens'),
+    h('h3', {}, 'Paleta'),
     h('div', { class: 'row' },
       h('button', {
         testid: 'load-palette',
@@ -57,13 +40,11 @@ export function libraryPanel(client: TableClient, board: Board, dropZone: HTMLEl
         }
       }, 'Carregar paleta')
     ),
-    message,
-    list
+    message
   )
   return {
     root,
     destroy: () => {
-      off()
       dropZone.removeEventListener('dragover', onDragOver)
       dropZone.removeEventListener('drop', dropListener)
     }

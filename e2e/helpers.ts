@@ -79,6 +79,16 @@ export async function act(page: Page, action: Action): Promise<void> {
   const r = await page.evaluate((a) => window.__mesaTest!.send(a), action)
   expect(r, JSON.stringify(action)).toEqual({ ok: true })
 }
+/** Picks a map tool from the tool column; a fog shape opens the Névoa panel first (MTB-08). */
+export async function pickTool(page: Page, tool: string): Promise<void> {
+  if (tool.startsWith('fog-')) await openFog(page)
+  await page.getByTestId(`tool-${tool}`).click()
+}
+/** Opens the Névoa panel if it is closed (it closes when the map is pressed). */
+export async function openFog(page: Page): Promise<void> {
+  if (!(await page.getByTestId('fog-flyout').isVisible())) await page.getByTestId('tool-fog').click()
+  await expect(page.getByTestId('fog-flyout')).toBeVisible()
+}
 /** Brings a docked panel to the front by clicking its tab (PANEL-03). */
 export async function showPanel(page: Page, id: 'conectados' | 'rede' | 'tokens' | 'mapas' | 'dados' | 'chat'): Promise<void> {
   await page.getByTestId(`tab-${id}`).click()

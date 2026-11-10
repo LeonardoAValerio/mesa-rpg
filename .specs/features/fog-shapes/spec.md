@@ -77,13 +77,13 @@ A névoa segue as células do grid, então o resultado fica quadriculado, e as f
 
 **Acceptance Criteria**:
 
-1. FOGT-01: WHEN the master picks a fog tool THEN the toolbar SHALL show the modes "Cobrir" and "Revelar" next to the fog tools, with "Cobrir" selected the first time.
+1. FOGT-01 (replaced by MTB-08, AD-008: the modes are in the Névoa panel): WHEN the master picks a fog tool THEN the toolbar SHALL show the modes "Cobrir" and "Revelar" next to the fog tools, with "Cobrir" selected the first time.
 2. FOGT-02: WHILE the master holds Alt and paints with a fog tool THEN the app SHALL use the opposite of the selected mode.
 3. FOGT-03: WHILE the brush tool is selected the master's window SHALL draw a circle of the brush radius under the cursor.
 4. FOGT-04: WHILE the master drags the brush or the rectangle, or adds polygon points, the master's window SHALL draw a preview of the shape, and the other windows SHALL not change until it is released or closed.
 5. FOGT-05: WHEN the master presses Esc while drawing a polygon THEN the app SHALL discard it and send nothing.
 6. FOGT-06: WHEN the master sets the brush radius THEN the app SHALL accept 0,5 to 10 cells in steps of 0,5 and clamp any other value into that range.
-7. FOGT-07: WHILE no fog tool is selected the toolbar SHALL not show the fog modes.
+7. FOGT-07 (replaced by MTB-06, MTB-11, AD-008): WHILE no fog tool is selected the toolbar SHALL not show the fog modes.
 
 **Independent Test**: com o mapa sem névoa, o mestre escolhe o Pincel de névoa e arrasta: a área fica escura para ele e preta para o jogador; segurando Alt, a mesma ação revela.
 

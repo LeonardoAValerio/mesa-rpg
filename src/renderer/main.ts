@@ -14,7 +14,7 @@ import { libraryPanel } from './ui/library'
 import { chatPanel, dicePanel } from './ui/log-panel'
 import { sceneMenu } from './ui/scene-menu'
 import { tokenEditor } from './ui/token-editor'
-import { toolbar } from './ui/toolbar'
+import { mapToolbar } from './ui/map-toolbar'
 import { mountUpdateBar } from './ui/update-bar'
 
 declare global {
@@ -24,6 +24,7 @@ declare global {
       board(): BoardSnapshot | null
       fogSample(points: Array<[number, number]>): boolean[]
       fogTool(): FogToolSnapshot | null
+      mapTools(): { flyout: boolean; fogIcon: string | null }
       overlays(): OverlaySnapshot
       send(action: Action): Promise<ActionResult>
     }
@@ -50,8 +51,8 @@ onSession(async ({ client, screen }) => {
   })
   const stopSync = syncAssets(client, textures, screen.board)
   const overlays = new Overlays(board, client)
-  const stopToolbar = toolbar(screen.toolbar, board, master ? [{ tool: 'fog-brush', label: 'Pincel de névoa' }, { tool: 'fog-rect', label: 'Retângulo de névoa' }, { tool: 'fog-poly', label: 'Polígono de névoa' }] : [])
-  const fog = master ? new FogTools(board, client, screen.toolbar) : null
+  const fog = master ? new FogTools(board, client) : null
+  const tools = mapToolbar(screen.board, board, fog?.modes ?? null)
   if (fog) screen.panels.mapas.append(fog.panel)
   const dice = dicePanel(client, (id) => layout.arrived(id))
   screen.panels.dados.append(dice.root)
@@ -60,11 +61,11 @@ onSession(async ({ client, screen }) => {
   const library = master ? libraryPanel(client, board, screen.board) : null
   if (library) screen.panels.tokens.append(library.root)
   if (editor) screen.panels.tokens.append(editor.root)
-  if (window.mesa.isTest) window.__mesaTest = { layout: () => layout.snapshot(), board: () => board.snapshot(), fogSample: (p) => board.fogSample(p), fogTool: () => fog?.snapshot() ?? null, overlays: () => overlays.snapshot(), send: (a) => client.send(a) }
+  if (window.mesa.isTest) window.__mesaTest = { layout: () => layout.snapshot(), board: () => board.snapshot(), fogSample: (p) => board.fogSample(p), fogTool: () => fog?.snapshot() ?? null, mapTools: () => tools.snapshot(), overlays: () => overlays.snapshot(), send: (a) => client.send(a) }
   return () => {
     if (window.__mesaTest) window.__mesaTest = undefined
     stopSync()
-    stopToolbar()
+    tools.destroy()
     overlays.destroy()
     fog?.destroy()
     dice.destroy()

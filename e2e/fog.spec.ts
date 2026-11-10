@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { act, closeAll, coveredCenters, fogSample, masterAndPlayer, putAsset, screenOf, snap, solidPng, type AppHandle } from './helpers'
+import { act, closeAll, coveredCenters, fogSample, masterAndPlayer, putAsset, screenOf, snap, solidPng, type AppHandle, pickTool, openFog } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -30,9 +30,10 @@ test('[C65] FOG-02 a covered cell is opaque in the player window and 50% opaque 
   expect((await snap(player.page)).fog.alpha).toBe(1)
   expect((await snap(master.page)).fog.alpha).toBe(0.5)
   expect(await coveredCenters(master.page)).toBe(48)
-  await master.page.getByTestId('tool-fog-rect').click()
+  await pickTool(master.page, 'fog-rect')
+  await openFog(master.page)
   await master.page.getByTestId('fog-mode-reveal').click()
-  await dragRect(master.page, 10, 10, 290, 190) // the centres of cells (0..2, 0..1)
+  await dragRect(master.page, 290, 190, 10, 10) // the centres of cells (0..2, 0..1); started away from the tool column
   await expect.poll(() => coveredCenters(player.page)).toBe(42)
   await expect.poll(() => coveredCenters(master.page)).toBe(42)
   expect((await snap(player.page)).fog.alpha).toBe(1)
@@ -43,10 +44,12 @@ test('the master reveals a rectangle and the player sees only that area and the 
   const { master, player } = await table()
   expect(await names(player.page)).toEqual([])
   expect(await names(master.page)).toEqual(['Goblin', 'Ogro'])
-  await master.page.getByTestId('tool-fog-rect').click()
+  await pickTool(master.page, 'fog-rect')
+  await openFog(master.page)
   await master.page.getByTestId('fog-mode-reveal').click()
-  await dragRect(master.page, 10, 10, 290, 190)
+  await dragRect(master.page, 290, 190, 10, 10)
   await expect.poll(() => names(player.page)).toEqual(['Goblin'])
+  await openFog(master.page)
   await master.page.getByTestId('fog-mode-cover').click()
   await dragRect(master.page, 110, 110, 190, 190)
   await expect.poll(() => names(player.page)).toEqual([])
@@ -54,8 +57,10 @@ test('the master reveals a rectangle and the player sees only that area and the 
 
 test('the brush reveals around the cursor and "Cobrir tudo" covers everything again (FOGS-01, FOGS-05)', async () => {
   const { master, player } = await table()
-  await master.page.getByTestId('tool-fog-brush').click()
+  await pickTool(master.page, 'fog-brush')
+  await openFog(master.page)
   await master.page.getByTestId('fog-mode-reveal').click()
+  await openFog(master.page)
   await master.page.getByTestId('fog-radius').fill('1')
   await master.page.getByTestId('fog-radius').press('Enter')
   // (570, 470): within one cell (100 px) of the centres of (5,4), (6,4) and (5,5) only (82 px); the rest are over 100 px away

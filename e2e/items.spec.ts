@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { act, closeAll, showPanel, masterAndPlayer, putAsset, snap, solidPng, type AppHandle } from './helpers'
+import { act, closeAll, showPanel, masterAndPlayer, putAsset, snap, solidPng, type AppHandle, pickTool } from './helpers'
 import type { TokenSnapshot } from '../src/renderer/board/board'
 
 test.afterEach(closeAll)
@@ -309,7 +309,7 @@ test('the resize handle works with the Mover tool only: a fog rectangle drawn fr
   await expect.poll(async () => (await snap(master.page)).selection.handle).not.toBeNull()
   const s = await snap(master.page)
   const [hx, hy] = s.selection.handle!
-  await master.page.getByTestId('tool-fog-rect').click()
+  await pickTool(master.page, 'fog-rect')
   expect((await snap(master.page)).selection.handle).toBeNull()
   const screen = (px: number, py: number) => ({ x: s.canvas.left + px * s.camera.scale + s.camera.x, y: s.canvas.top + py * s.camera.scale + s.camera.y })
   await master.page.mouse.move(screen(hx, hy).x, screen(hx, hy).y)

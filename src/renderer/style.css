@@ -34,7 +34,19 @@ label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
 .tab-count { background: #ef4444; color: white; border-radius: 9px; font-size: 11px; padding: 0 6px; line-height: 16px; }
 .tab-dot { color: #facc15; font-size: 10px; }
 .tab-count[hidden], .tab-dot[hidden] { display: none; }
-.topbar-actions { display: flex; gap: 6px; position: relative; }
+.topbar-actions { display: flex; gap: 6px; position: relative; margin-left: auto; }
+.map-toolbar { position: absolute; left: 8px; top: 8px; z-index: 5; display: flex; gap: 6px; align-items: flex-start; pointer-events: none; }
+.map-tools, .fog-flyout { pointer-events: auto; background: rgba(23, 25, 31, 0.92); border: 1px solid var(--line); border-radius: 8px; padding: 4px; }
+.map-tools { display: flex; flex-direction: column; gap: 4px; }
+.map-tool { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; background: transparent; color: #cbd5e1; border: 1px solid transparent; border-radius: 6px; }
+.map-tool:hover { background: rgba(255, 255, 255, 0.08); }
+.map-tool[aria-pressed="true"] { background: #2563eb; color: white; outline: none; }
+.fog-flyout { display: flex; flex-direction: column; gap: 8px; padding: 8px; min-width: 190px; }
+.fog-flyout[hidden] { display: none; }
+.fog-flyout .fog-modes { display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; }
+.fog-flyout .row { display: flex; flex-direction: row; gap: 4px; }
+.fog-flyout .fog-modes button { flex: 1; }
+.fog-flyout .fog-modes button[aria-pressed="true"] { background: #2563eb; color: white; }
 .panels { position: relative; }
 .panels-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 50; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; min-width: 180px; }
 .panels-menu[hidden] { display: none; }
@@ -53,9 +65,6 @@ label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
 .host-info .hint { color: var(--muted); }
 .address { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .address .label { color: var(--muted); }
-.toolbar { display: flex; gap: 6px; margin-left: auto; }
-.toolbar button[aria-pressed="true"] { outline: 2px solid white; }
-.fog-modes { display: flex; gap: 6px; align-items: center; padding-left: 8px; border-left: 1px solid var(--line); }
 .fog-modes[hidden], .fog-modes [hidden] { display: none; }
 .fog-radius { display: flex; gap: 4px; align-items: center; font-size: 12px; color: var(--muted); }
 .fog-radius input { width: 64px; }

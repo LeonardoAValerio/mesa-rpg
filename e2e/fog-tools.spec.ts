@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { act, closeAll, fogSample, masterAndPlayer, putAsset, screenOf, solidPng, type AppHandle } from './helpers'
+import { act, closeAll, fogSample, masterAndPlayer, putAsset, screenOf, solidPng, type AppHandle, pickTool, openFog } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -8,7 +8,7 @@ async function table(tool?: string): Promise<{ master: AppHandle; player: AppHan
   const { master, player } = await masterAndPlayer('Ana')
   const map = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
   await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
-  if (tool) await master.page.getByTestId(tool).click()
+  if (tool) await pickTool(master.page, tool.replace('tool-', ''))
   return { master, player }
 }
 const fogTool = (page: Page) => page.evaluate(() => window.__mesaTest!.fogTool())
@@ -48,32 +48,6 @@ test('[C2] FOGS-02 a rectangle covers exactly its inside in every window', async
   }
 })
 
-test('[C10] FOGT-01 picking a fog tool shows "Cobrir" and "Revelar" in the toolbar, "Cobrir" selected the first time', async () => {
-  const { master } = await table()
-  const modes = master.page.getByTestId('toolbar').getByTestId('fog-modes')
-  await expect(modes).toBeHidden()
-  await master.page.getByTestId('tool-fog-rect').click()
-  await expect(modes).toBeVisible()
-  await expect(modes.getByTestId('fog-mode-cover')).toHaveText('Cobrir')
-  await expect(modes.getByTestId('fog-mode-reveal')).toHaveText('Revelar')
-  await expect(modes.getByTestId('fog-mode-cover')).toHaveAttribute('aria-pressed', 'true')
-  await expect(modes.getByTestId('fog-mode-reveal')).toHaveAttribute('aria-pressed', 'false')
-  await master.page.getByTestId('tool-fog-brush').click()
-  await expect(modes).toBeVisible()
-  // the old modes in the side panel are gone
-  await expect(master.page.getByTestId('fog-panel').getByTestId('fog-mode-cover')).toHaveCount(0)
-})
-
-test('[C16] FOGT-07 without a fog tool the toolbar shows no fog modes, and a player never sees them', async () => {
-  const { master, player } = await table('tool-fog-brush')
-  await expect(master.page.getByTestId('fog-modes')).toBeVisible()
-  for (const tool of ['tool-select', 'tool-ruler', 'tool-ping', 'tool-draw']) {
-    await master.page.getByTestId(tool).click()
-    await expect(master.page.getByTestId('fog-modes'), tool).toBeHidden()
-  }
-  await expect(player.page.getByTestId('fog-modes')).toHaveCount(0)
-})
-
 test('[C11] FOGT-02 holding Alt draws in the opposite mode, and releasing it goes back to the selected mode', async () => {
   const { master, player } = await table('tool-fog-rect')
   await master.page.getByTestId('fog-cover-all').click()
@@ -86,6 +60,7 @@ test('[C11] FOGT-02 holding Alt draws in the opposite mode, and releasing it goe
   await master.page.mouse.up()
   await expect.poll(() => fogSample(player.page, [[200, 200], [120, 120]])).toEqual([true, false]) // no Alt: Cobrir again
   // and the other way round
+  await openFog(master.page)
   await master.page.getByTestId('fog-mode-reveal').click()
   await master.page.keyboard.down('Alt')
   await press(master.page, 500, 100, [700, 300])
@@ -103,16 +78,18 @@ test('[C12] FOGT-03 the brush shows a circle of its radius under the cursor', as
   expect(Math.abs(c.x - 400)).toBeLessThan(2)
   expect(Math.abs(c.y - 300)).toBeLessThan(2)
   expect(Math.abs(c.r - 100)).toBeLessThan(2)
+  await openFog(master.page)
   await master.page.getByTestId('fog-radius').fill('2.5')
   await master.page.getByTestId('fog-radius').press('Enter')
   await to(master.page, 200, 200)
   await expect.poll(async () => Math.round((await fogTool(master.page))!.cursor!.r)).toBe(250)
   // the input clamps what the master types (FOGT-06)
+  await openFog(master.page)
   await master.page.getByTestId('fog-radius').fill('13')
   await master.page.getByTestId('fog-radius').press('Enter')
   await expect(master.page.getByTestId('fog-radius')).toHaveValue('10')
   // no circle with the rectangle
-  await master.page.getByTestId('tool-fog-rect').click()
+  await pickTool(master.page, 'fog-rect')
   await to(master.page, 300, 300)
   expect((await fogTool(master.page))!.cursor).toBeNull()
 })
@@ -133,7 +110,7 @@ test('[C13] FOGT-04 while drawing only the master sees a preview; the fog change
   expect((await fogTool(master.page))!.preview).toBeNull()
   for (const page of both(master, player)) await expect.poll(() => fogSample(page, [[400, 300]])).toEqual([true])
   // the rectangle the same
-  await master.page.getByTestId('tool-fog-rect').click()
+  await pickTool(master.page, 'fog-rect')
   await press(master.page, 100, 450, [300, 550])
   await expect.poll(async () => (await fogTool(master.page))!.preview).toMatchObject({ kind: 'rect' })
   const r = (await fogTool(master.page))!.preview!

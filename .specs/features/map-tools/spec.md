@@ -193,3 +193,11 @@ Proof: run e2e | ✓ [C14] MTB-14
 
 **C15** - A layout saved by 0.5.0 gives the starting layout with Rede (MTB-15, AC 4)
 Proof: run e2e | ✓ [C15] MTB-15
+
+---
+
+## Handoff
+
+**Settled mid-build:** steps 2 and 3 went in one commit (the tool column and the fog panel share `src/renderer/ui/map-toolbar.ts`). The fog e2e that started drags at map (10, 10) now start mid-map, since the column covers the map's top-left corner. Letting `pointerup` pass the column was meant to stop a drag sticking there; a mutation showed Pixi ends the drag either way, so that test is only a regression guard. FOGT-01 and FOGT-07 tests (fog-shapes C10, C16) were removed as replaced (AD-008).
+**Dispatched:** none
+**Walked:** none

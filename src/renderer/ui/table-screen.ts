@@ -12,7 +12,6 @@ export interface TableScreen {
   dock: HTMLElement
   /** The content of each panel, built once (PANEL-14). */
   panels: Record<PanelId, HTMLElement>
-  toolbar: HTMLElement
   /** The top bar's right end, before "Encerrar mesa" / "Sair". */
   actions: HTMLElement
   destroy(): void
@@ -29,7 +28,6 @@ export interface HostDetails {
 export function renderTableScreen(root: HTMLElement, client: TableClient, host: HostDetails | null, backHome: () => void): TableScreen {
   const players = h('ul', { class: 'players', testid: 'players' })
   const board = h('main', { class: 'board', testid: 'board' })
-  const toolbar = h('div', { class: 'toolbar', testid: 'toolbar' })
   const panel = (id: PanelId, ...children: HTMLElement[]): HTMLElement => h('div', { class: 'dock-panel', testid: `panel-${id}` }, ...children)
   const panels: Record<PanelId, HTMLElement> = {
     conectados: panel('conectados', players),
@@ -45,7 +43,6 @@ export function renderTableScreen(root: HTMLElement, client: TableClient, host: 
   const you = client.you
   const topbar = h('header', { class: 'topbar' },
     h('strong', { testid: 'you' }, `${you?.name ?? ''} · ${you?.role === 'master' ? 'mestre' : 'jogador'}`),
-    toolbar,
     actions,
     host
       ? h('button', { testid: 'stop-host', onclick: host.stop }, 'Encerrar mesa')
@@ -72,7 +69,6 @@ export function renderTableScreen(root: HTMLElement, client: TableClient, host: 
     board,
     dock,
     panels,
-    toolbar,
     actions,
     destroy: () => {
       offView()

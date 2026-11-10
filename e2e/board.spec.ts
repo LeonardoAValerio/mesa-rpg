@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { BoardSnapshot } from '../src/renderer/board/board'
-import { act, closeAll, coveredCenters, masterAndPlayer, putAsset, screenOf, snap, type AppHandle } from './helpers'
+import { act, closeAll, coveredCenters, masterAndPlayer, putAsset, screenOf, snap, type AppHandle, pickTool } from './helpers'
 
 test.afterEach(closeAll)
 
@@ -102,7 +102,7 @@ test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (pi
   const pings: number[] = []
   const polyStarted: boolean[] = []
   for (const tool of ['tool-ping', 'tool-fog-rect', 'tool-fog-brush', 'tool-fog-poly']) {
-    await master.page.getByTestId(tool).click()
+    await pickTool(master.page, tool.replace('tool-', ''))
     const before = await snap(master.page)
     const p = { x: before.canvas.left + 400, y: before.canvas.top + 300 }
     await master.page.mouse.move(p.x, p.y)

@@ -41,7 +41,7 @@ export class FogTools {
   private readonly error: HTMLElement
   private readonly offs: Array<() => void> = []
 
-  constructor(private readonly board: Board, private readonly client: TableClient, toolbar: HTMLElement) {
+  constructor(private readonly board: Board, private readonly client: TableClient) {
     board.overlayLayer.addChild(this.preview, this.ring)
     const modeBtn = (m: FogMode, label: string): HTMLButtonElement =>
       h('button', { testid: `fog-mode-${m}`, class: 'secondary', 'aria-pressed': String(m === this.mode), onclick: () => this.setMode(m) }, label)
@@ -50,8 +50,8 @@ export class FogTools {
     this.radiusInput = h('input', { type: 'number', testid: 'fog-radius', min: 0.5, max: 10, step: 0.5, value: '1', title: 'Raio do pincel (células)' })
     this.radiusInput.addEventListener('change', () => this.setRadius(Number(this.radiusInput.value)))
     const radius = h('label', { class: 'fog-radius', testid: 'fog-radius-label' }, 'Raio', this.radiusInput)
-    this.modes = h('div', { class: 'fog-modes', testid: 'fog-modes', hidden: true }, this.coverBtn, this.revealBtn, radius)
-    toolbar.append(this.modes)
+    // MTB-08: the mode and the radius live in the fog panel the tool column opens
+    this.modes = h('div', { class: 'fog-modes', testid: 'fog-modes' }, h('div', { class: 'row' }, this.coverBtn, this.revealBtn), radius)
     this.error = h('p', { class: 'error', testid: 'fog-error', role: 'alert' })
     this.panel = h('section', { class: 'panel', testid: 'fog-panel' },
       h('h3', {}, 'Névoa'),
@@ -96,7 +96,6 @@ export class FogTools {
 
   /** FOGT-01, FOGT-07: the modes show with a fog tool only; the radius only with the brush. */
   private toolChanged(tool: Tool): void {
-    this.modes.hidden = !FOG_TOOLS.includes(tool)
     const label = this.modes.querySelector<HTMLElement>('[data-testid=fog-radius-label]')
     if (label) label.hidden = tool !== 'fog-brush'
     this.drawing = null

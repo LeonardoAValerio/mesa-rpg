@@ -96,12 +96,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Integration tests in a temp dir: listing and creating campaigns, the six folders, the last campaign kept and dropped when gone, scan with groups and kinds and the `.json` rule, bad and huge files skipped, a file added by `fs` seen within 2 s, `addFiles` naming
-- [ ] Quick gate passes
+- [x] Integration tests in a temp dir: listing and creating campaigns, the six folders, the last campaign kept and dropped when gone, scan with groups and kinds and the `.json` rule, bad and huge files skipped, a file added by `fs` seen within 2 s, `addFiles` naming
+- [x] Quick gate passes
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(main): the campaign folder, scanned and watched`
+**Done**: yes
 
 ---
 

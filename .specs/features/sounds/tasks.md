@@ -158,12 +158,13 @@ T3 → T4 → T5 → T6
 
 **Done when**:
 
-- [ ] e2e: lists with groups update within 2 s; a click starts a layer in both windows with the rise, a second click fades it out; layer volume reaches the player within 1 s; the 9th layer message; "Parar tudo"; an effect clicked twice overlaps in both windows; a player has no play controls; "Adicionar arquivos" names `(2)`
-- [ ] Task e2e gate passes
+- [x] e2e: lists with groups update within 2 s; a click starts a layer in both windows with the rise, a second click fades it out; layer volume reaches the player within 1 s; the 9th layer message; "Parar tudo"; an effect clicked twice overlaps in both windows; a player has no play controls; "Adicionar arquivos" names `(2)`
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(ui): the master's music layers and effects`
+**Done**: yes
 
 ---
 
@@ -279,7 +280,7 @@ Proof: run e2e | ✓ [C29] SOM-29
 
 ## Handoff
 
-**Settled mid-build:** T4 widened the starting panel column from 340 to 380 px so the five tabs (with Sons) fit without dockview's overflow menu (PANEL-01).
+**Settled mid-build:** T4 widened the starting panel column from 340 to 380 px so the five tabs (with Sons) fit without dockview's overflow menu (PANEL-01). T5 put "Tocando" after the lists, held at the panel's foot, so a layer starting never moves a row under the pointer.
 **Dispatched:** none
 **Walked:** none
 

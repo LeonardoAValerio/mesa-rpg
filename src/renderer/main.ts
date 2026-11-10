@@ -18,7 +18,7 @@ import { campaignHeader } from './ui/campaign-header'
 import { campaignSection } from './ui/campaign-lists'
 import { mapToolbar } from './ui/map-toolbar'
 import { mountUpdateBar } from './ui/update-bar'
-import { personalControls } from './ui/sound-panel'
+import { masterSoundControls, personalControls } from './ui/sound-panel'
 import { SoundEngine, type SoundSnapshot } from './sound/engine'
 import { AssetLoader, webSha256 } from './net/asset-loader'
 
@@ -79,6 +79,8 @@ onSession(async ({ client, screen }) => {
   if (client.view) sound.setLayers(client.view.sound.layers)
   sound.preload(client.effects)
   screen.panels.sons.append(personalControls((p) => sound.setPersonal(p)))
+  const soundControls = master ? masterSoundControls(client) : null // SOM-19: a player has no play controls
+  if (soundControls) screen.panels.sons.append(soundControls.root)
   const overlays = new Overlays(board, client)
   const fog = master ? new FogTools(board, client) : null
   const tools = mapToolbar(screen.board, board, fog?.modes ?? null)
@@ -96,7 +98,10 @@ onSession(async ({ client, screen }) => {
     screen.panels.tokens.append(sections[0].root, sections[1].root)
     screen.panels.mapas.insertBefore(sections[2].root, screen.panels.mapas.children[1] ?? null)
   }
-  const drawCampaign = (info: Parameters<(typeof sections)[number]['draw']>[0]): void => sections.forEach((sec) => sec.draw(info))
+  const drawCampaign = (info: Parameters<(typeof sections)[number]['draw']>[0]): void => {
+    sections.forEach((sec) => sec.draw(info))
+    soundControls?.draw(info)
+  }
   if (master) void window.mesa.campaign().then(drawCampaign)
   const offCampaign = master ? window.mesa.onCampaign(drawCampaign) : () => {}
   if (library) screen.panels.tokens.append(library.root)
@@ -107,6 +112,7 @@ onSession(async ({ client, screen }) => {
     stopSync()
     for (const off of offSound) off()
     sound.close()
+    soundControls?.destroy()
     tools.destroy()
     overlays.destroy()
     fog?.destroy()

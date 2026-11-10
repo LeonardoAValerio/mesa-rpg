@@ -111,3 +111,13 @@ button.campaign-row { cursor: pointer; width: 100%; }
 .scene-list button.campaign-row { border: 1px solid var(--line); padding: 6px 8px; }
 .scene-list button.campaign-row::before { content: "▸"; color: var(--muted); }
 .campaign-group > .campaign-row { margin-left: 8px; }
+.sound-row .sound-icon { width: 16px; color: var(--muted); }
+.sound-row[data-playing="true"] { background: rgba(59, 130, 246, 0.15); }
+.sound-row[data-playing="true"] .sound-icon { color: var(--accent); }
+.layer-row { display: flex; align-items: center; gap: 8px; }
+.layer-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-row input { width: 120px; }
+.sound-personal label { flex-direction: row; align-items: center; justify-content: space-between; }
+.sound-personal label.check { justify-content: flex-start; gap: 8px; }
+.sound-personal input[type="checkbox"] { width: auto; }
+.sound-playing { position: sticky; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); z-index: 1; }

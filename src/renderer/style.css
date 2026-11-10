@@ -98,3 +98,6 @@ button.danger { background: var(--danger); }
 .update-confirm { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 20; }
 .update-confirm p { margin: 0; }
 .update-confirm .row { display: flex; gap: 8px; justify-content: flex-end; }
+.campaigns { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
+.campaign { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.campaign input { width: auto; }

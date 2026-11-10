@@ -47,8 +47,13 @@ export function showHome(values: HomeValues = {}): void {
   const root = document.getElementById('app')!
   renderHome(root, {
     version: window.mesa.version,
-    host: async (portText) => {
-      const res = await window.mesa.host(portText, (await window.mesa.campaigns()).last ?? '') // T4 adds the campaign choice
+    campaigns: () => window.mesa.campaigns(),
+    createCampaign: async (name) => {
+      const r = await window.mesa.createCampaign(name)
+      return r.ok ? null : r.error
+    },
+    host: async (portText, campaign) => {
+      const res = await window.mesa.host(portText, campaign)
       if (!res.ok) return res.error
       const client = new TableClient({ ip: '127.0.0.1', port: res.port, name: 'Mestre', hostToken: res.hostToken, version: window.mesa.version })
       try {

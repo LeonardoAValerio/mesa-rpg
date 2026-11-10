@@ -14,6 +14,7 @@ import { libraryPanel } from './ui/library'
 import { chatPanel, dicePanel } from './ui/log-panel'
 import { sceneMenu } from './ui/scene-menu'
 import { tokenEditor } from './ui/token-editor'
+import { campaignHeader } from './ui/campaign-header'
 import { mapToolbar } from './ui/map-toolbar'
 import { mountUpdateBar } from './ui/update-bar'
 
@@ -34,6 +35,7 @@ declare global {
 onSession(async ({ client, screen }) => {
   const textures = new TextureStore()
   const master = client.you?.role === 'master'
+  if (master) screen.panels.mapas.append(campaignHeader().root)
   if (master) screen.panels.mapas.append(sceneMenu(client, screen.root).root)
   const panel = master ? gridPanel(client, textures) : null
   if (panel) screen.panels.mapas.append(panel.root)

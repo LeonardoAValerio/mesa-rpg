@@ -136,12 +136,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] e2e: an empty Documents shows no campaign and a disabled "Hospedar"; "Nova campanha" creates the six folders and selects it; bad names show the messages; hosting remembers it for the next start; "Abrir pasta" opens the folder
-- [ ] Task e2e gate passes
+- [x] e2e: an empty Documents shows no campaign and a disabled "Hospedar"; "Nova campanha" creates the six folders and selects it; bad names show the messages; hosting remembers it for the next start; "Abrir pasta" opens the folder
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(ui): choose or create the campaign before hosting`
+**Done**: yes
 
 ---
 

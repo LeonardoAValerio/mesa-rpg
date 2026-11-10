@@ -1,5 +1,5 @@
 import { _electron as electron, expect, type ElectronApplication, type Page } from '@playwright/test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { PNG } from 'pngjs'
 import { tmpdir } from 'node:os'
@@ -16,9 +16,16 @@ export interface AppHandle {
 const open: AppHandle[] = []
 
 /** Starts one app instance with its own profile, as a second PC would have. */
-export async function launch(opts: { ifaces?: string[]; version?: string; unpackaged?: boolean; userData?: string } = {}): Promise<AppHandle> {
+export async function launch(opts: { ifaces?: string[]; version?: string; unpackaged?: boolean; userData?: string; campaign?: false } = {}): Promise<AppHandle> {
+  const fresh = !opts.userData
   const userData = opts.userData ?? mkdtempSync(pathJoin(tmpdir(), 'mesa-e2e-')) // the same profile again: what it saved comes back
-  const env: Record<string, string> = { ...(process.env as Record<string, string>), MESA_TEST: '1', MESA_USER_DATA: userData }
+  const documents = pathJoin(userData, 'Documentos') // AD-009: this test's own Documentos/Mesa RPG
+  if (fresh && opts.campaign !== false) {
+    // a campaign "Teste", marked as the last one used, so "Hospedar" works as before (CAMP-06)
+    mkdirSync(pathJoin(documents, 'Mesa RPG', 'Teste'), { recursive: true })
+    writeFileSync(pathJoin(userData, 'settings.json'), JSON.stringify({ lastCampaign: 'Teste' }))
+  }
+  const env: Record<string, string> = { ...(process.env as Record<string, string>), MESA_TEST: '1', MESA_USER_DATA: userData, MESA_DOCUMENTS: documents }
   delete env.ELECTRON_RUN_AS_NODE // set by VS Code terminals; it turns Electron into plain Node
   if (opts.ifaces) env.MESA_TEST_IFACES = JSON.stringify(opts.ifaces)
   if (opts.version) env.MESA_VERSION = opts.version // runs this instance as another app version

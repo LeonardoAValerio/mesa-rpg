@@ -44,6 +44,7 @@ describe('GET /asset/:hash', () => {
     const ok = await fetch(base + mapHash)
     expect(ok.status).toBe(200)
     expect(new Uint8Array(await ok.arrayBuffer())).toEqual(png(1))
+    expect(ok.headers.get('access-control-allow-origin')).toBe('*') // readable from a window on another origin (dev server)
 
     expect((await fetch(base + secret)).status).toBe(404)
     expect((await fetch(base + '0'.repeat(64))).status).toBe(404)

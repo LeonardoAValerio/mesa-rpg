@@ -76,7 +76,8 @@ export async function startTableServer(opts: TableServerOptions): Promise<TableS
       return
     }
     const type = imageInfo(bytes)?.type ?? 'png'
-    res.writeHead(200, { 'Content-Type': `image/${type}`, 'Content-Length': bytes.length, 'Cache-Control': 'no-store' })
+    // the window that fetches it may be on another origin (the dev server at http://localhost:5173)
+    res.writeHead(200, { 'Content-Type': `image/${type}`, 'Content-Length': bytes.length, 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' })
     res.end(Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength))
   })
   const wss = new WebSocketServer({ server: http, maxPayload: 1024 * 1024 })

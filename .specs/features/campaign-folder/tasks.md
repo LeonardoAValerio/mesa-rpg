@@ -116,12 +116,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Integration tests: save and load round trip; a missing file refused with the message; a changed file loads the new one; an imported `.mesa` saved copies its images into `importados/`
-- [ ] Phase gate passes (the renderer adapted only as far as it needs to build; the e2e follow in Phase 2)
+- [x] Integration tests: save and load round trip; a missing file refused with the message; a changed file loads the new one; an imported `.mesa` saved copies its images into `importados/`
+- [x] Phase gate passes (the renderer adapted only as far as it needs to build; the e2e follow in Phase 2)
 
 **Tests**: integration
 **Gate**: quick
 **Commit**: `feat(main): campaign scenes that point at the folder`
+**Done**: yes
 
 ---
 
@@ -254,7 +255,7 @@ Proof: run unit | ✓ [C22] CAMP-22
 
 ## Handoff
 
-**Settled mid-build:** none
+**Settled mid-build:** T3 gate was unit (161) + build + lint; the e2e (hosting now needs a campaign, the library import is gone) are reworked in Phase 2 with the "Teste" campaign in `launch`.
 **Dispatched:** none
 **Walked:** none
 

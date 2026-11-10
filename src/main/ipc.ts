@@ -1,13 +1,16 @@
 import { randomBytes } from 'node:crypto'
-import { app, clipboard, dialog, ipcMain } from 'electron'
+import { app, clipboard, dialog, ipcMain, shell, type WebContents } from 'electron'
 import { readFile, writeFile } from 'node:fs/promises'
 import { decodeMesa, encodeMesa, sceneHashes } from '../core/mesa-file'
 import { parsePalette } from '../core/palette'
-import type { HostResult, ImportedImage, ImportTokensResult, PaletteResult, SceneFileResult } from '../preload/api'
+import type { CampaignInfo, CampaignsResult, HostResult, ImportedImage, PaletteResult, SceneFileResult } from '../preload/api'
 import { join } from 'node:path'
 import { AssetCache } from './asset-cache'
 import { AssetStore, sha256 } from './asset-store'
-import { importTokenFolder, readImageFile } from './import'
+import { CampaignFolder, type Section } from './campaign'
+import { readImageFile } from './import'
+import { CampaignScenes, type SaveResult } from './scenes'
+import { readSettings, writeSettings } from './settings'
 import { validatePort } from '../core/session-rules'
 import { listAddresses } from './netinfo'
 import { startTableServer, type TableServer } from './table-server'
@@ -15,11 +18,29 @@ import { startTableServer, type TableServer } from './table-server'
 let server: TableServer | null = null
 /** Lives as long as the app, so re-hosting keeps the imported images. */
 const store = new AssetStore()
+let folder: CampaignFolder | null = null
+let scenes: CampaignScenes | null = null
+let watcherOff: (() => void) | null = null
+
+/** AD-009: `Documentos/Mesa RPG`; tests point `MESA_DOCUMENTS` at their own folder. */
+function campaignRoot(): string {
+  const docs = process.env.MESA_TEST === '1' && process.env.MESA_DOCUMENTS ? process.env.MESA_DOCUMENTS : app.getPath('documents')
+  return join(docs, 'Mesa RPG')
+}
+const settingsFile = (): string => join(app.getPath('userData'), 'settings.json')
+
+async function campaignInfo(): Promise<CampaignInfo | null> {
+  if (!folder?.name || !scenes) return null
+  return { name: folder.name, entries: folder.all, scenes: await scenes.list() }
+}
 
 /** Ends the hosted table; players see "O mestre encerrou a mesa" (NET-13). */
 export async function stopHost(): Promise<void> {
   const s = server
   server = null
+  watcherOff?.()
+  watcherOff = null
+  folder?.close()
   exposeForTests()
   await s?.close()
 }
@@ -42,9 +63,20 @@ export function registerIpc(version: string): void {
   ipcMain.on('mesa:version', (e) => {
     e.returnValue = version
   })
-  ipcMain.handle('mesa:host', async (_e, portText: string): Promise<HostResult> => {
+  folder = new CampaignFolder(campaignRoot(), store)
+  scenes = new CampaignScenes(folder, store)
+  /** CAMP-01, CAMP-06: the campaigns, and the last one used if it still exists. */
+  ipcMain.handle('mesa:campaigns', async (): Promise<CampaignsResult> => {
+    const list = await folder!.list()
+    const last = (await readSettings(settingsFile())).lastCampaign
+    return { list, last: last && list.includes(last) ? last : null }
+  })
+  ipcMain.handle('mesa:createCampaign', (_e, name: string) => folder!.create(String(name)))
+  ipcMain.handle('mesa:campaign', () => campaignInfo())
+  ipcMain.handle('mesa:host', async (e, portText: string, campaign: string): Promise<HostResult> => {
     const check = validatePort(String(portText))
     if (!check.ok) return { ok: false, error: check.error }
+    if (!(await folder!.list()).includes(String(campaign))) return { ok: false, error: 'Escolha uma campanha' } // CAMP-04
     await stopHost()
     const hostToken = randomBytes(24).toString('hex')
     try {
@@ -52,20 +84,45 @@ export function registerIpc(version: string): void {
     } catch (err) {
       return { ok: false, error: (err as Error).message }
     }
+    // CAMP-05: the campaign opens (missing folders created), is remembered, and its changes reach this window
+    await folder!.open(String(campaign))
+    await writeSettings(settingsFile(), { lastCampaign: String(campaign) })
+    const sender: WebContents = e.sender
+    watcherOff = folder!.onChange(() => void campaignInfo().then((info) => !sender.isDestroyed() && sender.send('mesa:campaign', info)))
     exposeForTests()
     return { ok: true, port: server.port, hostToken }
+  })
+  /** CAMP-07 */
+  ipcMain.handle('mesa:openFolder', async (): Promise<void> => {
+    const dir = folder?.dir()
+    if (!dir) return
+    if (process.env.MESA_TEST === '1') (globalThis as { __mesaOpened?: string }).__mesaOpened = dir
+    else await shell.openPath(dir)
+  })
+  /** CAMP-14 */
+  ipcMain.handle('mesa:addFiles', async (_e, section: Section): Promise<{ ok: true; added: string[] } | { ok: false; canceled: true }> => {
+    const pick = await dialog.showOpenDialog({ title: 'Adicionar arquivos', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'webp'] }] })
+    if (pick.canceled || !pick.filePaths.length) return { ok: false, canceled: true }
+    return { ok: true, added: await folder!.addFiles(section, pick.filePaths) }
+  })
+  /** The bytes of an image in the store (a campaign map, for grid detection and the master's own texture). */
+  ipcMain.handle('mesa:assetBytes', (_e, hash: string) => store.get(String(hash)))
+  /** CAMP-16, CAMP-17, CAMP-22 */
+  ipcMain.handle('mesa:saveCena', async (_e, name: string, replace: boolean): Promise<SaveResult> => {
+    if (!server) return { ok: false, error: 'Nenhuma mesa hospedada' }
+    return scenes!.save(String(name), server.getScene(), !!replace)
+  })
+  /** CAMP-18..20 */
+  ipcMain.handle('mesa:loadCena', async (_e, name: string): Promise<SceneFileResult> => {
+    if (!server) return { ok: false, error: 'Nenhuma mesa hospedada' }
+    const r = await scenes!.load(String(name))
+    if (!r.ok) return r
+    server.setScene(r.scene)
+    return { ok: true }
   })
   ipcMain.handle('mesa:stopHost', () => stopHost())
   ipcMain.handle('mesa:addresses', () => listAddresses())
   ipcMain.handle('mesa:copy', (_e, text: string) => clipboard.writeText(String(text)))
-  ipcMain.handle('mesa:importTokens', async (): Promise<ImportTokensResult> => {
-    const pick = await dialog.showOpenDialog({ title: 'Importar pasta de tokens', properties: ['openDirectory'] })
-    if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
-    const { tokens, skipped } = await importTokenFolder(pick.filePaths[0])
-    const items = tokens.map((t) => ({ hash: store.put(t.bytes), name: t.name, kind: t.kind, width: t.width, ring: t.ring }))
-    server?.addLibrary(items)
-    return { ok: true, count: items.length, skipped }
-  })
   ipcMain.handle('mesa:loadPalette', async (): Promise<PaletteResult> => {
     const pick = await dialog.showOpenDialog({
       title: 'Carregar paleta',
@@ -76,7 +133,7 @@ export function registerIpc(version: string): void {
     const text = await readFile(pick.filePaths[0], 'utf8').catch(() => null)
     return { ok: true, palette: parsePalette(text) }
   })
-  ipcMain.handle('mesa:saveScene', async (): Promise<SceneFileResult> => {
+  ipcMain.handle('mesa:exportMesa', async (): Promise<SceneFileResult> => {
     if (!server) return { ok: false, error: 'Nenhuma mesa hospedada' }
     const pick = await dialog.showSaveDialog({ title: 'Salvar cena', defaultPath: 'cena.mesa', filters: [{ name: 'Cena', extensions: ['mesa'] }] })
     if (pick.canceled || !pick.filePath) return { ok: false, canceled: true }
@@ -85,7 +142,7 @@ export function registerIpc(version: string): void {
     await writeFile(pick.filePath, encodeMesa(scene, assets))
     return { ok: true }
   })
-  ipcMain.handle('mesa:loadScene', async (): Promise<SceneFileResult> => {
+  ipcMain.handle('mesa:importMesa', async (): Promise<SceneFileResult> => {
     if (!server) return { ok: false, error: 'Nenhuma mesa hospedada' }
     const pick = await dialog.showOpenDialog({ title: 'Carregar cena', properties: ['openFile'], filters: [{ name: 'Cena', extensions: ['mesa'] }] })
     if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
@@ -105,6 +162,7 @@ export function registerIpc(version: string): void {
     if (pick.canceled || !pick.filePaths[0]) return { ok: false, canceled: true }
     const img = await readImageFile(pick.filePaths[0])
     if (!img.ok) return img
+    if (folder?.name) await folder.addFiles('mapas', [pick.filePaths[0]]) // AD-009: an imported map joins the campaign
     const hash = store.put(img.bytes)
     return { ok: true, hash, width: img.info.width, height: img.info.height, bytes: img.bytes }
   })

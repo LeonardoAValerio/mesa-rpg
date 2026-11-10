@@ -49,13 +49,6 @@ export function libraryPanel(client: TableClient, board: Board, dropZone: HTMLEl
     h('h3', {}, 'Tokens'),
     h('div', { class: 'row' },
       h('button', {
-        testid: 'import-tokens',
-        onclick: async () => {
-          const r = await window.mesa.importTokens()
-          if (r.ok) message.textContent = r.skipped.length ? `Ignorados: ${r.skipped.join(', ')}` : ''
-        }
-      }, 'Importar pasta de tokens'),
-      h('button', {
         testid: 'load-palette',
         class: 'secondary',
         onclick: async () => {

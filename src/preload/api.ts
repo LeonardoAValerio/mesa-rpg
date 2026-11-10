@@ -13,7 +13,26 @@ export type ImportedImage =
   | { ok: false; error: string }
   | { ok: false; canceled: true }
 
-export type ImportTokensResult = { ok: true; count: number; skipped: string[] } | { ok: false; canceled: true }
+/** One image of the campaign (CAMP-08, CAMP-09). */
+export interface CampaignEntry {
+  section: 'mapas' | 'tokens' | 'objetos'
+  path: string
+  group: string
+  name: string
+  hash: string
+  kind: 'character' | 'object'
+  width: number
+  ring: 'grupo' | 'inimigo' | 'npc' | 'neutro' | null
+  w: number
+  h: number
+}
+export interface CampaignInfo {
+  name: string
+  entries: CampaignEntry[]
+  scenes: string[]
+}
+export type CampaignsResult = { list: string[]; last: string | null }
+export type CenaSaveResult = { ok: true } | { ok: false; exists: true } | { ok: false; error: string }
 export type PaletteResult = { ok: true; palette: Record<'grupo' | 'inimigo' | 'npc' | 'neutro', string> } | { ok: false; canceled: true }
 
 export type SceneFileResult = { ok: true } | { ok: false; canceled: true } | { ok: false; error: string }
@@ -23,15 +42,26 @@ export interface MesaApi {
   isTest: boolean
   /** The app version, sent on join and shown on the start screen (VER-01, UPD-14). */
   version: string
-  host(portText: string): Promise<HostResult>
+  /** CAMP-01, CAMP-06 */
+  campaigns(): Promise<CampaignsResult>
+  /** CAMP-02, CAMP-03 */
+  createCampaign(name: string): Promise<{ ok: true } | { ok: false; error: string }>
+  host(portText: string, campaign: string): Promise<HostResult>
+  /** The open campaign, and later every change to it (CAMP-11). */
+  campaign(): Promise<CampaignInfo | null>
+  onCampaign(fn: (info: CampaignInfo | null) => void): () => void
+  openFolder(): Promise<void>
+  addFiles(section: 'mapas' | 'tokens' | 'objetos'): Promise<{ ok: true; added: string[] } | { ok: false; canceled: true }>
+  assetBytes(hash: string): Promise<Uint8Array | null>
+  saveCena(name: string, replace: boolean): Promise<CenaSaveResult>
+  loadCena(name: string): Promise<SceneFileResult>
   stopHost(): Promise<void>
   addresses(): Promise<LanAddress[]>
   copy(text: string): Promise<void>
   importMap(): Promise<ImportedImage>
-  importTokens(): Promise<ImportTokensResult>
   loadPalette(): Promise<PaletteResult>
-  saveScene(): Promise<SceneFileResult>
-  loadScene(): Promise<SceneFileResult>
+  exportMesa(): Promise<SceneFileResult>
+  importMesa(): Promise<SceneFileResult>
   cacheGet(hash: string): Promise<Uint8Array | null>
   cachePut(hash: string, bytes: Uint8Array): Promise<boolean>
   /** The update's current state, for a window that loads after the updater spoke (UPD-04, UPD-05). */

@@ -25,13 +25,13 @@ function confirmReplace(host: HTMLElement): Promise<boolean> {
 export function sceneMenu(client: TableClient, overlayHost: HTMLElement): { root: HTMLElement } {
   const message = h('p', { class: 'error', testid: 'scene-message' })
   const save = async (): Promise<void> => {
-    const r = await window.mesa.saveScene()
+    const r = await window.mesa.exportMesa()
     message.textContent = r.ok ? '' : 'error' in r ? r.error : ''
   }
   const load = async (): Promise<void> => {
     message.textContent = ''
     if (Object.keys(client.view?.tokens ?? {}).length > 0 && !(await confirmReplace(overlayHost))) return // SAVE-05
-    const r = await window.mesa.loadScene()
+    const r = await window.mesa.importMesa()
     if (!r.ok && 'error' in r) message.textContent = r.error
   }
   const root = h('section', { class: 'panel', testid: 'scene-menu' },

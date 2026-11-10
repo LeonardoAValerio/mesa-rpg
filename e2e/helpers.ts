@@ -47,12 +47,24 @@ export async function closeAll(): Promise<void> {
   }
 }
 
+/**
+ * A port no other worker hands out: each worker counts through its own block below 32768, where Linux never picks
+ * the ephemeral port of an outgoing connection, so a port freed here cannot be taken before the app binds it.
+ */
+let nextPort = 20000 + Number(process.env.TEST_PARALLEL_INDEX ?? 0) * 1000
 export async function freePort(): Promise<number> {
-  const s = createServer()
-  await new Promise<void>((r) => s.listen(0, '0.0.0.0', () => r()))
-  const port = (s.address() as { port: number }).port
-  await new Promise<void>((r) => s.close(() => r()))
-  return port
+  for (;;) {
+    const port = nextPort++
+    const s = createServer()
+    const ok = await new Promise<boolean>((r) => {
+      s.once('error', () => r(false))
+      s.listen(port, '0.0.0.0', () => r(true))
+    })
+    if (ok) {
+      await new Promise<void>((r) => s.close(() => r()))
+      return port
+    }
+  }
 }
 
 export async function host(page: Page, port: number): Promise<void> {

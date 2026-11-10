@@ -116,6 +116,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: F6 (core)
 - last seen: 2026-11-09T23:14:22Z
 
+### L-018 - A test of 'kept separate' writes both sides and reads both back; a test of a filter feeds it a real, readable input it must reject.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: sidebar-tabs
+- evidence: F1, F2 (e2e)
+- last seen: 2026-11-10T00:50:09Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

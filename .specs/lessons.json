@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 18,
+  "next_id": 19,
   "lessons": [
     {
       "id": "L-001",
@@ -310,6 +310,24 @@
       ],
       "created": "2026-11-09T23:14:22Z",
       "last_seen": "2026-11-09T23:14:22Z"
+    },
+    {
+      "id": "L-018",
+      "key": "weak_test::a test of kept separate writes both sides and reads both back a test of a filter feeds it a real readable input it must reject",
+      "text": "A test of 'kept separate' writes both sides and reads both back; a test of a filter feeds it a real, readable input it must reject.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "sidebar-tabs"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F1, F2 (e2e)"
+      ],
+      "created": "2026-11-10T00:50:09Z",
+      "last_seen": "2026-11-10T00:50:09Z"
     }
   ]
 }

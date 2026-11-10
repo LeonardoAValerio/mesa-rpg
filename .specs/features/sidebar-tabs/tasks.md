@@ -99,12 +99,13 @@ T3 → T4
 
 **Done when**:
 
-- [ ] e2e with real drags: a tab onto another group and onto a group's edge; a divider resizes and the board canvas follows; a group floats over the table; close and reopen; restore; the layout comes back in a second session with the same profile; a broken saved layout gives the starting one; typed text survives moves
-- [ ] Phase gate passes
+- [x] e2e with real drags: a tab onto another group and onto a group's edge; a divider resizes and the board canvas follows; a group floats over the table; close and reopen; restore; the layout comes back in a second session with the same profile; a broken saved layout gives the starting one; typed text survives moves
+- [x] Phase gate passes
 
 **Tests**: e2e
 **Gate**: phase
 **Commit**: `feat(ui): arrange, float, close and restore panels, saved per computer`
+**Done**: yes
 
 ---
 
@@ -209,7 +210,7 @@ Proof: run e2e | ✓ [C19] PANEL-19
 
 ## Handoff
 
-**Settled mid-build:** dockview only uses the custom tab renderer through `defaultTabComponent`, and passes the panel in `init`; the e2e that use controls in a closed panel first open it with `showPanel` (tokens, library, log, offline).
+**Settled mid-build:** dockview only uses the custom tab renderer through `defaultTabComponent`, and passes the panel in `init`; the e2e that use controls in a closed panel first open it with `showPanel` (tokens, library, log, offline). Found in T2: at 300 px the fourth tab sat under dockview's overflow button (unreachable): the right column starts at 340 px with compact tabs, with a test; floated groups cascaded (they used to open on top of each other); dockview's HTML5 drags need human-paced moves in tests (`humanMove`), and the default DnD strategy is kept (with `dndStrategy: 'pointer'` the floating move lost its pointer capture). Phase 1 gate: unit 142, e2e 103.
 **Dispatched:** none
 **Walked:** none
 

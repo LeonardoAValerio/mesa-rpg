@@ -16,8 +16,8 @@ export interface AppHandle {
 const open: AppHandle[] = []
 
 /** Starts one app instance with its own profile, as a second PC would have. */
-export async function launch(opts: { ifaces?: string[]; version?: string; unpackaged?: boolean } = {}): Promise<AppHandle> {
-  const userData = mkdtempSync(pathJoin(tmpdir(), 'mesa-e2e-'))
+export async function launch(opts: { ifaces?: string[]; version?: string; unpackaged?: boolean; userData?: string } = {}): Promise<AppHandle> {
+  const userData = opts.userData ?? mkdtempSync(pathJoin(tmpdir(), 'mesa-e2e-')) // the same profile again: what it saved comes back
   const env: Record<string, string> = { ...(process.env as Record<string, string>), MESA_TEST: '1', MESA_USER_DATA: userData }
   delete env.ELECTRON_RUN_AS_NODE // set by VS Code terminals; it turns Electron into plain Node
   if (opts.ifaces) env.MESA_TEST_IFACES = JSON.stringify(opts.ifaces)

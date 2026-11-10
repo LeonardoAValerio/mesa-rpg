@@ -9,6 +9,7 @@ import { Overlays, type OverlaySnapshot } from './board/overlays'
 import type { ActionResult } from './net/table-client'
 import { gridPanel } from './ui/grid-panel'
 import { Layout, type LayoutSnapshot } from './ui/layout'
+import { panelsMenu } from './ui/panels-menu'
 import { libraryPanel } from './ui/library'
 import { logPanel } from './ui/log-panel'
 import { sceneMenu } from './ui/scene-menu'
@@ -37,6 +38,8 @@ onSession(async ({ client, screen }) => {
   if (panel) screen.panels.mapas.append(panel.root)
   const editor = master ? tokenEditor(client) : null
   const layout = new Layout(screen.dock, master ? 'master' : 'player', screen.board, screen.panels)
+  const menu = panelsMenu(layout)
+  screen.actions.append(menu.root)
   const board = await Board.create(screen.board, client, {
     textures,
     onImportMap: () => void panel?.importMap(),
@@ -64,6 +67,7 @@ onSession(async ({ client, screen }) => {
     editor?.destroy()
     panel?.destroy()
     board.destroy()
+    menu.destroy()
     layout.dispose()
   }
 })

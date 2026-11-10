@@ -37,7 +37,8 @@ onSession(async ({ client, screen }) => {
   const textures = new TextureStore()
   const master = client.you?.role === 'master'
   if (master) screen.panels.mapas.append(campaignHeader().root)
-  if (master) screen.panels.mapas.append(sceneMenu(client, screen.root).root)
+  const scenesMenu = master ? sceneMenu(client, screen.root) : null
+  if (scenesMenu) screen.panels.mapas.append(scenesMenu.root)
   const panel = master ? gridPanel(client, textures) : null
   if (panel) screen.panels.mapas.append(panel.root)
   const editor = master ? tokenEditor(client) : null
@@ -86,6 +87,7 @@ onSession(async ({ client, screen }) => {
     chat.destroy()
     library?.destroy()
     offCampaign()
+    scenesMenu?.destroy()
     editor?.destroy()
     panel?.destroy()
     board.destroy()

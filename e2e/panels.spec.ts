@@ -124,16 +124,17 @@ test('[C4] PANEL-04 Tokens holds the token import, the palette, the library and 
   const { master } = await table()
   await showPanel(master.page, 'tokens')
   const p = master.page.getByTestId('panel-tokens')
-  await expect(p.getByTestId('import-tokens')).toBeVisible()
+  await expect(p.getByTestId('add-tokens')).toBeVisible() // CAMP-10 replaced the token import
+  await expect(p.getByTestId('add-objetos')).toBeVisible()
   await expect(p.getByTestId('load-palette')).toBeVisible()
-  await expect(p.getByTestId('library')).toHaveCount(1)
+  for (const id of ['list-tokens', 'list-objetos']) await expect(p.getByTestId(id), id).toHaveCount(1) // CAMP-08: the library is the campaign's lists
   await expect(p.getByTestId('token-editor')).toHaveCount(1) // shown when an item is selected
 })
 
 test('[C5] PANEL-05 Mapas holds Salvar cena, Carregar cena, Importar mapa, the grid settings, Cobrir tudo and Revelar tudo', async () => {
   const { master } = await table()
   const p = master.page.getByTestId('panel-mapas')
-  for (const id of ['save-scene', 'load-scene', 'import-map-panel', 'grid-panel', 'grid-color', 'fog-cover-all', 'fog-reveal-all']) await expect(p.getByTestId(id), id).toBeVisible()
+  for (const id of ['save-scene', 'export-mesa', 'import-mesa', 'import-map-panel', 'grid-panel', 'grid-color', 'fog-cover-all', 'fog-reveal-all']) await expect(p.getByTestId(id), id).toBeVisible()
 })
 
 test('[C13] PANEL-13 the table has no tab, and a tab dropped on its centre does not join it', async () => {

@@ -38,7 +38,7 @@ test('[C73] SAVE-02 loading a .mesa shows the loaded scene in both windows', asy
   await build(first)
   const saved = await summary(first)
   await nextSaveDialog(first.app, file)
-  await first.page.getByTestId('save-scene').click()
+  await first.page.getByTestId('export-mesa').click()
   await expect(first.page.getByTestId('scene-message')).toHaveText('')
   await first.app.close()
 
@@ -49,7 +49,7 @@ test('[C73] SAVE-02 loading a .mesa shows the loaded scene in both windows', asy
   const player = await launch()
   await joinTable(player.page, port, 'Ana')
   await nextOpenDialog(master.app, [file])
-  await master.page.getByTestId('load-scene').click()
+  await master.page.getByTestId('import-mesa').click()
   await expect.poll(() => summary(master)).toEqual(saved)
   expect(saved).toMatchObject({ map: { width: 800, height: 600 }, fog: { covered: 42, alpha: 0.5, base: 'covered', shapes: 1 } })
   // the player sees the same scene through the fog: their own Guerreira, not the hidden Ogro
@@ -64,7 +64,7 @@ test('[C76] SAVE-05 loading with tokens on the table asks "Substituir a cena atu
   const { master } = await masterAndPlayer('Ana')
   await build(master)
   await nextSaveDialog(master.app, file)
-  await master.page.getByTestId('save-scene').click()
+  await master.page.getByTestId('export-mesa').click()
   await act(master.page, { type: 'fog/coverAll' })
   const before = await summary(master)
   await master.app.evaluate(({ dialog }) => {
@@ -73,7 +73,7 @@ test('[C76] SAVE-05 loading with tokens on the table asks "Substituir a cena atu
       return { canceled: true, filePaths: [] }
     }) as typeof dialog.showOpenDialog
   })
-  await master.page.getByTestId('load-scene').click()
+  await master.page.getByTestId('import-mesa').click()
   await expect(master.page.getByTestId('confirm-message')).toHaveText('Substituir a cena atual?')
   await master.page.getByTestId('confirm-no').click()
   await expect(master.page.getByTestId('confirm')).toHaveCount(0)
@@ -82,7 +82,7 @@ test('[C76] SAVE-05 loading with tokens on the table asks "Substituir a cena atu
   expect(await summary(master)).toEqual(before)
 
   await nextOpenDialog(master.app, [file])
-  await master.page.getByTestId('load-scene').click()
+  await master.page.getByTestId('import-mesa').click()
   await master.page.getByTestId('confirm-yes').click()
   await expect.poll(async () => ((await summary(master)) as { fog: { covered: number } }).fog.covered).toBe(42)
 })
@@ -92,7 +92,7 @@ test('an invalid file shows "Arquivo .mesa inválido" and keeps the scene (SAVE-
   await build(master)
   const before = await summary(master)
   await nextOpenDialog(master.app, [textFile('quebrado.mesa', '{"format":"mesa","version":2}')])
-  await master.page.getByTestId('load-scene').click()
+  await master.page.getByTestId('import-mesa').click()
   await master.page.getByTestId('confirm-yes').click()
   await expect(master.page.getByTestId('scene-message')).toHaveText('Arquivo .mesa inválido')
   expect(await summary(master)).toEqual(before)

@@ -176,12 +176,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] e2e: save "Emboscada", change the scene, load it from the list in both windows; replace asked; a deleted token file blocks the load with the message; export and import of `.mesa`
-- [ ] Phase gate passes
+- [x] e2e: save "Emboscada", change the scene, load it from the list in both windows; replace asked; a deleted token file blocks the load with the message; export and import of `.mesa`
+- [x] Phase gate passes
 
 **Tests**: e2e
 **Gate**: phase
 **Commit**: `feat(ui): save and open campaign scenes by name`
+**Done**: yes
 
 ---
 

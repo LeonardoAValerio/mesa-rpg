@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: inline - the Design section below
-**Status**: In Progress
+**Status**: Done
 **Approved**: 2026-11-10 - user: "Pode seguir"
 **Build**: `scripts/with-node npm run build`; `scripts/with-node npm run typecheck`; `scripts/with-node npm run lint`
 **Run unit**: `scripts/with-node npx vitest run --reporter=verbose`
@@ -282,7 +282,7 @@ Proof: run e2e | ✓ [C29] SOM-29
 ## Handoff
 
 **Settled mid-build:** T4 widened the starting panel column from 340 to 380 px so the five tabs (with Sons) fit without dockview's overflow menu (PANEL-01). T5 put "Tocando" after the lists, held at the panel's foot, so a layer starting never moves a row under the pointer. Phase 2 gate: NET-02 failed once in a full run and passed alone and in the full rerun (166); it must bind 47800, which lies in Linux's ephemeral range (32768-60999), so a parallel worker's outgoing connection can briefly hold it.
-**Dispatched:** Verifier round 1 at the walk-fix commit
+**Dispatched:** Verifier round 1 at 9326c0e (7 findings, closed in 0f52ae4); round 2 = check_proofs after 0f52ae4
 **Walked:** at 9e47d95 with real clicks in Electron (MESA_TEST=1, master + player "Ana", generated WAV tones in `musicas/Ambiente/`, `musicas/` and `efeitos/`): Sons shows "Músicas" (batalha, group "Ambiente" with chuva and taverna) and "Efeitos" (espada, porta) with "Adicionar arquivos"; chuva and taverna clicked play in both windows at the same point (2.9 s / 2.8 s), marked ■; chuva's volume set to 30 gives 0.3 in Ana's window too; espada clicked played for Ana; Ana's Sons holds only "Meu volume" (Música, Efeitos at 80, Mudo); with 8 layers, a 9th click shows "Máximo de 8 camadas". Found and fixed: that message sat under "Parar tudo" and fell out of view with 8 layers; it now opens the "Tocando" section.
 
 ---

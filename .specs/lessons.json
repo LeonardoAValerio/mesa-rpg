@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 25,
+  "next_id": 30,
   "lessons": [
     {
       "id": "L-001",
@@ -436,6 +436,96 @@
       ],
       "created": "2026-11-10T12:50:38Z",
       "last_seen": "2026-11-10T12:50:38Z"
+    },
+    {
+      "id": "L-025",
+      "key": "weak_test::a timed transition a 2 s fade is proven by sampling its value midway through in the real app never by a state flag a timer keeps",
+      "text": "A timed transition (a 2 s fade) is proven by sampling its value midway through in the real app, never by a state flag a timer keeps.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "sounds"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C6,C7,C11 (e2e)"
+      ],
+      "created": "2026-11-10T14:40:17Z",
+      "last_seen": "2026-11-10T14:40:17Z"
+    },
+    {
+      "id": "L-026",
+      "key": "weak_test::a volume or filter claim is read from what leaves the processing graph a meter on the output not from the setting s own node",
+      "text": "A volume or filter claim is read from what leaves the processing graph (a meter on the output), not from the setting's own node.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "sounds"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C21,C22,C23 (e2e)"
+      ],
+      "created": "2026-11-10T14:40:17Z",
+      "last_seen": "2026-11-10T14:40:17Z"
+    },
+    {
+      "id": "L-027",
+      "key": "weak_test::anything that compensates for another computer clock offset is tested with that difference simulated two windows on one machine share it",
+      "text": "Anything that compensates for another computer (clock offset) is tested with that difference simulated; two windows on one machine share it.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "sounds"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C13 (e2e)"
+      ],
+      "created": "2026-11-10T14:40:17Z",
+      "last_seen": "2026-11-10T14:40:17Z"
+    },
+    {
+      "id": "L-028",
+      "key": "ac_gap::async loads that race with state changes are tested in every order off before the file arrives then on again during the fade",
+      "text": "Async loads that race with state changes are tested in every order: off before the file arrives, then on again during the fade.",
+      "signal": "ac_gap",
+      "scope": "renderer",
+      "status": "candidate",
+      "features": [
+        "sounds"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F6 (renderer)"
+      ],
+      "created": "2026-11-10T14:40:17Z",
+      "last_seen": "2026-11-10T14:40:17Z"
+    },
+    {
+      "id": "L-029",
+      "key": "weak_test::overlapping or concurrent is asserted as both alive at the same instant not as both having happened",
+      "text": "'Overlapping' or 'concurrent' is asserted as both alive at the same instant, not as both having happened.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "sounds"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C16 (e2e)"
+      ],
+      "created": "2026-11-10T14:40:17Z",
+      "last_seen": "2026-11-10T14:40:17Z"
     }
   ]
 }

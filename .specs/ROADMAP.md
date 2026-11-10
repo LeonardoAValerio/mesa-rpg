@@ -10,7 +10,7 @@ user: "Sim, nessa ordem (Recomendado)".
 | C | Painéis encaixáveis (estilo Photoshop): Conectados, Tokens, Mapas, Dados, Chat; Sons vem com E | `.specs/features/sidebar-tabs/` | Done - v0.5.0 |
 | C2 | Ferramentas do mapa em coluna de ícones, névoa num botão, painel Rede (pedido entre C e D) | `.specs/features/map-tools/` | Done - v0.6.0 |
 | D | Pasta da campanha em `Documentos/Mesa RPG/<Campanha>/` com mapas, tokens, objetos, músicas, efeitos e cenas; as abas listam o que está nela | `.specs/features/campaign-folder/` | Done - v0.7.0 |
-| E | Sons: músicas e efeitos tocados pelo mestre, sincronizados com os jogadores, volume por pessoa | `.specs/features/sounds/` | In progress |
+| E | Sons: músicas e efeitos tocados pelo mestre, sincronizados com os jogadores, volume por pessoa | `.specs/features/sounds/` | Done - v0.8.0 |
 
 ## Decisions already taken (user's words)
 

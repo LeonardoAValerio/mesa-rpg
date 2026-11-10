@@ -158,6 +158,36 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: src/renderer/board/selection.ts (renderer)
 - last seen: 2026-11-10T12:50:38Z
 
+### L-025 - A timed transition (a 2 s fade) is proven by sampling its value midway through in the real app, never by a state flag a timer keeps.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: sounds
+- evidence: C6,C7,C11 (e2e)
+- last seen: 2026-11-10T14:40:17Z
+
+### L-026 - A volume or filter claim is read from what leaves the processing graph (a meter on the output), not from the setting's own node.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: sounds
+- evidence: C21,C22,C23 (e2e)
+- last seen: 2026-11-10T14:40:17Z
+
+### L-027 - Anything that compensates for another computer (clock offset) is tested with that difference simulated; two windows on one machine share it.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: sounds
+- evidence: C13 (e2e)
+- last seen: 2026-11-10T14:40:17Z
+
+### L-028 - Async loads that race with state changes are tested in every order: off before the file arrives, then on again during the fade.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `renderer` · harmful: 0
+- features: sounds
+- evidence: F6 (renderer)
+- last seen: 2026-11-10T14:40:17Z
+
+### L-029 - 'Overlapping' or 'concurrent' is asserted as both alive at the same instant, not as both having happened.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: sounds
+- evidence: C16 (e2e)
+- last seen: 2026-11-10T14:40:17Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

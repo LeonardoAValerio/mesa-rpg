@@ -117,12 +117,13 @@ T3 → T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Integration tests: save with two layers writes their paths and volumes; load sets them; a `.cena` with no `sound` stops all; a missing audio path refused with the message
-- [ ] Phase gate passes
+- [x] Integration tests: save with two layers writes their paths and volumes; load sets them; a `.cena` with no `sound` stops all; a missing audio path refused with the message
+- [x] Phase gate passes
 
 **Tests**: integration
 **Gate**: phase
 **Commit**: `feat(main): scenes keep their music layers`
+**Done**: yes
 
 ---
 

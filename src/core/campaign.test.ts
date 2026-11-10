@@ -57,7 +57,7 @@ describe('.cena files', () => {
     expect(file.assets).toBeUndefined()
     expect(text.length).toBeLessThan(2000) // small: no base64 images
     const back = decodeCena(text)
-    expect(back).toEqual({ scene: scene(), files: paths })
+    expect(back).toEqual({ scene: scene(), files: paths, sound: [] })
     // an image without a campaign path cannot be saved as a .cena
     expect(() => encodeCena(scene(), (h) => (h === MAP ? paths[h] : undefined))).toThrow()
   })
@@ -69,7 +69,7 @@ describe('.cena files', () => {
       f(c)
       return JSON.stringify(c)
     }
-    for (const text of ['{ nope', bad((c) => (c.version = 2)), bad((c) => delete c.files[TOK]), bad((c) => (c.files[MAP] = '../../segredo.jpg')), bad((c) => (c.files[MAP] = 'C:/x.jpg')), bad((c) => (c.scene.tokens.g.id = 'x'))]) {
+    for (const text of ['{ nope', bad((c) => (c.version = 2)), bad((c) => delete c.files[TOK]), bad((c) => (c.files[MAP] = '../../segredo.jpg')), bad((c) => (c.files[MAP] = 'C:/x.jpg')), bad((c) => (c.scene.tokens.g.id = 'x')), bad((c) => (c.sound = [{ path: '../fora.mp3', volume: 50 }])), bad((c) => (c.sound = [{ path: 'musicas/a.mp3', volume: 101 }]))]) {
       expect(decodeCena(text), text.slice(0, 50)).toEqual({ error: INVALID_CENA })
     }
   })

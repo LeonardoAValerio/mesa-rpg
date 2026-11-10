@@ -6,7 +6,8 @@ import { sceneHashes } from '../core/mesa-file'
 import type { Scene } from '../core/types'
 import type { AssetStore } from './asset-store'
 import type { CampaignFolder } from './campaign'
-import { readImageFile } from './import'
+import type { Layer } from '../core/sound'
+import { readAudioFile, readImageFile } from './import'
 
 export const MISSING_FILE = (path: string): string => `Arquivo não encontrado: ${path}`
 const EXT = '.cena'
@@ -34,7 +35,7 @@ export class CampaignScenes {
    * CAMP-16, CAMP-17, CAMP-22: writes `cenas/<name>.cena`; an existing name needs `replace`; an image that is not in the
    * campaign (from an imported .mesa) is copied into `mapas/importados/` or `tokens/importados/` first.
    */
-  async save(name: string, scene: Scene, replace: boolean): Promise<SaveResult> {
+  async save(name: string, scene: Scene, replace: boolean, layers: Layer[] = []): Promise<SaveResult> {
     const d = this.dir()
     if (!d) return { ok: false, error: 'Nenhuma campanha aberta' }
     const existing = await this.list()
@@ -58,12 +59,17 @@ export class CampaignScenes {
     }
     if (copied) await this.folder.scan()
     await mkdir(d, { recursive: true })
-    await writeFile(join(d, `${taken ?? name}${EXT}`), encodeCena(scene, (h) => this.folder.pathOf(h)))
+    // SOM-25: the layers playing (not those fading out); a file no longer in the campaign cannot be pointed at
+    const sound = layers.filter((l) => l.stoppingAt === null).flatMap((l) => {
+      const path = this.folder.pathOf(l.hash)
+      return path ? [{ path, volume: l.volume }] : []
+    })
+    await writeFile(join(d, `${taken ?? name}${EXT}`), encodeCena(scene, (h) => this.folder.pathOf(h), sound))
     return { ok: true }
   }
 
   /** CAMP-18..20: the scene, with each image read from the campaign now; a missing one refuses the whole scene. */
-  async load(name: string): Promise<{ ok: true; scene: Scene } | { ok: false; error: string }> {
+  async load(name: string): Promise<{ ok: true; scene: Scene; sound: Array<{ hash: string; volume: number }> } | { ok: false; error: string }> {
     const d = this.dir()
     if (!d) return { ok: false, error: 'Nenhuma campanha aberta' }
     const text = await readFile(join(d, `${name}${EXT}`), 'utf8').catch(() => null)
@@ -77,6 +83,13 @@ export class CampaignScenes {
       const now = this.store.put(img.bytes)
       if (now !== hash) remap[hash] = now // CAMP-20: the file changed, the scene shows it as it is now
     }
-    return { ok: true, scene: remapHashes(cena.scene, remap) }
+    // SOM-28: every music file of the scene must still be in the campaign
+    const sound: Array<{ hash: string; volume: number }> = []
+    for (const l of cena.sound) {
+      const audio = await readAudioFile(join(this.folder.dir()!, ...l.path.split('/')))
+      if (!audio.ok) return { ok: false, error: MISSING_FILE(l.path) }
+      sound.push({ hash: this.store.put(audio.bytes), volume: l.volume })
+    }
+    return { ok: true, scene: remapHashes(cena.scene, remap), sound }
   }
 }

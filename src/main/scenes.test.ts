@@ -49,7 +49,7 @@ describe('campaign scenes', () => {
     const file = JSON.parse(readFileSync(join(dir, 'cenas', 'Emboscada.cena'), 'utf8'))
     expect(Object.values(file.files).sort()).toEqual(['mapas/Floresta.png', 'tokens/Goblins/goblin.png'])
     expect(await scenes.list()).toEqual(['Emboscada'])
-    expect(await scenes.load('Emboscada')).toEqual({ ok: true, scene: s })
+    expect(await scenes.load('Emboscada')).toEqual({ ok: true, scene: s, sound: [] })
   })
 
   it('an existing name needs replace, ignoring case; a bad name is refused (CAMP-17)', async () => {
@@ -93,5 +93,43 @@ describe('campaign scenes', () => {
     expect(folder.pathOf(outsideTok)).toBe(`tokens/importados/importado-${outsideTok.slice(0, 8)}.png`)
     // and it loads from there
     expect((await scenes.load('Importada')).ok).toBe(true)
+  })
+
+  const wav = (n: number): Buffer => Buffer.concat([Buffer.from('RIFF', 'latin1'), Buffer.from([n, 0, 0, 0]), Buffer.from('WAVEfmt ', 'latin1')])
+  const layer = (hash: string, volume: number, stoppingAt: number | null = null) => ({ hash, volume, startedAt: 0, stoppingAt })
+
+  it('[C25] SOM-25 a saved scene keeps each playing layer\'s path and volume, not one fading out', async () => {
+    const { dir, folder, scenes } = await campaign()
+    mkdirSync(join(dir, 'musicas', 'Ambiente'), { recursive: true })
+    writeFileSync(join(dir, 'musicas', 'Ambiente', 'chuva.wav'), wav(1))
+    writeFileSync(join(dir, 'musicas', 'taverna.wav'), wav(2))
+    writeFileSync(join(dir, 'musicas', 'batalha.wav'), wav(3))
+    await folder.scan()
+    const s = sceneWith(hashOf(png(40, 40, 30)), hashOf(png(200)))
+    const layers = [layer(hashOf(wav(1)), 30), layer(hashOf(wav(2)), 60), layer(hashOf(wav(3)), 100, 5000)]
+    expect(await scenes.save('Taverna', s, false, layers)).toEqual({ ok: true })
+    const file = JSON.parse(readFileSync(join(dir, 'cenas', 'Taverna.cena'), 'utf8'))
+    expect(file.sound).toEqual([{ path: 'musicas/Ambiente/chuva.wav', volume: 30 }, { path: 'musicas/taverna.wav', volume: 60 }])
+    expect(await scenes.load('Taverna')).toEqual({ ok: true, scene: s, sound: [{ hash: hashOf(wav(1)), volume: 30 }, { hash: hashOf(wav(2)), volume: 60 }] })
+  })
+
+  it('SOM-27 a scene saved with no layers, or before sounds existed, loads with no layers', async () => {
+    const { dir, scenes } = await campaign()
+    const s = sceneWith(hashOf(png(40, 40, 30)), hashOf(png(200)))
+    await scenes.save('Vazia', s, false, [])
+    expect(await scenes.load('Vazia')).toEqual({ ok: true, scene: s, sound: [] })
+    const old = JSON.parse(readFileSync(join(dir, 'cenas', 'Vazia.cena'), 'utf8'))
+    delete old.sound // a 0.7.0 scene
+    writeFileSync(join(dir, 'cenas', 'Antiga.cena'), JSON.stringify(old))
+    expect(await scenes.load('Antiga')).toEqual({ ok: true, scene: s, sound: [] })
+  })
+
+  it('SOM-28 a scene whose music file is gone is refused with "Arquivo não encontrado: <caminho>"', async () => {
+    const { dir, folder, scenes } = await campaign()
+    writeFileSync(join(dir, 'musicas', 'taverna.wav'), wav(2))
+    await folder.scan()
+    await scenes.save('Taverna', sceneWith(hashOf(png(40, 40, 30)), hashOf(png(200))), false, [layer(hashOf(wav(2)), 60)])
+    rmSync(join(dir, 'musicas', 'taverna.wav'))
+    expect(await scenes.load('Taverna')).toEqual({ ok: false, error: 'Arquivo não encontrado: musicas/taverna.wav' })
   })
 })

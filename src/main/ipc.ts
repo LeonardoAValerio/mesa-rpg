@@ -116,7 +116,7 @@ export function registerIpc(version: string): void {
   /** CAMP-16, CAMP-17, CAMP-22 */
   ipcMain.handle('mesa:saveCena', async (_e, name: string, replace: boolean): Promise<SaveResult> => {
     if (!server) return { ok: false, error: 'Nenhuma mesa hospedada' }
-    return scenes!.save(String(name), server.getScene(), !!replace)
+    return scenes!.save(String(name), server.getScene(), !!replace, server.getSound().layers)
   })
   /** CAMP-18..20 */
   ipcMain.handle('mesa:loadCena', async (_e, name: string): Promise<SceneFileResult> => {
@@ -124,6 +124,7 @@ export function registerIpc(version: string): void {
     const r = await scenes!.load(String(name))
     if (!r.ok) return r
     server.setScene(r.scene)
+    server.masterSound({ type: 'sound/set', layers: r.sound }) // SOM-26, SOM-27
     return { ok: true }
   })
   ipcMain.handle('mesa:stopHost', () => stopHost())

@@ -42,24 +42,34 @@ const cenaSchema = z.object({
   format: z.literal('mesa-cena'),
   version: z.literal(1),
   scene: sceneSchemaV3,
-  files: z.record(z.string().regex(/^[0-9a-f]{64}$/), z.string())
+  files: z.record(z.string().regex(/^[0-9a-f]{64}$/), z.string()),
+  /** SOM-25: the music layers playing when it was saved; absent in scenes saved before sounds (SOM-27). */
+  sound: z.array(z.object({ path: z.string(), volume: z.number().min(0).max(100) })).max(8).optional()
 })
+
+/** A music layer of a scene: the file in the campaign and its volume (SOM-25). */
+export interface CenaLayer {
+  path: string
+  volume: number
+}
 
 export interface Cena {
   scene: Scene
   /** Each image the scene uses → its path inside the campaign. */
   files: Record<string, string>
+  sound: CenaLayer[]
 }
 
 /** CAMP-16: a light scene file: the scene and where each of its images is in the campaign; no image bytes. */
-export function encodeCena(scene: Scene, pathOf: (hash: string) => string | undefined): string {
+export function encodeCena(scene: Scene, pathOf: (hash: string) => string | undefined, sound: CenaLayer[] = []): string {
   const files: Record<string, string> = {}
   for (const h of sceneHashes(scene)) {
     const p = pathOf(h)
     if (!p || !safeRelPath(p)) throw new Error(`no campaign path for ${h}`)
     files[h] = p
   }
-  return JSON.stringify({ format: 'mesa-cena', version: 1, scene, files })
+  if (!sound.every((l) => safeRelPath(l.path))) throw new Error('sound path outside the campaign')
+  return JSON.stringify({ format: 'mesa-cena', version: 1, scene, files, sound })
 }
 
 /** The scene back from a `.cena`, or "Arquivo de cena inválido" when it is malformed or points outside the campaign. */
@@ -76,8 +86,10 @@ export function decodeCena(text: string): Cena | { error: typeof INVALID_CENA } 
   const scene = r.data.scene as Scene
   for (const h of sceneHashes(scene)) if (!r.data.files[h]) return fail
   if (!Object.values(r.data.files).every(safeRelPath)) return fail
+  const sound = r.data.sound ?? []
+  if (!sound.every((l) => safeRelPath(l.path))) return fail
   for (const [id, t] of Object.entries(scene.tokens)) if (t.id !== id) return fail
-  return { scene, files: r.data.files }
+  return { scene, files: r.data.files, sound }
 }
 
 /** CAMP-20: the scene with each old image hash replaced by the hash its file has now. */

@@ -138,7 +138,7 @@ export function masterSoundControls(client: TableClient): { root: HTMLElement; d
   // "Tocando" sits after the lists, held at the panel's foot: a layer starting never moves a row under the pointer
   const root = h('div', { class: 'sound-master' },
     ...sections.map((s) => s.root),
-    h('section', { class: 'panel sound-playing', testid: 'section-playing' }, h('h3', {}, 'Tocando'), playingList, stopAll, message)
+    h('section', { class: 'panel sound-playing', testid: 'section-playing' }, h('h3', {}, 'Tocando'), message, playingList, stopAll) // the message on top: seen even with 8 layers
   )
   return {
     root,

@@ -55,6 +55,9 @@ const sceneFields = {
 const file = <V extends number, S extends z.ZodRawShape>(version: V, scene: S) =>
   z.object({ format: z.literal('mesa'), version: z.literal(version), scene: z.object({ ...sceneFields, ...scene }), assets: z.record(hash, z.string()) })
 
+/** A version 3 scene (items, fog shapes), also used by campaign scenes (`.cena`). */
+export const sceneSchemaV3 = z.object({ ...sceneFields, fog: shapeFog.nullable(), tokens: z.record(z.string(), item) })
+
 const fileSchema = z.discriminatedUnion('version', [
   file(1, { fog: cellFog.nullable(), tokens: z.record(z.string(), oldToken) }),
   file(2, { fog: shapeFog.nullable(), tokens: z.record(z.string(), oldToken) }),

@@ -65,3 +65,11 @@
 - **Scope**: `src/renderer/ui/layout.ts`, table screen, toolbar, fog tools.
 - **Date**: 2026-11-09
 - **Status**: active
+
+### AD-009
+- **Decision**: Cada campanha é uma pasta `Documentos/Mesa RPG/<Campanha>/` (mapas, tokens, objetos, musicas, efeitos, cenas), escolhida ao hospedar; o app lê e observa a pasta e põe as imagens no depósito de assets; cenas da campanha são arquivos `.cena` leves que apontam para os caminhos da pasta; `.mesa` completo fica para exportar e importar.
+- **Reason**: user: "o aplicativo criar uma pasta para ele (...) quando você tenta buscar um token, ou mapa, ele já mostra os que estão salvos dentro dele"; respostas "Ao hospedar", "Leves, apontando para a pasta", "Sozinho", "Sim, como grupos"; spec e tarefas "Aprovo".
+- **Trade-off**: "Importar pasta de tokens" e a importação de mapa por janela saem; uma cena `.cena` depende da pasta (por isso a exportação `.mesa` continua).
+- **Scope**: main (campanha, cenas, IPC), tela inicial, painéis Mapas e Tokens.
+- **Date**: 2026-11-10
+- **Status**: active

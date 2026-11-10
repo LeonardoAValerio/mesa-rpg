@@ -9,8 +9,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: inline - the Design section below
-**Status**: Draft
-**Approved**: pending
+**Status**: In Progress
+**Approved**: 2026-11-10 - user: "Aprovo"
 **Build**: `scripts/with-node npm run build`; `scripts/with-node npm run typecheck`; `scripts/with-node npm run lint`
 **Run unit**: `scripts/with-node npx vitest run --reporter=verbose`
 **Run e2e**: `scripts/with-node npm run build && scripts/with-node npx playwright test --reporter=list`
@@ -76,12 +76,13 @@ T4 → T5 → T6
 
 **Done when**:
 
-- [ ] Unit tests for every rule and edge (60/61 chars, each forbidden character, edge spaces, case clash; `(2)`, `(3)`, no extension; a `.cena` round trip, a missing `files` entry, `..` paths, remap of map and items)
-- [ ] Quick gate passes
+- [x] Unit tests for every rule and edge (60/61 chars, each forbidden character, edge spaces, case clash; `(2)`, `(3)`, no extension; a `.cena` round trip, a missing `files` entry, `..` paths, remap of map and items)
+- [x] Quick gate passes
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(core): campaign names and the .cena scene format`
+**Done**: yes
 
 ---
 

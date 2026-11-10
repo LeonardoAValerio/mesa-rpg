@@ -128,6 +128,36 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: F1, F3 (renderer)
 - last seen: 2026-11-10T01:51:10Z
 
+### L-020 - A check's proof is the test at the layer that does the thing (the service that loads, the e2e that sees nothing created), not the pure helper it calls.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `proofs` · harmful: 0
+- features: campaign-folder
+- evidence: C20,C3 (proofs)
+- last seen: 2026-11-10T12:50:38Z
+
+### L-021 - A time limit in a criterion is the test's timeout exactly, measured with the app's real delays, never a rounded-up margin.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: campaign-folder
+- evidence: C11 (e2e)
+- last seen: 2026-11-10T12:50:38Z
+
+### L-022 - Every part a test title names (token and object, grid detected) gets its own assertion; a title is not evidence.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: campaign-folder
+- evidence: C12,C13 (e2e)
+- last seen: 2026-11-10T12:50:38Z
+
+### L-023 - Parallel e2e workers take ports from disjoint blocks below the ephemeral range; a port freed by the OS picker can be taken before the app binds it.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: campaign-folder
+- evidence: e2e/helpers.ts:freePort (e2e)
+- last seen: 2026-11-10T12:50:38Z
+
+### L-024 - Client-side optimistic state lives until the view shows it, not until the ack, because the server acks before it broadcasts the patch.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `renderer` · harmful: 0
+- features: campaign-folder
+- evidence: src/renderer/board/selection.ts (renderer)
+- last seen: 2026-11-10T12:50:38Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 20,
+  "next_id": 25,
   "lessons": [
     {
       "id": "L-001",
@@ -346,6 +346,96 @@
       ],
       "created": "2026-11-10T01:51:10Z",
       "last_seen": "2026-11-10T01:51:10Z"
+    },
+    {
+      "id": "L-020",
+      "key": "weak_test::a check s proof is the test at the layer that does the thing the service that loads the e2e that sees nothing created not the pure helper it calls",
+      "text": "A check's proof is the test at the layer that does the thing (the service that loads, the e2e that sees nothing created), not the pure helper it calls.",
+      "signal": "weak_test",
+      "scope": "proofs",
+      "status": "candidate",
+      "features": [
+        "campaign-folder"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C20,C3 (proofs)"
+      ],
+      "created": "2026-11-10T12:50:38Z",
+      "last_seen": "2026-11-10T12:50:38Z"
+    },
+    {
+      "id": "L-021",
+      "key": "weak_test::a time limit in a criterion is the test s timeout exactly measured with the app s real delays never a rounded up margin",
+      "text": "A time limit in a criterion is the test's timeout exactly, measured with the app's real delays, never a rounded-up margin.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "campaign-folder"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C11 (e2e)"
+      ],
+      "created": "2026-11-10T12:50:38Z",
+      "last_seen": "2026-11-10T12:50:38Z"
+    },
+    {
+      "id": "L-022",
+      "key": "weak_test::every part a test title names token and object grid detected gets its own assertion a title is not evidence",
+      "text": "Every part a test title names (token and object, grid detected) gets its own assertion; a title is not evidence.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "campaign-folder"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C12,C13 (e2e)"
+      ],
+      "created": "2026-11-10T12:50:38Z",
+      "last_seen": "2026-11-10T12:50:38Z"
+    },
+    {
+      "id": "L-023",
+      "key": "gate_fail::parallel e2e workers take ports from disjoint blocks below the ephemeral range a port freed by the os picker can be taken before the app binds it",
+      "text": "Parallel e2e workers take ports from disjoint blocks below the ephemeral range; a port freed by the OS picker can be taken before the app binds it.",
+      "signal": "gate_fail",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "campaign-folder"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "e2e/helpers.ts:freePort (e2e)"
+      ],
+      "created": "2026-11-10T12:50:38Z",
+      "last_seen": "2026-11-10T12:50:38Z"
+    },
+    {
+      "id": "L-024",
+      "key": "gate_fail::client side optimistic state lives until the view shows it not until the ack because the server acks before it broadcasts the patch",
+      "text": "Client-side optimistic state lives until the view shows it, not until the ack, because the server acks before it broadcasts the patch.",
+      "signal": "gate_fail",
+      "scope": "renderer",
+      "status": "candidate",
+      "features": [
+        "campaign-folder"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/renderer/board/selection.ts (renderer)"
+      ],
+      "created": "2026-11-10T12:50:38Z",
+      "last_seen": "2026-11-10T12:50:38Z"
     }
   ]
 }

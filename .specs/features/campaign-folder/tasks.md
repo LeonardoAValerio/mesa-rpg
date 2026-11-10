@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: inline - the Design section below
-**Status**: In Progress
+**Status**: Done
 **Approved**: 2026-11-10 - user: "Aprovo"
 **Build**: `scripts/with-node npm run build`; `scripts/with-node npm run typecheck`; `scripts/with-node npm run lint`
 **Run unit**: `scripts/with-node npx vitest run --reporter=verbose`
@@ -259,7 +259,7 @@ Proof: run unit | ✓ [C22] CAMP-22
 ## Handoff
 
 **Settled mid-build:** T3 gate was unit (161) + build + lint; the e2e (hosting now needs a campaign, the library import is gone) are reworked in Phase 2 with the "Teste" campaign in `launch`.
-**Dispatched:** Verifier at ccd386a+walk-style commit (round 1)
+**Dispatched:** Verifier round 1 at 00b4da3 (5 findings, closed in 2c83018); round 2 = check_proofs at 2c83018
 **Walked:** at ccd386a with real clicks in Electron (MESA_TEST=1, empty Documentos, master + player "Ana"): the start screen shows "Nenhuma campanha ainda" and "Hospedar" disabled; "Nova campanha" with "Mistério" creates cenas, efeitos, mapas, musicas, objetos, tokens and selects it; hosted. `Florestas Frias.jpg`, `tokens/Goblins/goblin.png` and `objetos/bau.png` copied in with the file system show in Mapas (thumbnail) and in Tokens (group "Goblins", Objetos); the map clicked loads in both windows; goblin and bau dragged onto the map show for Ana. "Salvar cena" → "Emboscada" writes `cenas/Emboscada.cena` and lists it; saving "Emboscada" again asks "Substituir a cena Emboscada?" (Cancelar kept it); with the chest removed, a click on "Emboscada" asks "Substituir a cena atual?" and Substituir brings the chest back in Ana's window; with goblin.png deleted, the load stops at "Arquivo não encontrado: tokens/Goblins/goblin.png". Found and fixed: the campaign radio stacked above its name, and the scene row did not look clickable (style.css).
 
 ---

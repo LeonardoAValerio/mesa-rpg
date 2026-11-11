@@ -248,8 +248,8 @@ Proof: run e2e | ✓ [C23] BRD-23
 ## Handoff
 
 **Settled mid-build:** T1 changed the expected snap positions of the old ITEM-08 tests (unit and e2e `[C8]`) to BRD-01, which the user's answer replaced ("Centro no centro da célula"); the phase gate's only failure was that e2e, green after the update. T4 added a table rule: a move of several items must hold every member of their groups (a player does not see a hidden member, so could otherwise split the group); C16's refusal is reached with the action itself, since the box and Shift+click never offer an item the person may not move.
-**Dispatched:** none
-**Walked:** none
+**Dispatched:** Verifier round 1 at the walk-log commit
+**Walked:** at 36b182f with real mouse and keys in Electron (MESA_TEST=1, master + player "Ana", `Florestas Frias.jpg` from the campaign, grid detected 85.33 px): three goblins dropped from the list near cells (8.3, 8.4), (9.4, 8.6), (8.6, 9.5) and a 1.5-cell ogre near (12.3, 9.2) all land centred on cells (x.49 with the detected offset); a box over the goblins draws a blue rectangle, selects the three with an outline each and shows "Agrupar" over the map; after "Agrupar" and Esc, dragging one goblin 3 cells right and 2 up moves all three in Ana's window; "Mostrar grid" off removes the app's lines in Ana's window (the lines left are drawn in the map image itself); a right-button drag pans the master's view by exactly (-150, -60) px.
 
 ---
 

@@ -7,7 +7,12 @@ import type { Board } from './board'
 const HANDLE_PX = 12
 
 export interface SelectionSnapshot {
+  /** The one selected item, or null with none or several. */
   id: string | null
+  /** BRD-08..14: every selected item. */
+  ids: string[]
+  /** How many outlines are drawn (one per selected item, BRD-14). */
+  outlines: number
   /** The drawn outline's corners, in map pixels; empty with nothing selected. */
   outline: Array<[number, number]>
   /** The drawn resize handle's centre (master only), in map pixels. */
@@ -17,11 +22,13 @@ export interface SelectionSnapshot {
 }
 
 /**
- * ITEM-04, ITEM-13: the selected item (a click selects it, in any window) gets an outline; Q and E rotate it 15° when
- * the viewer may move it; the master drags the corner handle to resize it in steps of 0.25 cell, keeping the aspect.
+ * ITEM-04, ITEM-13, BRD-08..14: the selected items (this window's own) each get an outline; Q and E turn each one
+ * 15° the viewer may move; the master's Delete removes them; with one item the master drags the corner handle to
+ * resize it in steps of 0.25 cell, keeping the aspect.
  */
 export class Selection {
-  private id: string | null = null
+  private list: string[] = []
+  private outlineCount = 0
   private readonly outline = new Graphics()
   private readonly handle = new Graphics()
   private resize: { width: number } | null = null
@@ -29,7 +36,7 @@ export class Selection {
    * The last rotation sent, so quick key presses add up before the view has it. The server acks before it sends the
    * patch, so it is dropped on the first view after the ack of the last one, not on the ack itself.
    */
-  private sent: { id: string; rotation: number; acked: boolean } | null = null
+  private sent = new Map<string, { rotation: number; acked: boolean }>()
   private readonly offs: Array<() => void> = []
 
   constructor(private readonly board: Board, private readonly client: TableClient) {
@@ -47,24 +54,48 @@ export class Selection {
       () => stage.off('pointerupoutside', this.endResize),
       () => window.removeEventListener('keydown', this.key),
       client.on('view', () => {
-        if (this.sent?.acked) this.sent = null
+        for (const [id, s] of this.sent) if (s.acked) this.sent.delete(id)
         this.draw()
       })
     )
   }
 
+  /** The one selected item, or null with none or several. */
   get selected(): string | null {
-    return this.id
+    return this.list.length === 1 ? this.list[0] : null
+  }
+
+  get ids(): string[] {
+    return [...this.list]
+  }
+
+  has(id: string): boolean {
+    return this.list.includes(id)
   }
 
   select(id: string | null): void {
-    this.id = id
+    this.set(id ? [id] : [])
+  }
+
+  set(ids: string[]): void {
+    this.list = [...new Set(ids)]
     this.resize = null
     this.draw()
   }
 
+  /** BRD-09: Shift+click adds an item, or takes it out. */
+  toggle(id: string): void {
+    this.set(this.has(id) ? this.list.filter((x) => x !== id) : [...this.list, id])
+  }
+
   private item(): Token | null {
-    return this.id ? (this.client.view?.tokens[this.id] ?? null) : null
+    const id = this.selected
+    return id ? (this.client.view?.tokens[id] ?? null) : null
+  }
+
+  private items(): Token[] {
+    const tokens = this.client.view?.tokens ?? {}
+    return this.list.map((id) => tokens[id]).filter((t): t is Token => !!t)
   }
 
   /** The item's drawn corners and size, rotated, in map pixels. */
@@ -81,38 +112,56 @@ export class Selection {
   draw(): void {
     this.outline.clear()
     this.handle.clear()
-    const t = this.item()
-    if (!t) {
-      if (this.id) this.id = null // gone from this view
-      return
-    }
+    this.outlineCount = 0
+    const items = this.items()
+    if (items.length !== this.list.length) this.list = items.map((t) => t.id) // gone from this view
+    if (!items.length) return
     const line = 2 / this.board.camera.scale
+    for (const t of items) {
+      const c = this.corners(t, items.length === 1 ? (this.resize?.width ?? t.width) : t.width)
+      this.outline.poly(c.flat(), true).stroke({ width: line, color: 0xffffff, alpha: 0.9 })
+      this.outlineCount++
+    }
+    const t = this.item()
+    if (!t) return // the resize handle is for one item only
     const c = this.corners(t, this.resize?.width ?? t.width)
-    this.outline.poly(c.flat(), true).stroke({ width: line, color: 0xffffff, alpha: 0.9 })
     if (this.client.you?.role === 'master' && this.board.tool === 'select') {
       const s = HANDLE_PX / this.board.camera.scale
       this.handle.rect(c[2][0] - s / 2, c[2][1] - s / 2, s, s).fill(0xffffff).stroke({ width: line, color: 0x111827 })
     }
   }
 
-  /** ITEM-13: E turns clockwise, Q anticlockwise; nothing when the viewer may not move it (the server says why). */
+  /**
+   * ITEM-13, BRD-11..13: E turns each selected item clockwise, Q anticlockwise (those the viewer may move); the
+   * master's Delete removes them; Esc clears.
+   */
   private key = (e: KeyboardEvent): void => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return
     if (e.key === 'Escape') return this.board.deselect()
-    const key = e.key.toLowerCase()
-    if (key !== 'q' && key !== 'e') return
-    const t = this.item()
     const you = this.client.you
-    if (!t || !you || !canMove(t, you).ok) return
-    const from = this.sent?.id === t.id ? this.sent.rotation : t.rotation
-    const rotation = normalizeRotation(from + (key === 'e' ? ROTATION_STEP : -ROTATION_STEP))
-    const sent = { id: t.id, rotation, acked: false }
-    this.sent = sent
-    void this.client.send({ type: 'token/rotate', id: t.id, rotation }).then((r) => {
-      if (this.sent !== sent) return // a later press is on its way
-      if (r.ok) sent.acked = true // the patch with it is next
-      else this.sent = null
-    })
+    if (!you) return
+    if (e.key === 'Delete') {
+      if (you.role !== 'master') return // BRD-12: a player's Delete removes nothing
+      const items = this.items()
+      if (!items.length) return
+      for (const t of items) void this.client.send({ type: 'token/remove', id: t.id })
+      this.board.deselect()
+      return
+    }
+    const key = e.key.toLowerCase()
+    if (key !== 'q' && key !== 'e' || e.ctrlKey || e.metaKey || e.altKey) return
+    for (const t of this.items()) {
+      if (!canMove(t, you).ok) continue
+      const from = this.sent.get(t.id)?.rotation ?? t.rotation
+      const rotation = normalizeRotation(from + (key === 'e' ? ROTATION_STEP : -ROTATION_STEP))
+      const sent = { rotation, acked: false }
+      this.sent.set(t.id, sent)
+      void this.client.send({ type: 'token/rotate', id: t.id, rotation }).then((r) => {
+        if (this.sent.get(t.id) !== sent) return // a later press is on its way
+        if (r.ok) sent.acked = true // the patch with it is next
+        else this.sent.delete(t.id)
+      })
+    }
   }
 
   /** Whether a map point is on the master's resize handle. */
@@ -169,6 +218,8 @@ export class Selection {
     const hb = this.handle.getLocalBounds()
     return {
       id: t ? t.id : null,
+      ids: this.items().map((x) => x.id),
+      outlines: this.outlineCount,
       outline: t && ob.width > 0 ? this.corners(t, this.resize?.width ?? t.width) : [],
       handle: hb.width > 0 ? [hb.x + hb.width / 2, hb.y + hb.height / 2] : null,
       resizing: this.resize?.width ?? null

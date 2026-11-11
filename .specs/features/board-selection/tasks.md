@@ -122,12 +122,13 @@ T1 → T2 → T3 → T4 → T5
 
 **Done when**:
 
-- [ ] e2e: a box selects exactly the movable, visible items whose centre is inside, for master and player; Shift+click adds and removes; dragging one of four moves all by the same offset in both windows; Q/E turn each; Delete removes for the master and nothing for a player; Esc and an empty click clear; each selected item outlined and the editor hidden with several
-- [ ] Task e2e gate passes
+- [x] e2e: a box selects exactly the movable, visible items whose centre is inside, for master and player; Shift+click adds and removes; dragging one of four moves all by the same offset in both windows; Q/E turn each; Delete removes for the master and nothing for a player; Esc and an empty click clear; each selected item outlined and the editor hidden with several
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(board): select several items with a box and move them together`
+**Done**: yes
 
 ---
 

@@ -165,3 +165,141 @@ test('[C7] BRD-07 a player\'s change of the grid visibility is refused with "Sem
   for (const page of [master.page, player.page]) expect(await lines(page)).toBeGreaterThan(0)
   await expect(player.page.getByTestId('grid-visible')).toHaveCount(0) // no switch for a player
 })
+
+const ids = async (page: Page): Promise<string[]> => [...(await snap(page)).selection.ids].sort()
+const idOf = async (page: Page, name: string): Promise<string> => (await item(page, name)).id
+const idsOf = async (page: Page, ...names: string[]): Promise<string[]> => (await Promise.all(names.map((n) => idOf(page, n)))).sort()
+/** Drags a selection box on the map from (x0, y0) to (x1, y1), map pixels. */
+async function boxDrag(page: Page, x0: number, y0: number, x1: number, y1: number): Promise<void> {
+  const a = await at(page, x0, y0)
+  const b = await at(page, x1, y1)
+  await page.mouse.move(a.x, a.y)
+  await page.mouse.down()
+  await page.mouse.move(b.x, b.y, { steps: 8 })
+  await page.mouse.up()
+}
+async function clickItem(page: Page, name: string, modifiers: Array<'Shift'> = []): Promise<void> {
+  const t = await item(page, name)
+  const p = await at(page, t.x, t.y)
+  for (const m of modifiers) await page.keyboard.down(m)
+  await page.mouse.click(p.x, p.y)
+  for (const m of modifiers) await page.keyboard.up(m)
+}
+/** Goblins at (150,150), (250,150), (150,250), a locked door at (250,250), Ana's Guerreira at (450,150), a "Só mestre" chest at (550,150), a hidden spy at (450,250). */
+async function crowd(): Promise<{ master: AppHandle; player: AppHandle }> {
+  const t = await table()
+  const m = t.master.page
+  for (const [name, x, y] of [['G1', 150, 150], ['G2', 250, 150], ['G3', 150, 250]] as const) await place(m, t.square, name, 1, x, y)
+  await act(m, { type: 'token/place', hash: t.square, name: 'Porta', kind: 'object', x: 250, y: 250, width: 1, ring: null })
+  await act(m, { type: 'token/update', id: await idOf(m, 'Porta'), movement: 'locked' })
+  await place(m, t.square, 'Guerreira', 1, 450, 150)
+  await act(m, { type: 'token/owner', id: await idOf(m, 'Guerreira'), owner: 'Ana' })
+  await act(m, { type: 'token/place', hash: t.square, name: 'Bau', kind: 'object', x: 550, y: 150, width: 1, ring: null })
+  await act(m, { type: 'token/update', id: await idOf(m, 'Bau'), movement: 'master' })
+  await place(m, t.square, 'Espiao', 1, 450, 250)
+  await act(m, { type: 'token/hide', id: await idOf(m, 'Espiao') })
+  await item(t.player.page, 'Bau')
+  return t
+}
+
+test('[C8] BRD-08 a box selects exactly the items whose centre is inside and that the person may move', async () => {
+  const { master, player } = await crowd()
+  // the master: the three goblins, not the locked door; the box edge cuts the chest's body but not its centre
+  await boxDrag(master.page, 100, 100, 300, 300)
+  await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'G1', 'G2', 'G3'))
+  await boxDrag(master.page, 400, 100, 590, 300)
+  await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'Guerreira', 'Bau', 'Espiao'))
+  // Ana: her character and the free goblins; not the master-only chest nor the spy she cannot see
+  await boxDrag(player.page, 100, 100, 590, 300)
+  await expect.poll(() => ids(player.page)).toEqual(await idsOf(player.page, 'G1', 'G2', 'G3', 'Guerreira'))
+  expect(await ids(master.page)).toEqual(await idsOf(master.page, 'Guerreira', 'Bau', 'Espiao')) // each window its own
+})
+
+test('[C9] BRD-09 Shift+click adds an item the person may move, and takes it out again', async () => {
+  const { master } = await crowd()
+  await clickItem(master.page, 'G1')
+  await clickItem(master.page, 'G2', ['Shift'])
+  await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'G1', 'G2'))
+  await clickItem(master.page, 'Bau', ['Shift'])
+  await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'G1', 'G2', 'Bau'))
+  await clickItem(master.page, 'G1', ['Shift'])
+  await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'G2', 'Bau'))
+  await clickItem(master.page, 'Porta', ['Shift']) // locked: not added
+  await master.page.waitForTimeout(200)
+  expect(await ids(master.page)).toEqual(await idsOf(master.page, 'G2', 'Bau'))
+})
+
+test('[C10] BRD-10 dragging one of several selected items moves them all by the same offset, in every window', async () => {
+  const { master, player } = await crowd()
+  await boxDrag(master.page, 100, 100, 300, 200) // G1, G2
+  await clickItem(master.page, 'G3', ['Shift'])
+  await clickItem(master.page, 'Guerreira', ['Shift'])
+  await expect.poll(async () => (await ids(master.page)).length).toBe(4)
+  await dragItem(master.page, 'G1', 330, 370) // lands centred on (350, 350): +200, +200
+  for (const page of [master.page, player.page]) {
+    await expect.poll(() => centre(page, 'G1')).toEqual([350, 350])
+    await expect.poll(() => centre(page, 'G2')).toEqual([450, 350])
+    await expect.poll(() => centre(page, 'G3')).toEqual([350, 450])
+    await expect.poll(() => centre(page, 'Guerreira')).toEqual([650, 350])
+    expect(await centre(page, 'Porta')).toEqual([250, 250]) // not selected: stays
+  }
+})
+
+test('[C11] BRD-11 Q and E turn each selected item 15° about its own centre, in every window', async () => {
+  const { master, player } = await crowd()
+  await boxDrag(master.page, 100, 100, 300, 200) // G1, G2
+  await expect.poll(async () => (await ids(master.page)).length).toBe(2)
+  await master.page.keyboard.press('e')
+  for (const page of [master.page, player.page]) for (const n of ['G1', 'G2']) await expect.poll(async () => (await item(page, n)).rotation).toBe(15)
+  await master.page.keyboard.press('q')
+  await master.page.keyboard.press('q')
+  for (const page of [master.page, player.page]) {
+    for (const n of ['G1', 'G2']) await expect.poll(async () => (await item(page, n)).rotation).toBe(345)
+    expect(await centre(page, 'G1')).toEqual([150, 150]) // about its own centre
+    expect((await item(page, 'G3')).rotation).toBe(0)
+  }
+})
+
+test('[C12] BRD-12 the master\'s Delete removes the selected items in every window; a player\'s removes nothing', async () => {
+  const { master, player } = await crowd()
+  await boxDrag(player.page, 100, 100, 300, 200) // G1, G2 for Ana
+  await expect.poll(async () => (await ids(player.page)).length).toBe(2)
+  await player.page.keyboard.press('Delete')
+  await player.page.waitForTimeout(400)
+  expect((await snap(master.page)).tokens.map((t) => t.name)).toContain('G1')
+  await boxDrag(master.page, 100, 100, 300, 200)
+  await expect.poll(async () => (await ids(master.page)).length).toBe(2)
+  await master.page.keyboard.press('Delete')
+  for (const page of [master.page, player.page]) {
+    await expect.poll(async () => (await snap(page)).tokens.map((t) => t.name).filter((n) => n === 'G1' || n === 'G2')).toEqual([])
+    expect((await snap(page)).tokens.map((t) => t.name)).toContain('G3')
+  }
+})
+
+test('[C13] BRD-13 a click on the empty map or Esc clears the selection', async () => {
+  const { master } = await crowd()
+  await boxDrag(master.page, 100, 100, 300, 300)
+  await expect.poll(async () => (await ids(master.page)).length).toBe(3)
+  const empty = await at(master.page, 650, 450)
+  await master.page.mouse.click(empty.x, empty.y)
+  await expect.poll(() => ids(master.page)).toEqual([])
+  await boxDrag(master.page, 100, 100, 300, 300)
+  await expect.poll(async () => (await ids(master.page)).length).toBe(3)
+  await master.page.keyboard.press('Escape')
+  await expect.poll(() => ids(master.page)).toEqual([])
+})
+
+test('[C14] BRD-14 each selected item is outlined, and the master\'s editor hides with several', async () => {
+  const { master } = await crowd()
+  await showPanel(master.page, 'tokens')
+  await clickItem(master.page, 'G1')
+  await expect(master.page.getByTestId('token-editor')).toBeVisible()
+  await expect.poll(async () => (await snap(master.page)).selection.outlines).toBe(1)
+  await boxDrag(master.page, 100, 100, 300, 300)
+  await expect.poll(async () => (await snap(master.page)).selection.outlines).toBe(3)
+  await expect(master.page.getByTestId('token-editor')).toBeHidden()
+  expect((await snap(master.page)).selection.handle).toBeNull() // no resize handle with several
+  await clickItem(master.page, 'G2') // a click on one of them: just it
+  await expect.poll(() => ids(master.page)).toEqual([await idOf(master.page, 'G2')])
+  await expect(master.page.getByTestId('token-editor')).toBeVisible()
+})

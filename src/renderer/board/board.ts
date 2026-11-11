@@ -79,7 +79,22 @@ export class Board {
 
   private sprites = new Map<string, TokenSprite>()
   private spriteKeys = new Map<string, string>()
-  private drag: { id: string; dx: number; dy: number; container: Container; from: { x: number; y: number }; moved: boolean } | null = null
+  private drag: {
+    id: string
+    dx: number
+    dy: number
+    container: Container
+    from: { x: number; y: number }
+    moved: boolean
+    /** BRD-10: the other selected items, moved by the same offset; their starting centres. */
+    followers: Array<{ id: string; container: Container; x: number; y: number }>
+    start: { x: number; y: number }
+  } | null = null
+  /** BRD-08: the selection box being dragged, in map pixels. */
+  private box: { x0: number; y0: number; x1: number; y1: number; from: { x: number; y: number }; moved: boolean } | null = null
+  private readonly boxGraphic = new Graphics()
+  /** BRD-18: a refused move of several items tells why. */
+  readonly moveRefused = new Set<(reason: string) => void>()
   private panning: { x: number; y: number } | null = null
   private space = false
   private fittedFor: string | null = null
@@ -106,6 +121,7 @@ export class Board {
     b.world.addChild(b.mapLayer, b.gridLayer, b.fogLayer, b.tokenLayer, b.overlayLayer) // tokens a player may see are drawn above the fog
     b.fog = new FogRenderer(b.world, b.fogLayer)
     b.selection = new Selection(b, client)
+    b.overlayLayer.addChild(b.boxGraphic)
     b.app.stage.addChild(b.world)
     b.bindInput()
     // the board area changes size with the layout, not only with the window
@@ -152,11 +168,22 @@ export class Board {
     return dropPosition(kind, shift, grid, x, y, box.w, box.h)
   }
 
-  /** Clears the selection: an empty click, Esc or another tool (ITEM-13). */
+  /** Clears the selection: an empty click, Esc or another tool (ITEM-13, BRD-13). */
   deselect(): void {
-    if (!this.selection.selected) return
+    if (!this.selection.ids.length) return
     this.selection.select(null)
     this.opts.onSelect?.(null)
+  }
+
+  /** What a click on an item selects: the item alone (T4 adds its group). */
+  clickSelection(id: string): string[] {
+    return [id]
+  }
+
+  /** Makes these items the selection; the master's editor follows only one item (BRD-14). */
+  selectIds(ids: string[]): void {
+    this.selection.set(ids)
+    if (this.client.you?.role === 'master') this.opts.onSelect?.(this.selection.selected)
   }
 
   private bindInput(): void {
@@ -199,28 +226,76 @@ export class Board {
     stage.eventMode = 'static'
     stage.hitArea = this.app.screen
     stage.on('pointermove', (e: FederatedPointerEvent) => {
+      if (this.box) return this.moveBox(e)
       if (!this.drag) return
       if (!this.drag.moved && Math.hypot(e.global.x - this.drag.from.x, e.global.y - this.drag.from.y) < 4) return // a click selects, it does not move
       this.drag.moved = true
       const w = this.toWorld(e.global.x, e.global.y)
-      this.drag.container.position.set(w.x - this.drag.dx, w.y - this.drag.dy)
+      const d = this.drag
+      d.container.position.set(w.x - d.dx, w.y - d.dy)
+      for (const f of d.followers) f.container.position.set(f.x + d.container.x - d.start.x, f.y + d.container.y - d.start.y)
     })
     stage.on('pointerdown', (e: FederatedPointerEvent) => {
-      // a click on the empty map clears the selection; a click on an item or the handle never reaches here as the target
-      if (e.target === stage && e.button === 0 && !this.space && this.tool === 'select' && !this.selection.onHandle(this.toWorld(e.global.x, e.global.y))) this.deselect()
+      // a press on the empty map starts a selection box; a click there (no drag) clears the selection (BRD-08, BRD-13)
+      if (e.target === stage && e.button === 0 && !this.space && this.tool === 'select' && !this.selection.onHandle(this.toWorld(e.global.x, e.global.y))) {
+        const w = this.toWorld(e.global.x, e.global.y)
+        this.box = { x0: w.x, y0: w.y, x1: w.x, y1: w.y, from: { x: e.global.x, y: e.global.y }, moved: false }
+      }
     })
-    stage.on('pointerup', (e: FederatedPointerEvent) => void this.endDrag(e.shiftKey))
-    stage.on('pointerupoutside', (e: FederatedPointerEvent) => void this.endDrag(e.shiftKey))
+    stage.on('pointerup', (e: FederatedPointerEvent) => {
+      if (this.box) return this.endBox()
+      void this.endDrag(e.shiftKey)
+    })
+    stage.on('pointerupoutside', (e: FederatedPointerEvent) => {
+      if (this.box) return this.endBox()
+      void this.endDrag(e.shiftKey)
+    })
+  }
+
+  private moveBox(e: FederatedPointerEvent): void {
+    const b = this.box!
+    if (!b.moved && Math.hypot(e.global.x - b.from.x, e.global.y - b.from.y) < 4) return
+    b.moved = true
+    const w = this.toWorld(e.global.x, e.global.y)
+    b.x1 = w.x
+    b.y1 = w.y
+    const line = 1.5 / this.camera.scale
+    this.boxGraphic.clear()
+    this.boxGraphic
+      .rect(Math.min(b.x0, b.x1), Math.min(b.y0, b.y1), Math.abs(b.x1 - b.x0), Math.abs(b.y1 - b.y0))
+      .fill({ color: 0x3b82f6, alpha: 0.12 })
+      .stroke({ width: line, color: 0x93c5fd, alpha: 0.9 })
+  }
+
+  /** BRD-08: the items whose centre is inside the box, that this window sees and the person may move. */
+  private endBox(): void {
+    const b = this.box!
+    this.box = null
+    this.boxGraphic.clear()
+    if (!b.moved) return this.deselect() // a click on the empty map
+    const [x0, x1] = [Math.min(b.x0, b.x1), Math.max(b.x0, b.x1)]
+    const [y0, y1] = [Math.min(b.y0, b.y1), Math.max(b.y0, b.y1)]
+    const tokens = Object.values(this.client.view?.tokens ?? {})
+    this.selectIds(tokens.filter((t) => t.x >= x0 && t.x <= x1 && t.y >= y0 && t.y <= y1 && this.canDrag(t)).map((t) => t.id))
   }
 
   private startDrag(t: Token, sprite: TokenSprite, e: FederatedPointerEvent): void {
     if (e.button !== 0 || this.space || this.tool !== 'select') return
     if (this.selection.onHandle(this.toWorld(e.global.x, e.global.y))) return this.selection.beginResize() // ITEM-04
-    this.selection.select(t.id)
-    if (this.client.you?.role === 'master') this.opts.onSelect?.(t.id)
+    if (e.shiftKey) {
+      // BRD-09: Shift+click adds an item the person may move, or takes it out
+      if (this.canDrag(t)) this.selectIds(this.selection.has(t.id) ? this.selection.ids.filter((x) => x !== t.id) : [...this.selection.ids, t.id])
+      return
+    }
+    // a press on one of several selected items keeps them all; otherwise it becomes the selection
+    if (!(this.selection.has(t.id) && this.selection.ids.length > 1)) this.selectIds(this.clickSelection(t.id))
     if (!this.canDrag(t)) return // ITEM-14..16
     const w = this.toWorld(e.global.x, e.global.y)
-    this.drag = { id: t.id, dx: w.x - sprite.root.x, dy: w.y - sprite.root.y, container: sprite.root, from: { x: e.global.x, y: e.global.y }, moved: false }
+    const view = this.client.view
+    const followers = this.selection.ids
+      .filter((id) => id !== t.id && view?.tokens[id] && this.sprites.has(id) && this.canDrag(view.tokens[id]))
+      .map((id) => ({ id, container: this.sprites.get(id)!.root, x: this.sprites.get(id)!.root.x, y: this.sprites.get(id)!.root.y }))
+    this.drag = { id: t.id, dx: w.x - sprite.root.x, dy: w.y - sprite.root.y, container: sprite.root, from: { x: e.global.x, y: e.global.y }, moved: false, followers, start: { x: sprite.root.x, y: sprite.root.y } }
     sprite.root.parent?.addChild(sprite.root) // on top of its layer while dragging
   }
 
@@ -232,12 +307,35 @@ export class Board {
     const view = this.client.view
     if (!view || !view.tokens[d.id]) return this.render(true)
     const t = view.tokens[d.id]
-    if (!d.moved) return // a click: nothing moves, not even a snap
+    if (!d.moved) {
+      if (d.followers.length) this.selectIds(this.clickSelection(d.id)) // a click on one of several: just it (its group)
+      return // a click: nothing moves, not even a snap
+    }
     const p = this.dropAt(t.kind, t.hash, t.width, d.container.x, d.container.y, shift, t.rotation)
     d.container.position.set(p.x, p.y)
-    if (t.x === p.x && t.y === p.y) return
-    const r = await this.client.send({ type: 'token/move', id: d.id, x: p.x, y: p.y })
-    if (!r.ok) this.render(true)
+    if (t.x === p.x && t.y === p.y) {
+      if (d.followers.length) this.render(true) // the others go back too
+      return
+    }
+    if (!d.followers.length) {
+      const r = await this.client.send({ type: 'token/move', id: d.id, x: p.x, y: p.y })
+      if (!r.ok) this.render(true)
+      return
+    }
+    // BRD-10: the others move by the dragged item's offset, all in one action (all or nothing)
+    const dx = p.x - t.x
+    const dy = p.y - t.y
+    const moves = [{ id: d.id, x: p.x, y: p.y }]
+    for (const f of d.followers) {
+      const ft = view.tokens[f.id]
+      if (ft) moves.push({ id: f.id, x: ft.x + dx, y: ft.y + dy })
+      f.container.position.set(f.x + dx, f.y + dy)
+    }
+    const r = await this.client.send({ type: 'token/moveMany', moves })
+    if (!r.ok) {
+      this.render(true)
+      for (const fn of this.moveRefused) fn(r.reason)
+    }
   }
 
   /** Space is held: a left drag pans the view, so no tool may act on it (MAP-08). */
@@ -318,13 +416,14 @@ export class Board {
   private renderTokens(view: View, force: boolean): void {
     if (this.drag && !view.tokens[this.drag.id]) this.drag = null // TOK-11: the token is gone, so is the drag
     if (force) this.drag = null
+    const dragged = new Set(this.drag ? [this.drag.id, ...this.drag.followers.map((f) => f.id)] : [])
     const colors = this.colors()
     const g = view.grid
     const keyOf = (t: Token): string =>
       JSON.stringify([t, g.cell, g.offsetX, g.offsetY, t.ring ? colors[t.ring] : '', this.textureSize(t.hash), view.role, this.canDrag(t)])
     for (const [id, s] of this.sprites) {
       const t = view.tokens[id]
-      if (this.drag?.id === id) continue
+      if (dragged.has(id) && t) continue
       if (!force && t && this.spriteKeys.get(id) === keyOf(t)) continue
       s.root.destroy({ children: true })
       this.sprites.delete(id)

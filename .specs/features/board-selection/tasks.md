@@ -162,12 +162,13 @@ T1 → T2 → T3 → T4 → T5
 
 **Done when**:
 
-- [ ] e2e: with the ruler and with the select tool, a right drag moves the camera by the drag and nothing else happens (no ruler, no box, no move); a right click opens no context menu
-- [ ] Phase gate passes
+- [x] e2e: with the ruler and with the select tool, a right drag moves the camera by the drag and nothing else happens (no ruler, no box, no move); a right click opens no context menu
+- [x] Phase gate passes
 
 **Tests**: e2e
 **Gate**: phase
 **Commit**: `feat(board): pan the view with the right mouse button`
+**Done**: yes
 
 ---
 

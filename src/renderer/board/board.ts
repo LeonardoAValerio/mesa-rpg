@@ -200,7 +200,8 @@ export class Board {
       this.applyCamera()
     }, { passive: false })
     canvas.addEventListener('pointerdown', (e) => {
-      if (e.button === 1 || (e.button === 0 && this.space)) {
+      // MAP-08, BRD-22: the middle or the right button, or Space + left, pans in any tool
+      if (e.button === 1 || e.button === 2 || (e.button === 0 && this.space)) {
         e.preventDefault()
         this.panning = { x: e.clientX, y: e.clientY }
         canvas.setPointerCapture(e.pointerId)
@@ -218,6 +219,7 @@ export class Board {
     canvas.addEventListener('pointerup', endPan)
     canvas.addEventListener('pointercancel', endPan)
     canvas.addEventListener('auxclick', (e) => e.preventDefault())
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault()) // BRD-23: the right button is for panning
     const key = (down: boolean) => (e: KeyboardEvent): void => {
       if (e.code === 'Space' && !(e.target instanceof HTMLInputElement)) this.space = down
     }

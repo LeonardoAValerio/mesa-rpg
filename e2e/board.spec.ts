@@ -429,3 +429,56 @@ test('[C20] BRD-20 groups come back as saved when a scene is loaded', async () =
   await master.page.getByTestId('confirm-yes').click()
   await expect.poll(() => groups(master)).toEqual(saved)
 })
+
+const overlays = (page: Page) => page.evaluate(() => window.__mesaTest!.overlays())
+/** A right-button drag on the map from (x0, y0) to (x1, y1), map pixels; returns the camera before and after. */
+async function rightDrag(page: Page, x0: number, y0: number, dxPx: number, dyPx: number) {
+  const before = (await snap(page)).camera
+  const a = await at(page, x0, y0)
+  await page.mouse.move(a.x, a.y)
+  await page.mouse.down({ button: 'right' })
+  await page.mouse.move(a.x + dxPx, a.y + dyPx, { steps: 8 })
+  await page.mouse.up({ button: 'right' })
+  return { before, after: (await snap(page)).camera }
+}
+
+test('[C22] BRD-22 a right-button drag pans the view in any tool, and the tool does nothing', async () => {
+  const { master, player, square } = await table()
+  await place(master.page, square, 'G1', 1, 150, 150)
+  await item(player.page, 'G1')
+  // select tool, starting on a token: the view moves, the token does not, nothing is selected
+  let r = await rightDrag(master.page, 150, 150, 120, 80)
+  expect(r.after.x - r.before.x).toBeCloseTo(120, 0)
+  expect(r.after.y - r.before.y).toBeCloseTo(80, 0)
+  expect(await centre(master.page, 'G1')).toEqual([150, 150])
+  expect(await ids(master.page)).toEqual([])
+  // select tool on the empty map: no selection box either
+  r = await rightDrag(master.page, 600, 400, -60, 0)
+  expect(r.after.x - r.before.x).toBeCloseTo(-60, 0)
+  expect(await ids(master.page)).toEqual([])
+  // the ruler and the drawing tool: the view moves, no ruler and no stroke in either window
+  for (const tool of ['ruler', 'draw'] as const) {
+    await master.page.getByTestId(`tool-${tool}`).click()
+    r = await rightDrag(master.page, 450, 300, -100, 50)
+    expect(r.after.x - r.before.x, tool).toBeCloseTo(-100, 0)
+    expect(r.after.y - r.before.y, tool).toBeCloseTo(50, 0)
+    await master.page.waitForTimeout(300)
+    for (const page of [master.page, player.page]) {
+      const o = await overlays(page)
+      expect([o.rulers.length, o.strokes.length], tool).toEqual([0, 0])
+    }
+  }
+  expect(await centre(player.page, 'G1')).toEqual([150, 150])
+})
+
+test('[C23] BRD-23 a right click on the map opens no context menu', async () => {
+  const { master } = await table()
+  await master.page.evaluate(() => {
+    const w = window as unknown as { contextMenus: boolean[] }
+    w.contextMenus = []
+    document.addEventListener('contextmenu', (e) => w.contextMenus.push(e.defaultPrevented)) // after the canvas had its say
+  })
+  const p = await at(master.page, 300, 300)
+  await master.page.mouse.click(p.x, p.y, { button: 'right' })
+  await expect.poll(() => master.page.evaluate(() => (window as unknown as { contextMenus: boolean[] }).contextMenus)).toEqual([true])
+})

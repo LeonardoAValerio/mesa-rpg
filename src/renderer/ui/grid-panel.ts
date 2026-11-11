@@ -24,6 +24,7 @@ export function gridPanel(client: TableClient, textures: TextureStore): GridPane
   const offY = num('grid-offset-y', 0, 500, 0.01)
   const opacity = num('grid-opacity', 0, 100)
   const color = h('input', { type: 'color', testid: 'grid-color' })
+  const visible = h('input', { type: 'checkbox', testid: 'grid-visible' }) // BRD-03: kept with the scene
 
   const send = (grid: Partial<Grid>): void => void client.send({ type: 'grid/set', grid })
   const onNum = (input: HTMLInputElement, key: 'cell' | 'offsetX' | 'offsetY' | 'opacity'): void => {
@@ -38,6 +39,7 @@ export function gridPanel(client: TableClient, textures: TextureStore): GridPane
   onNum(offY, 'offsetY')
   onNum(opacity, 'opacity')
   color.addEventListener('change', () => send({ color: color.value }))
+  visible.addEventListener('change', () => send({ visible: visible.checked }))
 
   const fill = (): void => {
     const g = client.view?.grid
@@ -50,6 +52,7 @@ export function gridPanel(client: TableClient, textures: TextureStore): GridPane
     set(offY, String(g.offsetY))
     set(opacity, String(Math.round(g.opacity * 100)))
     set(color, g.color)
+    visible.checked = g.visible !== false
   }
   fill()
   const off = client.on('view', fill)
@@ -90,6 +93,7 @@ export function gridPanel(client: TableClient, textures: TextureStore): GridPane
     h('h3', {}, 'Mapa e grid'),
     h('button', { testid: 'import-map-panel', onclick: () => void importMap() }, 'Importar mapa'),
     message,
+    h('label', { class: 'check' }, visible, 'Mostrar grid'),
     h('label', {}, 'Célula (px)', cell),
     h('div', { class: 'row' }, h('label', {}, 'Deslocamento X', offX), h('label', {}, 'Deslocamento Y', offY)),
     h('div', { class: 'row' }, h('label', {}, 'Cor', color), h('label', {}, 'Opacidade (%)', opacity))

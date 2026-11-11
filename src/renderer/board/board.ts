@@ -306,7 +306,7 @@ export class Board {
     const g = this.gridLayer
     g.clear()
     this.gridLines = 0
-    if (!view.map) return
+    if (!view.map || view.grid.visible === false) return // BRD-03: a hidden grid draws no line
     const { cell, offsetX, offsetY, color, opacity } = view.grid
     const { width, height } = view.map
     for (let x = offsetX - Math.floor(offsetX / cell) * cell; x <= width; x += cell, this.gridLines++) g.moveTo(x, 0).lineTo(x, height)

@@ -102,12 +102,13 @@ T1 → T2 → T3 → T4 → T5
 
 **Done when**:
 
-- [ ] e2e: a 1.5-cell and a 2-cell character dragged and dropped land centred by the rule in both windows; one dragged from the campaign list too; "Mostrar grid" off hides the lines in both windows and a drop stays where it is (Shift snaps); a scene saved hidden comes back hidden (`.cena` and `.mesa`); an old scene and a new map show the grid; a player's `grid/set` is refused
-- [ ] Task e2e gate passes
+- [x] e2e: a 1.5-cell and a 2-cell character dragged and dropped land centred by the rule in both windows; one dragged from the campaign list too; "Mostrar grid" off hides the lines in both windows and a drop stays where it is (Shift snaps); a scene saved hidden comes back hidden (`.cena` and `.mesa`); an old scene and a new map show the grid; a player's `grid/set` is refused
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(ui): hide the grid per scene and snap tokens centred`
+**Done**: yes
 
 ---
 

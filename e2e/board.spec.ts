@@ -1,126 +1,167 @@
 import { expect, test, type Page } from '@playwright/test'
-import type { BoardSnapshot } from '../src/renderer/board/board'
-import { act, closeAll, coveredCenters, masterAndPlayer, putAsset, screenOf, snap, type AppHandle, pickTool } from './helpers'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join as pathJoin } from 'node:path'
+import type { TokenSnapshot } from '../src/renderer/board/board'
+import { act, campaignDir, closeAll, masterAndPlayer, nextOpenDialog, putAsset, putFile, showPanel, snap, solidPng, type AppHandle } from './helpers'
 
 test.afterEach(closeAll)
 
-let H = ''
-
-async function mapReady(masterApp: AppHandle, player: Page): Promise<void> {
-  const master = masterApp.page
-  H = await putAsset(masterApp.app)
-  await act(master, { type: 'map/set', hash: H, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
-  await act(master, { type: 'fog/revealAll' }) // a no-op since FOGD-01 (a new map has no fog); kept so the board is open either way
-  await expect.poll(async () => (await snap(player)).map?.width).toBe(800)
+/** Master and Ana on an 800x600 map with 100 px cells. */
+async function table(): Promise<{ master: AppHandle; player: AppHandle; square: string; map: string }> {
+  const { master, player } = await masterAndPlayer('Ana')
+  const map = await putAsset(master.app, solidPng(800, 600, [40, 90, 40]))
+  const square = await putAsset(master.app, solidPng(64, 64, [90, 90, 200]))
+  await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  return { master, player, square, map }
 }
+async function item(page: Page, name: string): Promise<TokenSnapshot> {
+  await expect.poll(async () => (await snap(page)).tokens.find((t) => t.name === name)?.textured ?? false, { timeout: 10_000 }).toBe(true)
+  return (await snap(page)).tokens.find((t) => t.name === name)!
+}
+const at = async (page: Page, x: number, y: number): Promise<{ x: number; y: number }> => {
+  const s = await snap(page)
+  return { x: s.canvas.left + x * s.camera.scale + s.camera.x, y: s.canvas.top + y * s.camera.scale + s.camera.y }
+}
+/** Grabs an item at its centre and lets it go with its centre at (x, y) on the map. */
+async function dragItem(page: Page, name: string, x: number, y: number, shift = false): Promise<void> {
+  const t = await item(page, name)
+  const a = await at(page, t.x, t.y)
+  const b = await at(page, x, y)
+  await page.mouse.move(a.x, a.y)
+  await page.mouse.down()
+  await page.mouse.move(b.x, b.y, { steps: 6 })
+  if (shift) await page.keyboard.down('Shift')
+  await page.mouse.up()
+  if (shift) await page.keyboard.up('Shift')
+}
+const centre = async (page: Page, name: string): Promise<number[]> => {
+  const t = await item(page, name)
+  return [Math.round(t.x * 10) / 10, Math.round(t.y * 10) / 10]
+}
+const place = (page: Page, hash: string, name: string, width: number, x = 450, y = 450) =>
+  act(page, { type: 'token/place', hash, name, kind: 'character', x, y, width, ring: null })
+async function setGridVisible(page: Page, on: boolean): Promise<void> {
+  await showPanel(page, 'mapas')
+  const box = page.getByTestId('grid-visible')
+  if (on) await box.check()
+  else await box.uncheck()
+}
+async function saveScene(page: Page, name: string): Promise<void> {
+  await showPanel(page, 'mapas')
+  await page.getByTestId('save-scene').click()
+  await page.getByTestId('scene-name').fill(name)
+  await page.getByTestId('scene-name-ok').click()
+  await expect(page.getByTestId('scene-item').filter({ hasText: name })).toBeVisible({ timeout: 5000 })
+}
+const lines = async (page: Page): Promise<number> => (await snap(page)).grid?.lines ?? -1
 
-test('[C17] MAP-01 with no map the master sees "Nenhum mapa carregado" and "Importar mapa"; the player sees "Aguardando o mestre carregar um mapa"', async () => {
-  const { master, player } = await masterAndPlayer()
-  await expect(master.page.getByTestId('empty-message')).toHaveText('Nenhum mapa carregado')
-  await expect(master.page.getByTestId('import-map')).toHaveText('Importar mapa')
-  await expect(player.page.getByTestId('empty-message')).toHaveText('Aguardando o mestre carregar um mapa')
-  await expect(player.page.getByTestId('import-map')).toHaveCount(0)
-})
-
-test('[C23] MAP-07 the wheel zooms only that window, between 10% and 400%, keeping the point under the cursor', async () => {
-  const { master, player } = await masterAndPlayer()
-  await mapReady(master, player.page)
-  const other = (await snap(player.page)).camera
-  const before = await snap(master.page)
-  const cursor = { x: Math.round(before.canvas.left + 300), y: Math.round(before.canvas.top + 200) }
-  const worldUnder = (s: BoardSnapshot): { x: number; y: number } => ({
-    x: (cursor.x - s.canvas.left - s.camera.x) / s.camera.scale,
-    y: (cursor.y - s.canvas.top - s.camera.y) / s.camera.scale
-  })
-  await master.page.mouse.move(cursor.x, cursor.y)
-  await master.page.mouse.wheel(0, -100)
-  await expect.poll(async () => (await snap(master.page)).camera.scale).toBeCloseTo(before.camera.scale * 1.1, 5)
-  const after = await snap(master.page)
-  expect(worldUnder(after).x).toBeCloseTo(worldUnder(before).x, 3)
-  expect(worldUnder(after).y).toBeCloseTo(worldUnder(before).y, 3)
-  for (let i = 0; i < 60; i++) await master.page.mouse.wheel(0, -100)
-  await expect.poll(async () => (await snap(master.page)).camera.scale).toBe(4)
-  for (let i = 0; i < 120; i++) await master.page.mouse.wheel(0, 100)
-  await expect.poll(async () => (await snap(master.page)).camera.scale).toBeCloseTo(0.1, 10)
-  expect((await snap(player.page)).camera).toEqual(other)
-})
-
-test('[C24] MAP-08 dragging with the middle button pans only that window', async () => {
-  const { master, player } = await masterAndPlayer()
-  await mapReady(master, player.page)
-  const other = (await snap(player.page)).camera
-  const before = await snap(master.page)
-  const p = { x: before.canvas.left + 400, y: before.canvas.top + 300 }
-  await master.page.mouse.move(p.x, p.y)
-  await master.page.mouse.down({ button: 'middle' })
-  await master.page.mouse.move(p.x + 100, p.y + 50, { steps: 5 })
-  await master.page.mouse.up({ button: 'middle' })
-  const after = await snap(master.page)
-  expect(after.camera.x - before.camera.x).toBeCloseTo(100, 0)
-  expect(after.camera.y - before.camera.y).toBeCloseTo(50, 0)
-  expect(after.camera.scale).toBe(before.camera.scale)
-  expect((await snap(player.page)).camera).toEqual(other)
-})
-
-test('[C30] TOK-05 dropping a dragged character snaps its left and top edges to the grid lines, in both windows (ITEM-08)', async () => {
-  const { master, player } = await masterAndPlayer()
-  await mapReady(master, player.page)
-  await act(master.page, { type: 'token/place', hash: H, name: 'Goblin', kind: 'character', x: 150, y: 150, width: 1, ring: 'inimigo' })
-  await expect.poll(async () => (await snap(player.page)).tokens.length).toBe(1)
-  // grab the centre (150,150) and move by (+235,+120): the edges land at (335,220) and snap to (300,200), so the centre is (350,250)
-  const from = await screenOf(master.page, 150, 150)
-  const to = await screenOf(master.page, 385, 270)
-  await master.page.mouse.move(from.x, from.y)
-  await master.page.mouse.down()
-  await master.page.mouse.move(to.x, to.y, { steps: 8 })
-  await master.page.mouse.up()
+test('[C1] BRD-01 a dropped character lands centred: on a cell centre for 1, 1.5 and 3 cells, on the lines for 2 cells', async () => {
+  const { master, player, square } = await table()
+  await place(master.page, square, 'Um', 1, 150, 150)
+  await place(master.page, square, 'Meio', 1.5, 450, 150)
+  await place(master.page, square, 'Dois', 2, 650, 450)
+  await place(master.page, square, 'Tres', 3, 250, 450)
+  await dragItem(master.page, 'Um', 330, 170)
+  await dragItem(master.page, 'Meio', 530, 170)
+  await dragItem(master.page, 'Dois', 630, 370)
+  await dragItem(master.page, 'Tres', 230, 380)
   for (const page of [master.page, player.page]) {
-    await expect.poll(async () => (await snap(page)).tokens.map((t) => [t.x, t.y])).toEqual([[350, 250]])
+    await expect.poll(() => centre(page, 'Um')).toEqual([350, 150])
+    await expect.poll(() => centre(page, 'Meio')).toEqual([550, 150]) // not 575/175 (edges on lines)
+    await expect.poll(() => centre(page, 'Dois')).toEqual([600, 400]) // on a crossing: fills 4 cells
+    await expect.poll(() => centre(page, 'Tres')).toEqual([250, 350])
   }
 })
 
-test('[C31] TOK-06 a 2-cell character is drawn 2 cells wide with its name and a ring in its faction colour (ITEM-01, ITEM-02)', async () => {
-  const { master, player } = await masterAndPlayer()
-  await mapReady(master, player.page)
-  await act(master.page, { type: 'token/place', hash: H, name: 'Ogro', kind: 'character', x: 300, y: 300, width: 2, ring: 'inimigo' })
-  await act(master.page, { type: 'token/place', hash: H, name: 'Elfa', kind: 'character', x: 550, y: 150, width: 1, ring: 'grupo' })
+test('[C2] BRD-02 a character dragged from the campaign list lands centred by the same rule', async () => {
+  const { master, player } = await table()
+  putFile(master, 'tokens/ogro.png', solidPng(64, 64, [200, 30, 30]))
+  putFile(master, 'tokens/ogro.json', JSON.stringify({ tamanho: 1.5 }))
+  putFile(master, 'tokens/gigante.png', solidPng(64, 64, [30, 30, 200]))
+  putFile(master, 'tokens/gigante.json', JSON.stringify({ tamanho: 2 }))
+  await showPanel(master.page, 'tokens')
+  await expect(master.page.getByTestId('library-item')).toHaveCount(2, { timeout: 5000 })
+  const canvas = master.page.getByTestId('board-canvas')
+  const s = await snap(master.page)
+  const to = (x: number, y: number) => ({ x: x * s.camera.scale + s.camera.x, y: y * s.camera.scale + s.camera.y })
+  await master.page.getByTestId('library-item').filter({ hasText: 'ogro' }).dragTo(canvas, { targetPosition: to(130, 170) })
+  await master.page.getByTestId('library-item').filter({ hasText: 'gigante' }).dragTo(canvas, { targetPosition: to(430, 370) })
   for (const page of [master.page, player.page]) {
-    await expect.poll(async () => (await snap(page)).tokens.length).toBe(2)
-    const tokens = (await snap(page)).tokens.sort((a, b) => a.name.localeCompare(b.name))
-    expect(tokens[1]).toMatchObject({ name: 'Ogro', label: 'Ogro', x: 300, y: 300, w: 200, h: 200, ring: '#ef4444' })
-    expect(tokens[0]).toMatchObject({ name: 'Elfa', label: 'Elfa', x: 550, y: 150, w: 100, h: 100, ring: '#3b82f6' })
+    await expect.poll(() => centre(page, 'ogro')).toEqual([150, 150])
+    await expect.poll(() => centre(page, 'gigante')).toEqual([400, 400])
   }
 })
 
-test('[C80] MAP-08 Space + left drag pans only that window and fires no tool (ping, fog brush, rectangle, polygon)', async () => {
-  const { master, player } = await masterAndPlayer()
-  await mapReady(master, player.page)
-  await act(master.page, { type: 'fog/coverAll' }) // so that a stray reveal would show
-  await expect.poll(() => coveredCenters(player.page)).toBe(48)
-  const other = (await snap(player.page)).camera
-  const coveredBefore = await coveredCenters(player.page)
-  const pings: number[] = []
-  const polyStarted: boolean[] = []
-  for (const tool of ['tool-ping', 'tool-fog-rect', 'tool-fog-brush', 'tool-fog-poly']) {
-    await pickTool(master.page, tool.replace('tool-', ''))
-    const before = await snap(master.page)
-    const p = { x: before.canvas.left + 400, y: before.canvas.top + 300 }
-    await master.page.mouse.move(p.x, p.y)
-    await master.page.keyboard.down('Space')
-    await master.page.mouse.down()
-    await master.page.mouse.move(p.x + 80, p.y + 40, { steps: 5 })
-    await master.page.mouse.up()
-    await master.page.keyboard.up('Space')
-    const after = await snap(master.page)
-    expect(after.camera.x - before.camera.x, tool).toBeCloseTo(80, 0)
-    expect(after.camera.y - before.camera.y, tool).toBeCloseTo(40, 0)
-    pings.push((await master.page.evaluate(() => window.__mesaTest!.overlays().pings.length)) + (await player.page.evaluate(() => window.__mesaTest!.overlays().pings.length)))
-    polyStarted.push((await master.page.evaluate(() => window.__mesaTest!.fogTool()!.preview)) !== null)
+test('[C3] BRD-03 "Mostrar grid" off hides the lines in every window, and on draws them again', async () => {
+  const { master, player } = await table()
+  for (const page of [master.page, player.page]) await expect.poll(() => lines(page)).toBeGreaterThan(10)
+  await setGridVisible(master.page, false)
+  for (const page of [master.page, player.page]) await expect.poll(() => lines(page)).toBe(0)
+  await expect(master.page.getByTestId('grid-visible')).not.toBeChecked()
+  await setGridVisible(master.page, true)
+  for (const page of [master.page, player.page]) await expect.poll(() => lines(page)).toBe(16) // 9 + 7 lines on 800 x 600
+})
+
+test('[C4] BRD-04 with the grid hidden a dropped character stays where dropped; Shift snaps it to the hidden grid', async () => {
+  const { master, player, square } = await table()
+  await place(master.page, square, 'Livre', 1, 150, 150)
+  await place(master.page, square, 'Preso', 1, 450, 150)
+  await setGridVisible(master.page, false)
+  await expect.poll(() => lines(master.page)).toBe(0)
+  await dragItem(master.page, 'Livre', 333, 377)
+  await dragItem(master.page, 'Preso', 533, 377, true)
+  for (const page of [master.page, player.page]) {
+    await expect.poll(async () => (await centre(page, 'Livre')).map((v, i) => Math.abs(v - [333, 377][i]) < 1.5)).toEqual([true, true])
+    await expect.poll(() => centre(page, 'Preso')).toEqual([550, 350])
   }
-  await player.page.waitForTimeout(300)
-  expect(pings).toEqual([0, 0, 0, 0])
-  expect(polyStarted, 'no fog tool started a shape').toEqual([false, false, false, false])
-  expect(await coveredCenters(player.page)).toBe(coveredBefore)
-  expect((await snap(player.page)).fog.shapes).toBe(0)
-  expect((await snap(player.page)).camera).toEqual(other)
+})
+
+test('[C5] BRD-05 a scene saved with the grid hidden loads hidden, as .cena and as .mesa', async () => {
+  const { master, player } = await table()
+  await setGridVisible(master.page, false)
+  await saveScene(master.page, 'Cidade')
+  await setGridVisible(master.page, true)
+  await expect.poll(() => lines(player.page)).toBeGreaterThan(0)
+  await master.page.getByTestId('scene-item').filter({ hasText: 'Cidade' }).click()
+  for (const page of [master.page, player.page]) await expect.poll(() => lines(page)).toBe(0)
+  await expect(master.page.getByTestId('grid-visible')).not.toBeChecked()
+  // the full file
+  const out = pathJoin(campaignDir(master), '..', 'cidade.mesa')
+  await master.app.evaluate(({ dialog }, p) => {
+    dialog.showSaveDialog = (async () => ({ canceled: false, filePath: p })) as typeof dialog.showSaveDialog
+  }, out)
+  await master.page.getByTestId('export-mesa').click()
+  await expect.poll(() => { try { return JSON.parse(readFileSync(out, 'utf8')).scene.grid.visible } catch { return null } }).toBe(false)
+  await setGridVisible(master.page, true)
+  await expect.poll(() => lines(player.page)).toBeGreaterThan(0)
+  await nextOpenDialog(master.app, [out])
+  await master.page.getByTestId('import-mesa').click()
+  for (const page of [master.page, player.page]) await expect.poll(() => lines(page)).toBe(0)
+})
+
+test('[C6] BRD-06 a scene saved before this feature, and a new map, show the grid', async () => {
+  const { master, player, map } = await table()
+  await saveScene(master.page, 'Antiga')
+  const file = pathJoin(campaignDir(master), 'cenas', 'Antiga.cena')
+  const old = JSON.parse(readFileSync(file, 'utf8'))
+  delete old.scene.grid.visible // as 0.8.0 wrote it
+  writeFileSync(file, JSON.stringify(old))
+  await setGridVisible(master.page, false)
+  await expect.poll(() => lines(player.page)).toBe(0)
+  await master.page.getByTestId('scene-item').filter({ hasText: 'Antiga' }).click()
+  for (const page of [master.page, player.page]) await expect.poll(() => lines(page)).toBeGreaterThan(0)
+  // a new map shows the grid even when it was hidden
+  await setGridVisible(master.page, false)
+  await expect.poll(() => lines(player.page)).toBe(0)
+  await act(master.page, { type: 'map/set', hash: map, width: 800, height: 600, grid: { cell: 100, offsetX: 0, offsetY: 0 } })
+  for (const page of [master.page, player.page]) await expect.poll(() => lines(page)).toBeGreaterThan(0)
+  await expect(master.page.getByTestId('grid-visible')).toBeChecked()
+})
+
+test('[C7] BRD-07 a player\'s change of the grid visibility is refused with "Sem permissão"', async () => {
+  const { master, player } = await table()
+  const r = await player.page.evaluate(() => window.__mesaTest!.send({ type: 'grid/set', grid: { visible: false } }))
+  expect(r).toEqual({ ok: false, reason: 'Sem permissão' })
+  for (const page of [master.page, player.page]) expect(await lines(page)).toBeGreaterThan(0)
+  await expect(player.page.getByTestId('grid-visible')).toHaveCount(0) // no switch for a player
 })

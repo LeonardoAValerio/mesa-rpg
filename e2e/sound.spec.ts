@@ -134,9 +134,12 @@ test('[C22] SOM-22 "Efeitos" scales effects in that window only, in what it real
   await expect.poll(async () => (await sound(ana.page)).effectsBus).toBeCloseTo(0.5)
   await send(master.page, { type: 'sound/effect', hash: wind })
   for (const page of [master.page, ana.page]) await expect.poll(async () => (await sound(page)).effectsLevel, { timeout: 3000 }).toBeGreaterThan(0.01)
-  const [m, a] = await Promise.all([sound(master.page), sound(ana.page)])
-  expect(a.effectsLevel / m.effectsLevel).toBeCloseTo(0.625, 1) // 50 / 80
-  expect(a.musicLevel).toBeLessThan(0.001) // no music playing: only effects moved
+  // both windows sounding steadily (a sample at an effect's very start reads part of its onset): 50 / 80
+  await expect.poll(async () => {
+    const [m, a] = await Promise.all([sound(master.page), sound(ana.page)])
+    return a.effectsLevel / m.effectsLevel
+  }, { timeout: 2500, intervals: [100] }).toBeCloseTo(0.625, 1)
+  expect((await sound(ana.page)).musicLevel).toBeLessThan(0.001) // no music playing: only effects moved
 })
 
 test('[C23] SOM-23 "Mudo" silences what the window plays and turning it off brings the volumes back', async () => {

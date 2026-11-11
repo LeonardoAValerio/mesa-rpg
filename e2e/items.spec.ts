@@ -93,23 +93,23 @@ async function dragItem(page: Page, name: string, x: number, y: number, shift = 
 }
 const near = (a: number, b: number): boolean => Math.abs(a - b) < 1.5
 
-test('[C8] ITEM-08 a dropped character snaps its left and top edges to grid lines; a dropped object stays where it was dropped', async () => {
+test('[C8] ITEM-08 a dropped character snaps centred on a cell (BRD-01 replaced the edges-on-lines rule); a dropped object stays where it was dropped', async () => {
   const { master, player, square, tall } = await table()
   await act(master.page, { type: 'token/place', hash: square, name: 'Goblin', kind: 'character', x: 150, y: 150, width: 1, ring: null })
   await act(master.page, { type: 'token/place', hash: tall, name: 'Torre', kind: 'character', x: 650, y: 300, width: 1, ring: null }) // 100 x 150
   await act(master.page, { type: 'token/place', hash: square, name: 'Baú', kind: 'object', x: 150, y: 450, width: 0.5, ring: null })
   await dragItem(master.page, 'Goblin', 240, 260)
-  await dragItem(master.page, 'Torre', 520, 330) // 100 x 150: edges at 470/255 snap to 500/300, centre (550, 375)
+  await dragItem(master.page, 'Torre', 520, 330) // 1 x 1.5 cells: neither side even, centre on the cell centre (550, 350)
   await dragItem(master.page, 'Baú', 333, 377)
-  // a character turned 90° snaps by its drawn box (150 x 100): dropped at (520, 330) its edges land on 400 / 300
+  // a character turned 90° snaps by its drawn box (1.5 x 1 cells): dropped at (520, 330) it centres on (550, 350)
   await act(master.page, { type: 'token/place', hash: tall, name: 'Deitada', kind: 'character', x: 150, y: 450, width: 1, ring: null })
   await act(master.page, { type: 'token/update', id: (await item(master.page, 'Deitada')).id, rotation: 90 })
   await expect.poll(async () => (await item(master.page, 'Deitada')).rotation).toBe(90)
   await dragItem(master.page, 'Deitada', 520, 330)
   for (const page of both(master, player)) {
-    await expect.poll(async () => { const t = await item(page, 'Deitada'); return [t.x, t.y] }).toEqual([475, 350])
+    await expect.poll(async () => { const t = await item(page, 'Deitada'); return [t.x, t.y] }).toEqual([550, 350])
     await expect.poll(async () => { const t = await item(page, 'Goblin'); return [t.x, t.y] }).toEqual([250, 250])
-    await expect.poll(async () => { const t = await item(page, 'Torre'); return [t.x, t.y] }).toEqual([550, 375])
+    await expect.poll(async () => { const t = await item(page, 'Torre'); return [t.x, t.y] }).toEqual([550, 350])
     await expect.poll(async () => { const t = await item(page, 'Baú'); return near(t.x, 333) && near(t.y, 377) }).toBe(true)
   }
 })

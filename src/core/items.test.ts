@@ -23,11 +23,24 @@ describe('item rules', () => {
     expect(normalizeRotation(Number.NaN)).toBe(0)
   })
 
-  it('snapping puts the left and top edges on the nearest grid lines, for odd, even and fractional sizes and an offset grid', () => {
+  it('BRD-01 snapping centres the item: on a cell centre for odd and fractional sides, on a grid line for even whole sides', () => {
+    // (the ITEM-08 rule put the left and top edges on lines; BRD-01 replaced it, user: "Centro no centro da célula")
     expect(snapCentre(grid, 140, 260, 1, 1)).toEqual({ x: 150, y: 250 }) // 1 cell: centre of a cell
     expect(snapCentre(grid, 140, 260, 2, 2)).toEqual({ x: 100, y: 300 }) // 2 cells: on a grid crossing
-    expect(snapCentre(grid, 140, 260, 1.5, 0.75)).toEqual({ x: 175, y: 237.5 }) // left edge 100, top edge 200
+    expect(snapCentre(grid, 140, 260, 1.5, 0.75)).toEqual({ x: 150, y: 250 }) // fractional: a cell centre, not edges on lines
+    expect(snapCentre(grid, 140, 260, 3, 4)).toEqual({ x: 150, y: 300 }) // 3 across: a cell centre; 4 down: a line
+    expect(snapCentre(grid, 199, 201, 2.5, 1)).toEqual({ x: 150, y: 250 })
+    expect(snapCentre(grid, 140, 260, 1, 2)).toEqual({ x: 150, y: 300 }) // each axis on its own
     expect(snapCentre({ ...grid, offsetX: 30, offsetY: 10 }, 140, 260, 1, 1)).toEqual({ x: 180, y: 260 })
+    expect(snapCentre({ ...grid, offsetX: 30, offsetY: 10 }, 140, 260, 2, 2)).toEqual({ x: 130, y: 310 })
+  })
+
+  it('BRD-04 with the grid hidden nothing snaps, and Shift snaps any item', () => {
+    const hidden = { ...grid, visible: false }
+    expect(dropPosition('character', false, hidden, 140, 260, 1, 1)).toEqual({ x: 140, y: 260 })
+    expect(dropPosition('object', false, hidden, 140, 260, 1, 1)).toEqual({ x: 140, y: 260 })
+    expect(dropPosition('character', true, hidden, 140, 260, 1, 1)).toEqual({ x: 150, y: 250 })
+    expect(dropPosition('object', true, hidden, 140, 260, 1, 1)).toEqual({ x: 150, y: 250 })
   })
 
   it('a turned item snaps by its drawn box: 90° swaps the sides, 45° grows both', () => {
@@ -36,9 +49,9 @@ describe('item rules', () => {
     expect(rotatedExtent(1, 1.5, 180)).toEqual({ w: 1, h: 1.5 })
     const d = rotatedExtent(1, 1, 45)
     expect(d.w).toBeCloseTo(Math.SQRT2, 9)
-    // a 100 x 150 character turned 90° and dropped at (520, 330): its drawn box (150 x 100) snaps to 400 / 300
+    // a 100 x 150 character turned 90° and dropped at (520, 330): its drawn box (150 x 100) centres on the cell (5, 3)
     const e = rotatedExtent(1, 1.5, 90)
-    expect(snapCentre(grid, 520, 330, e.w, e.h)).toEqual({ x: 475, y: 350 })
+    expect(snapCentre(grid, 520, 330, e.w, e.h)).toEqual({ x: 550, y: 350 })
   })
 
   it('a character snaps and an object stays where dropped; Shift at the drop does the opposite', () => {

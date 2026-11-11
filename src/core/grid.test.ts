@@ -15,8 +15,13 @@ describe('clampGrid', () => {
       offsetX: 10,
       offsetY: 20,
       color: '#ff0000',
-      opacity: 0.4
+      opacity: 0.4,
+      visible: true
     })
+    // BRD-03, BRD-06: visibility is kept; a grid with none (an old file) is visible
+    expect(clampGrid({ visible: false }).visible).toBe(false)
+    expect(clampGrid({ cell: 50 }, { ...clampGrid({}), visible: false }).visible).toBe(false)
+    expect(clampGrid({ cell: 50 }, { cell: 70, offsetX: 0, offsetY: 0, color: '#000000', opacity: 0.5 } as never).visible).toBe(true)
   })
 
   it('keeps the current value for a missing, non-finite or malformed field', () => {

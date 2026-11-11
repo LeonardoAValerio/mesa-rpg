@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CAMPAIGN_EXISTS, decodeCena, encodeCena, freeName, INVALID_CENA, INVALID_NAME, nameError, remapHashes, safeRelPath, SCENE_EXISTS } from './campaign'
-import { DEFAULT_GRID, type Scene } from './types'
+import { DEFAULT_GRID, emptyScene, type Scene } from './types'
 
 const MAP = 'a'.repeat(64)
 const TOK = 'b'.repeat(64)
@@ -83,5 +83,18 @@ describe('.cena files', () => {
     const m = remapHashes(scene(), { [MAP]: NEW })
     expect(m.map!.hash).toBe(NEW)
     expect(m.tokens.g.hash).toBe(TOK)
+  })
+})
+
+describe('grid visibility in .cena (BRD-05, BRD-06)', () => {
+  it('a hidden grid is kept; a .cena from before reads with the grid visible', () => {
+    const paths2: Record<string, string> = {}
+    const s: Scene = { ...emptyScene(), grid: { ...emptyScene().grid, visible: false } }
+    const back = decodeCena(encodeCena(s, (h) => paths2[h]))
+    expect('error' in back ? null : back.scene.grid.visible).toBe(false)
+    const old = JSON.parse(encodeCena(s, (h) => paths2[h]))
+    delete old.scene.grid.visible
+    const r = decodeCena(JSON.stringify(old))
+    expect('error' in r ? null : r.scene.grid.visible).toBe(true)
   })
 })

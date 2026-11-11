@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { LOCKED_ITEM, MASTER_ONLY_ITEM } from './items'
 import type { Action } from './protocol'
 import { applyAction, NO_PERMISSION, OUTSIDE_MAP, type ReducerCtx } from './reducer'
-import { emptyScene, type Actor, type Scene } from './types'
+import { DEFAULT_GRID, emptyScene, type Actor, type Scene, type Token } from './types'
 
 const H = 'b'.repeat(64)
 const master: Actor = { role: 'master', name: 'Mestre' }
@@ -155,5 +155,77 @@ describe('applyAction', () => {
   it('clamps grid values set by the master (MAP-05, MAP-06)', () => {
     const r = applyAction(scene(), master, { type: 'grid/set', grid: { cell: 900, opacity: 2 } }, ctx())
     expect(r.ok && r.scene.grid).toMatchObject({ cell: 500, opacity: 1 })
+  })
+})
+
+describe('board selection rules (BRD)', () => {
+  const ctx = { rng: () => 1, now: () => 1, newId: (() => { let n = 0; return () => `g${++n}` })() }
+  const master = { role: 'master' as const, name: 'Mestre' }
+  const ana = { role: 'player' as const, name: 'Ana' }
+  const item = (id: string, extra: Partial<Token> = {}): Token => ({ id, name: id, hash: 'c'.repeat(64), kind: 'character', x: 150, y: 150, width: 1, rotation: 0, ring: null, owner: null, hidden: false, movement: 'free', ...extra })
+  const base = (...tokens: Token[]): Scene => ({ ...emptyScene(), map: { hash: 'a'.repeat(64), width: 800, height: 600 }, grid: { ...DEFAULT_GRID, cell: 100 }, fog: null, tokens: Object.fromEntries(tokens.map((t) => [t.id, t])) })
+  const run = (s: Scene, actor: typeof master | typeof ana, a: Action) => applyAction(s, actor, a, ctx)
+  const ok = (r: ReturnType<typeof run>): Scene => {
+    if (!r.ok) throw new Error(r.reason)
+    return r.scene
+  }
+
+  it('BRD-07 grid visibility is the master\'s: a player\'s change is refused with "Sem permissão"', () => {
+    const s = base()
+    expect(ok(run(s, master, { type: 'grid/set', grid: { visible: false } })).grid.visible).toBe(false)
+    expect(run(s, ana, { type: 'grid/set', grid: { visible: false } })).toEqual({ ok: false, reason: 'Sem permissão' })
+  })
+
+  it('BRD-06 a new map shows the grid again', () => {
+    const hidden = ok(run(base(), master, { type: 'grid/set', grid: { visible: false } }))
+    expect(ok(run(hidden, master, { type: 'map/set', hash: 'b'.repeat(64), width: 400, height: 300 })).grid.visible).toBe(true)
+  })
+
+  it('BRD-15 2+ items become one group, leaving their old groups; a group left with one item ends', () => {
+    let s = ok(run(base(item('a'), item('b'), item('c')), master, { type: 'token/group', ids: ['a', 'b'] }))
+    const g1 = s.tokens.a.group
+    expect(g1).toBeTruthy()
+    expect(s.tokens.b.group).toBe(g1)
+    expect(s.tokens.c.group ?? null).toBeNull()
+    s = ok(run(s, master, { type: 'token/group', ids: ['b', 'c'] }))
+    expect(s.tokens.b.group).toBe(s.tokens.c.group)
+    expect(s.tokens.b.group).not.toBe(g1)
+    expect(s.tokens.a.group).toBeNull() // its group of one ended
+    expect(run(s, master, { type: 'token/group', ids: ['a', 'a'] })).toEqual({ ok: false, reason: 'Selecione 2 ou mais itens' })
+    expect(run(s, master, { type: 'token/group', ids: ['a', 'zz'] })).toEqual({ ok: false, reason: 'Token não existe' })
+  })
+
+  it('BRD-16 grouping an item the actor may not move, or cannot see, is refused with "Sem permissão" and changes nothing', () => {
+    const s = base(item('mine', { owner: 'Ana' }), item('door', { kind: 'object', movement: 'master' }), item('lock', { movement: 'locked' }), item('ghost', { hidden: true }))
+    for (const other of ['door', 'lock', 'ghost']) expect(run(s, ana, { type: 'token/group', ids: ['mine', other] }), other).toEqual({ ok: false, reason: 'Sem permissão' })
+    expect(run(s, master, { type: 'token/group', ids: ['mine', 'lock'] })).toEqual({ ok: false, reason: 'Sem permissão' }) // locked: nobody moves it
+    expect(ok(run(s, master, { type: 'token/group', ids: ['mine', 'door'] })).tokens.door.group).toBeTruthy()
+  })
+
+  it('BRD-19 ungroup needs every member movable by the actor', () => {
+    const s = ok(run(base(item('horse'), item('door', { movement: 'master' })), master, { type: 'token/group', ids: ['horse', 'door'] }))
+    const g = s.tokens.horse.group!
+    expect(run(s, ana, { type: 'token/ungroup', group: g })).toEqual({ ok: false, reason: 'Sem permissão' })
+    const u = ok(run(s, master, { type: 'token/ungroup', group: g }))
+    expect([u.tokens.horse.group, u.tokens.door.group]).toEqual([null, null])
+    expect(run(u, master, { type: 'token/ungroup', group: g })).toEqual({ ok: false, reason: 'Grupo não existe' })
+  })
+
+  it('BRD-10, BRD-18 moveMany moves every item or none: a forbidden item or one outside the map refuses all', () => {
+    const s = base(item('a', { x: 150, y: 150 }), item('b', { x: 250, y: 150 }), item('door', { movement: 'master', x: 350, y: 150 }))
+    const moved = ok(run(s, ana, { type: 'token/moveMany', moves: [{ id: 'a', x: 150, y: 350 }, { id: 'b', x: 250, y: 350 }] }))
+    expect([moved.tokens.a.y, moved.tokens.b.y]).toEqual([350, 350])
+    expect(run(s, ana, { type: 'token/moveMany', moves: [{ id: 'a', x: 150, y: 350 }, { id: 'door', x: 350, y: 350 }] })).toEqual({ ok: false, reason: 'Sem permissão' })
+    expect(run(s, master, { type: 'token/moveMany', moves: [{ id: 'a', x: 150, y: 350 }, { id: 'b', x: 250, y: 650 }] })).toEqual({ ok: false, reason: 'Fora do mapa' })
+  })
+
+  it('[C21] BRD-21 removing an item keeps the rest of its group, and a group left with one item ends', () => {
+    let s = ok(run(base(item('a'), item('b'), item('c'), item('d'), item('e')), master, { type: 'token/group', ids: ['a', 'b', 'c'] }))
+    s = ok(run(s, master, { type: 'token/group', ids: ['d', 'e'] }))
+    const abc = s.tokens.a.group
+    s = ok(run(s, master, { type: 'token/remove', id: 'a' }))
+    expect([s.tokens.b.group, s.tokens.c.group]).toEqual([abc, abc]) // two left: still a group
+    s = ok(run(s, master, { type: 'token/remove', id: 'd' }))
+    expect(s.tokens.e.group).toBeNull() // one left: the group ends
   })
 })

@@ -44,12 +44,13 @@ const item = z.object({
   ring: faction.nullable(),
   owner: z.string().max(100).nullable(),
   hidden: z.boolean(),
-  movement: z.enum(['free', 'master', 'locked'])
+  movement: z.enum(['free', 'master', 'locked']),
+  group: z.string().max(64).nullable().optional() // BRD-20; absent before 0.9.0
 })
 
 const sceneFields = {
   map: z.object({ hash, width: int.positive(), height: int.positive() }).nullable(),
-  grid: z.object({ cell: z.number(), offsetX: z.number(), offsetY: z.number(), color, opacity: z.number() }),
+  grid: z.object({ cell: z.number(), offsetX: z.number(), offsetY: z.number(), color, opacity: z.number(), visible: z.boolean().optional() }),
   palette: z.record(faction, color).nullable().default(null)
 }
 const file = <V extends number, S extends z.ZodRawShape>(version: V, scene: S) =>

@@ -154,3 +154,22 @@ describe('.mesa file', () => {
     }
   })
 })
+
+describe('grid visibility and groups in files (BRD-05, BRD-06, BRD-20)', () => {
+  it('a hidden grid and groups come back from a .mesa; a file from before them reads with the grid visible and no groups', () => {
+    const s = scene()
+    const first = Object.keys(s.tokens)[0]
+    const saved: Scene = { ...s, grid: { ...s.grid, visible: false }, tokens: { ...s.tokens, [first]: { ...s.tokens[first], group: 'g1' } } }
+    const back = decodeMesa(encodeMesa(saved, assets()), sha)
+    if ('error' in back) throw new Error(back.error)
+    expect(back.scene.grid.visible).toBe(false)
+    expect(back.scene.tokens[first].group).toBe('g1')
+    const old = JSON.parse(encodeMesa(s, assets()))
+    delete old.scene.grid.visible
+    for (const t of Object.values(old.scene.tokens) as Array<Record<string, unknown>>) delete t.group
+    const r = decodeMesa(JSON.stringify(old), sha)
+    if ('error' in r) throw new Error(r.error)
+    expect(r.scene.grid.visible).toBe(true)
+    expect(Object.values(r.scene.tokens).every((t) => !t.group)).toBe(true)
+  })
+})

@@ -10,6 +10,8 @@ export interface Grid {
   offsetY: number // 0..cell
   color: string // #rrggbb
   opacity: number // 0..1
+  /** BRD-03: the lines are drawn, and characters snap (BRD-04). */
+  visible: boolean
 }
 
 export interface MapRef {
@@ -106,7 +108,7 @@ export type PatchOp =
   | { op: 'palette'; palette: FactionColors | null }
   | { op: 'sound'; sound: Sound }
 
-export const DEFAULT_GRID: Grid = { cell: 70, offsetX: 0, offsetY: 0, color: '#000000', opacity: 0.5 }
+export const DEFAULT_GRID: Grid = { cell: 70, offsetX: 0, offsetY: 0, color: '#000000', opacity: 0.5, visible: true }
 
 export function emptyScene(): Scene {
   return { map: null, grid: { ...DEFAULT_GRID }, tokens: {}, fog: null, palette: null }

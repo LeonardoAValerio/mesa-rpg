@@ -26,7 +26,8 @@ const gridPatch = z
     offsetX: num,
     offsetY: num,
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-    opacity: num
+    opacity: num,
+    visible: z.boolean()
   })
   .partial()
 
@@ -56,6 +57,9 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('palette/set'), palette: z.record(faction, z.string().regex(/^#[0-9a-fA-F]{6}$/)) }),
   z.object({ type: z.literal('roll'), expr: z.string().max(200) }),
   z.object({ type: z.literal('chat'), text: z.string().max(2000) }),
+  z.object({ type: z.literal('token/group'), ids: z.array(z.string().max(64)).max(500) }),
+  z.object({ type: z.literal('token/ungroup'), group: z.string().max(64) }),
+  z.object({ type: z.literal('token/moveMany'), moves: z.array(z.object({ id: z.string().max(64), x: num, y: num })).max(500) }),
   z.object({ type: z.literal('sound/toggle'), hash }),
   z.object({ type: z.literal('sound/volume'), hash, volume: num }),
   z.object({ type: z.literal('sound/stopAll') }),

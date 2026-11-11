@@ -1,3 +1,4 @@
+import { clampGrid } from './grid'
 import { sceneHashes, sceneSchemaV3 } from './mesa-file'
 import { z } from 'zod'
 import type { Scene } from './types'
@@ -83,7 +84,8 @@ export function decodeCena(text: string): Cena | { error: typeof INVALID_CENA } 
   }
   const r = cenaSchema.safeParse(data)
   if (!r.success) return fail
-  const scene = r.data.scene as Scene
+  const raw = r.data.scene as Scene
+  const scene: Scene = { ...raw, grid: clampGrid(raw.grid) } // BRD-06: a scene from before has no grid.visible
   for (const h of sceneHashes(scene)) if (!r.data.files[h]) return fail
   if (!Object.values(r.data.files).every(safeRelPath)) return fail
   const sound = r.data.sound ?? []

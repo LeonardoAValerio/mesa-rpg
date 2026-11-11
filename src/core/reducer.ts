@@ -41,6 +41,20 @@ const refuse = (reason: string): ApplyResult => ({ ok: false, reason })
 /** TOK-10: an item's centre must be on the map. */
 const centreInside = (map: MapRef, x: number, y: number): boolean => x >= 0 && y >= 0 && x <= map.width && y <= map.height
 const withToken = (scene: Scene, token: Token): Scene => ({ ...scene, tokens: { ...scene.tokens, [token.id]: token } })
+export const FEW_ITEMS = 'Selecione 2 ou mais itens'
+export const NO_GROUP = 'Grupo não existe'
+
+/** Whether the actor may move this item: a player only what they see and what its movement allows (ITEM-14..16). */
+const mayMove = (scene: Scene, actor: Actor, t: Token): boolean => (actor.role === 'master' || canSee(scene, actor, t)) && canMove(t, actor).ok
+
+/** BRD-21: a group left with one item ends. */
+function endLoneGroups(tokens: Record<string, Token>): Record<string, Token> {
+  const count = new Map<string, number>()
+  for (const t of Object.values(tokens)) if (t.group) count.set(t.group, (count.get(t.group) ?? 0) + 1)
+  const out = { ...tokens }
+  for (const t of Object.values(tokens)) if (t.group && count.get(t.group) === 1) out[t.id] = { ...t, group: null }
+  return out
+}
 
 /** NET-14: the only way the scene changes. Every action is checked against the actor first (PERM-02..04). */
 export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: ReducerCtx): ApplyResult {
@@ -48,7 +62,7 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
 
   switch (action.type) {
     case 'map/set': {
-      const grid = clampGrid(action.grid ?? {}, scene.grid)
+      const grid = clampGrid({ ...action.grid, visible: true }, scene.grid) // BRD-06: a new map shows the grid
       const map = { hash: action.hash, width: action.width, height: action.height }
       return { ok: true, scene: { ...scene, map, grid, fog: revealAll() } } // FOGD-01: a new map has no fog
     }
@@ -123,6 +137,41 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
       if (!scene.tokens[action.id]) return refuse(NO_TOKEN)
       const tokens = { ...scene.tokens }
       delete tokens[action.id]
+      return { ok: true, scene: { ...scene, tokens: endLoneGroups(tokens) } } // BRD-21
+    }
+    case 'token/group': {
+      // BRD-15, BRD-16: 2+ items the actor may move become one group, leaving the groups they were in
+      const ids = [...new Set(action.ids)]
+      if (ids.length < 2) return refuse(FEW_ITEMS)
+      for (const id of ids) {
+        const t = scene.tokens[id]
+        if (!t) return refuse(NO_TOKEN)
+        if (!mayMove(scene, actor, t)) return refuse(NO_PERMISSION)
+      }
+      const group = ctx.newId()
+      const tokens = { ...scene.tokens }
+      for (const id of ids) tokens[id] = { ...tokens[id], group }
+      return { ok: true, scene: { ...scene, tokens: endLoneGroups(tokens) } }
+    }
+    case 'token/ungroup': {
+      // BRD-19: only by someone who may move every member
+      const members = Object.values(scene.tokens).filter((t) => t.group === action.group)
+      if (!members.length) return refuse(NO_GROUP)
+      if (!members.every((t) => mayMove(scene, actor, t))) return refuse(NO_PERMISSION)
+      const tokens = { ...scene.tokens }
+      for (const t of members) tokens[t.id] = { ...t, group: null }
+      return { ok: true, scene: { ...scene, tokens } }
+    }
+    case 'token/moveMany': {
+      // BRD-10, BRD-17, BRD-18: all or nothing
+      const tokens = { ...scene.tokens }
+      for (const m of action.moves) {
+        const t = scene.tokens[m.id]
+        if (!t) return refuse(NO_TOKEN)
+        if (!mayMove(scene, actor, t)) return refuse(NO_PERMISSION)
+        if (!scene.map || !centreInside(scene.map, m.x, m.y)) return refuse(OUTSIDE_MAP)
+        tokens[m.id] = { ...t, x: m.x, y: m.y }
+      }
       return { ok: true, scene: { ...scene, tokens } }
     }
     case 'token/hide':

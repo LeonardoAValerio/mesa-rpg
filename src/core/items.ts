@@ -18,6 +18,8 @@ export interface Item {
   owner: string | null
   hidden: boolean
   movement: Movement
+  /** BRD-15..21: items with the same group move together; absent or null when alone. */
+  group?: string | null
 }
 
 export const WIDTH_MIN = 0.25
@@ -39,12 +41,17 @@ export function normalizeRotation(value: number): number {
   return ((r % 360) + 360) % 360
 }
 
-/** ITEM-08: the centre that puts the item's left and top edges on the nearest grid lines. */
+/**
+ * BRD-01: the snapped centre, axis by axis: a side that is an even whole number of cells (2, 4...) puts the centre on
+ * the nearest grid line, so the item fills whole cells; any other side (1, 3, 1.5, 2.5...) on the nearest cell centre.
+ */
 export function snapCentre(grid: Grid, x: number, y: number, wCells: number, hCells: number): { x: number; y: number } {
-  const halfW = (wCells * grid.cell) / 2
-  const halfH = (hCells * grid.cell) / 2
-  const line = (v: number, offset: number): number => offset + Math.round((v - offset) / grid.cell) * grid.cell
-  return { x: line(x - halfW, grid.offsetX) + halfW, y: line(y - halfH, grid.offsetY) + halfH }
+  const axis = (v: number, offset: number, cells: number): number => {
+    const even = Number.isInteger(cells) && cells % 2 === 0
+    if (even) return offset + Math.round((v - offset) / grid.cell) * grid.cell
+    return offset + (Math.floor((v - offset) / grid.cell) + 0.5) * grid.cell
+  }
+  return { x: axis(x, grid.offsetX, wCells), y: axis(y, grid.offsetY, hCells) }
 }
 
 /** The drawn box of a `w` x `h` item turned by `rotation` degrees, in the same units (what the snap aligns). */
@@ -58,7 +65,8 @@ export function rotatedExtent(w: number, h: number, rotation: number): { w: numb
 
 /** ITEM-08, ITEM-09: a character snaps and an object stays where dropped; Shift held at the drop does the opposite. */
 export function dropPosition(kind: ItemKind, shift: boolean, grid: Grid, x: number, y: number, wCells: number, hCells: number): { x: number; y: number } {
-  const snap = (kind === 'character') !== shift
+  // BRD-04: with the grid hidden nothing snaps unless Shift is held
+  const snap = grid.visible === false ? shift : (kind === 'character') !== shift
   return snap ? snapCentre(grid, x, y, wCells, hCells) : { x, y }
 }
 

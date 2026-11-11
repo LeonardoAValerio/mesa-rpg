@@ -13,7 +13,8 @@ export function clampGrid(patch: Partial<Grid>, base: Grid = DEFAULT_GRID): Grid
   const offsetY = clamp(finite(patch.offsetY) ? patch.offsetY : base.offsetY, 0, cell)
   const opacity = clamp(finite(patch.opacity) ? patch.opacity : base.opacity, 0, 1)
   const color = typeof patch.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(patch.color) ? patch.color.toLowerCase() : base.color
-  return { cell, offsetX, offsetY, color, opacity }
+  const visible = typeof patch.visible === 'boolean' ? patch.visible : base.visible !== false // BRD-06: old files have none
+  return { cell, offsetX, offsetY, color, opacity, visible }
 }
 
 export interface Cell {

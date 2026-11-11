@@ -9,8 +9,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: inline - the Design section below
-**Status**: Draft
-**Approved**: pending
+**Status**: In Progress
+**Approved**: 2026-11-11 - user: "aprovo"
 **Build**: `scripts/with-node npm run build`; `scripts/with-node npm run typecheck`; `scripts/with-node npm run lint`
 **Run unit**: `scripts/with-node npx vitest run --reporter=verbose`
 **Run e2e**: `scripts/with-node npm run build && scripts/with-node npx playwright test --reporter=list`
@@ -82,12 +82,13 @@ T1 → T2 → T3 → T4 → T5
 
 **Done when**:
 
-- [ ] Unit tests: snap for sizes 1, 1.5, 2, 2.5, 3, 4 and a 1x2 item on each axis, with grid offsets; drop with the grid hidden, with and without Shift; `grid/set` visible by the master and refused for a player; `map/set` shows the grid; group of 2+, refused for an item the actor may not move, regrouping leaves the old group; ungroup refused without permission; moveMany all or nothing (permission, outside the map); remove ends a group of one; old `.mesa`/`.cena` read with the grid visible and no groups
-- [ ] Phase gate passes
+- [x] Unit tests: snap for sizes 1, 1.5, 2, 2.5, 3, 4 and a 1x2 item on each axis, with grid offsets; drop with the grid hidden, with and without Shift; `grid/set` visible by the master and refused for a player; `map/set` shows the grid; group of 2+, refused for an item the actor may not move, regrouping leaves the old group; ungroup refused without permission; moveMany all or nothing (permission, outside the map); remove ends a group of one; old `.mesa`/`.cena` read with the grid visible and no groups
+- [x] Phase gate passes
 
 **Tests**: unit
 **Gate**: phase
 **Commit**: `feat(core): centred snap, hidden grid and token groups`
+**Done**: yes
 
 ---
 
@@ -242,7 +243,7 @@ Proof: run e2e | ✓ [C23] BRD-23
 
 ## Handoff
 
-**Settled mid-build:** none
+**Settled mid-build:** T1 changed the expected snap positions of the old ITEM-08 tests (unit and e2e `[C8]`) to BRD-01, which the user's answer replaced ("Centro no centro da célula"); the phase gate's only failure was that e2e, green after the update.
 **Dispatched:** none
 **Walked:** none
 

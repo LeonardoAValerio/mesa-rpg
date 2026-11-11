@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 30,
+  "next_id": 35,
   "lessons": [
     {
       "id": "L-001",
@@ -526,6 +526,96 @@
       ],
       "created": "2026-11-10T14:40:17Z",
       "last_seen": "2026-11-10T14:40:17Z"
+    },
+    {
+      "id": "L-030",
+      "key": "weak_test::a rule about which point counts centre vs body is tested with an item where the two disagree",
+      "text": "A rule about which point counts (centre vs body) is tested with an item where the two disagree.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "board-selection"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C8 (e2e)"
+      ],
+      "created": "2026-11-11T14:25:33Z",
+      "last_seen": "2026-11-11T14:25:33Z"
+    },
+    {
+      "id": "L-031",
+      "key": "weak_test::moved by the same offset is tested with an item whose own rule would put it elsewhere off grid follower or offset and snap look alike",
+      "text": "'Moved by the same offset' is tested with an item whose own rule would put it elsewhere (off-grid follower), or offset and snap look alike.",
+      "signal": "weak_test",
+      "scope": "e2e",
+      "status": "candidate",
+      "features": [
+        "board-selection"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C10 (e2e)"
+      ],
+      "created": "2026-11-11T14:25:33Z",
+      "last_seen": "2026-11-11T14:25:33Z"
+    },
+    {
+      "id": "L-032",
+      "key": "ac_gap::anything measured from a loaded asset an image s aspect needs a fallback known before the load test the first use before the asset arrives",
+      "text": "Anything measured from a loaded asset (an image's aspect) needs a fallback known before the load; test the first use, before the asset arrives.",
+      "signal": "ac_gap",
+      "scope": "renderer",
+      "status": "candidate",
+      "features": [
+        "board-selection"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F3 (renderer)"
+      ],
+      "created": "2026-11-11T14:25:33Z",
+      "last_seen": "2026-11-11T14:25:33Z"
+    },
+    {
+      "id": "L-033",
+      "key": "ac_gap::a grouping invariant a group moves whole is enforced on every path that moves an item including the old single item action and every selection path",
+      "text": "A grouping invariant (a group moves whole) is enforced on every path that moves an item, including the old single-item action, and every selection path.",
+      "signal": "ac_gap",
+      "scope": "core",
+      "status": "candidate",
+      "features": [
+        "board-selection"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "F4,F5 (core)"
+      ],
+      "created": "2026-11-11T14:25:33Z",
+      "last_seen": "2026-11-11T14:25:33Z"
+    },
+    {
+      "id": "L-034",
+      "key": "gate_fail::test runs put their temp folders under one per run root that is removed at the end leftover fixtures filled the system disk",
+      "text": "Test runs put their temp folders under one per-run root that is removed at the end; leftover fixtures filled the system disk.",
+      "signal": "gate_fail",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "board-selection"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "/tmp (tests)"
+      ],
+      "created": "2026-11-11T14:25:33Z",
+      "last_seen": "2026-11-11T14:25:33Z"
     }
   ]
 }

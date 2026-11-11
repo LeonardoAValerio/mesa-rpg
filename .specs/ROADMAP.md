@@ -11,7 +11,7 @@ user: "Sim, nessa ordem (Recomendado)".
 | C2 | Ferramentas do mapa em coluna de ícones, névoa num botão, painel Rede (pedido entre C e D) | `.specs/features/map-tools/` | Done - v0.6.0 |
 | D | Pasta da campanha em `Documentos/Mesa RPG/<Campanha>/` com mapas, tokens, objetos, músicas, efeitos e cenas; as abas listam o que está nela | `.specs/features/campaign-folder/` | Done - v0.7.0 |
 | E | Sons: músicas e efeitos tocados pelo mestre, sincronizados com os jogadores, volume por pessoa | `.specs/features/sounds/` | Done - v0.8.0 |
-| F | Seleção por área, grupos (montarias), encaixe centrado, esconder a grid por cena, mover a vista com o botão direito (pedido após 0.8.0) | `.specs/features/board-selection/` | In progress |
+| F | Seleção por área, grupos (montarias), encaixe centrado, esconder a grid por cena, mover a vista com o botão direito (pedido após 0.8.0) | `.specs/features/board-selection/` | Done - v0.9.0 |
 
 ## Decisions already taken (user's words)
 

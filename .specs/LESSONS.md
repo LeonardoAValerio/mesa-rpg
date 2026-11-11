@@ -188,6 +188,36 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C16 (e2e)
 - last seen: 2026-11-10T14:40:17Z
 
+### L-030 - A rule about which point counts (centre vs body) is tested with an item where the two disagree.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: board-selection
+- evidence: C8 (e2e)
+- last seen: 2026-11-11T14:25:33Z
+
+### L-031 - 'Moved by the same offset' is tested with an item whose own rule would put it elsewhere (off-grid follower), or offset and snap look alike.
+- signal: `weak_test` · recurrence: 1 feature(s) · scope: `e2e` · harmful: 0
+- features: board-selection
+- evidence: C10 (e2e)
+- last seen: 2026-11-11T14:25:33Z
+
+### L-032 - Anything measured from a loaded asset (an image's aspect) needs a fallback known before the load; test the first use, before the asset arrives.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `renderer` · harmful: 0
+- features: board-selection
+- evidence: F3 (renderer)
+- last seen: 2026-11-11T14:25:33Z
+
+### L-033 - A grouping invariant (a group moves whole) is enforced on every path that moves an item, including the old single-item action, and every selection path.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `core` · harmful: 0
+- features: board-selection
+- evidence: F4,F5 (core)
+- last seen: 2026-11-11T14:25:33Z
+
+### L-034 - Test runs put their temp folders under one per-run root that is removed at the end; leftover fixtures filled the system disk.
+- signal: `gate_fail` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: board-selection
+- evidence: /tmp (tests)
+- last seen: 2026-11-11T14:25:33Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

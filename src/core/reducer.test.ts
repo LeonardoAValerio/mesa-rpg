@@ -226,6 +226,15 @@ describe('board selection rules (BRD)', () => {
     expect(ok(run(s, master, { type: 'token/moveMany', moves: ['rider', 'horse', 'ghost'].map((id) => ({ id, x: 150, y: 350 })) })).tokens.ghost.y).toBe(350)
   })
 
+  it('BRD-18 a grouped item does not move alone (token/move), only with its group; once its group ends it does', () => {
+    let s = ok(run(base(item('rider', { owner: 'Ana' }), item('ghost', { hidden: true })), master, { type: 'token/group', ids: ['rider', 'ghost'] }))
+    expect(run(s, ana, { type: 'token/move', id: 'rider', x: 150, y: 350 })).toEqual({ ok: false, reason: 'Sem permissão' })
+    expect(run(s, master, { type: 'token/move', id: 'rider', x: 150, y: 350 })).toEqual({ ok: false, reason: 'Sem permissão' })
+    expect(ok(run(s, ana, { type: 'token/rotate', id: 'rider', rotation: 15 })).tokens.rider.rotation).toBe(15) // turning is per item
+    s = ok(run(s, master, { type: 'token/remove', id: 'ghost' }))
+    expect(ok(run(s, ana, { type: 'token/move', id: 'rider', x: 150, y: 350 })).tokens.rider.y).toBe(350)
+  })
+
   it('[C21] BRD-21 removing an item keeps the rest of its group, and a group left with one item ends', () => {
     let s = ok(run(base(item('a'), item('b'), item('c'), item('d'), item('e')), master, { type: 'token/group', ids: ['a', 'b', 'c'] }))
     s = ok(run(s, master, { type: 'token/group', ids: ['d', 'e'] }))

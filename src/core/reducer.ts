@@ -112,6 +112,8 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
       const allowed = canMove(t, actor) // ITEM-14..16
       if (!allowed.ok) return refuse(allowed.reason)
       if (action.type === 'token/rotate') return { ok: true, scene: withToken(scene, { ...t, rotation: normalizeRotation(action.rotation) }) }
+      // BRD-17, BRD-18: a grouped item moves only with its group (token/moveMany)
+      if (t.group && Object.values(scene.tokens).some((o) => o.id !== t.id && o.group === t.group)) return refuse(NO_PERMISSION)
       if (!scene.map || !centreInside(scene.map, action.x, action.y)) return refuse(OUTSIDE_MAP)
       return { ok: true, scene: withToken(scene, { ...t, x: action.x, y: action.y }) }
     }

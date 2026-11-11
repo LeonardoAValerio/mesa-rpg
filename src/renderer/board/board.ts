@@ -164,10 +164,10 @@ export class Board {
   }
 
   /** ITEM-08, ITEM-09, ITEM-10: where an item dropped at (x, y) lands; Shift inverts the snap; a turned item snaps by its drawn box. */
-  dropAt(kind: Token['kind'], hash: string, width: number, x: number, y: number, shift: boolean, rotation = 0): { x: number; y: number } {
+  dropAt(kind: Token['kind'], hash: string, width: number, x: number, y: number, shift: boolean, rotation = 0, aspect = this.aspect(hash)): { x: number; y: number } {
     const grid = this.client.view?.grid
     if (!grid) return { x, y }
-    const box = rotatedExtent(width, width * this.aspect(hash), rotation)
+    const box = rotatedExtent(width, width * aspect, rotation)
     return dropPosition(kind, shift, grid, x, y, box.w, box.h)
   }
 
@@ -183,6 +183,13 @@ export class Board {
     const tokens = this.client.view?.tokens ?? {}
     const g = tokens[id]?.group
     return g ? Object.values(tokens).filter((t) => t.group === g).map((t) => t.id) : [id]
+  }
+
+  /** These items and every other member of their groups (BRD-17). */
+  withGroups(ids: string[]): string[] {
+    const out = new Set<string>()
+    for (const id of ids) for (const x of this.clickSelection(id)) out.add(x)
+    return [...out]
   }
 
   /** Makes these items the selection; the master's editor follows only one item (BRD-14). */
@@ -291,7 +298,8 @@ export class Board {
     const [x0, x1] = [Math.min(b.x0, b.x1), Math.max(b.x0, b.x1)]
     const [y0, y1] = [Math.min(b.y0, b.y1), Math.max(b.y0, b.y1)]
     const tokens = Object.values(this.client.view?.tokens ?? {})
-    this.selectIds(tokens.filter((t) => t.x >= x0 && t.x <= x1 && t.y >= y0 && t.y <= y1 && this.canDrag(t)).map((t) => t.id))
+    const inside = tokens.filter((t) => t.x >= x0 && t.x <= x1 && t.y >= y0 && t.y <= y1 && this.canDrag(t)).map((t) => t.id)
+    this.selectIds(this.withGroups(inside)) // BRD-17: a group comes whole
   }
 
   private startDrag(t: Token, sprite: TokenSprite, e: FederatedPointerEvent): void {
@@ -299,7 +307,10 @@ export class Board {
     if (this.selection.onHandle(this.toWorld(e.global.x, e.global.y))) return this.selection.beginResize() // ITEM-04
     if (e.shiftKey) {
       // BRD-09: Shift+click adds an item the person may move, or takes it out
-      if (this.canDrag(t)) this.selectIds(this.selection.has(t.id) ? this.selection.ids.filter((x) => x !== t.id) : [...this.selection.ids, t.id])
+      if (this.canDrag(t)) {
+        const unit = this.clickSelection(t.id) // the item, or its whole group
+        this.selectIds(this.selection.has(t.id) ? this.selection.ids.filter((x) => !unit.includes(x)) : [...this.selection.ids, ...unit])
+      }
       return
     }
     // a press on one of several selected items keeps them all; otherwise it becomes the selection
@@ -337,7 +348,7 @@ export class Board {
       if (d.followers.length) this.render(true) // the others go back too
       return
     }
-    if (!d.followers.length) {
+    if (!d.followers.length && !t.group) {
       const r = await this.client.send({ type: 'token/move', id: d.id, x: p.x, y: p.y })
       if (!r.ok) this.render(true)
       return

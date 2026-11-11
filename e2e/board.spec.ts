@@ -79,16 +79,19 @@ test('[C2] BRD-02 a character dragged from the campaign list lands centred by th
   putFile(master, 'tokens/ogro.json', JSON.stringify({ tamanho: 1.5 }))
   putFile(master, 'tokens/gigante.png', solidPng(64, 64, [30, 30, 200]))
   putFile(master, 'tokens/gigante.json', JSON.stringify({ tamanho: 2 }))
+  putFile(master, 'tokens/torre.png', solidPng(64, 128, [200, 200, 40])) // 1 x 2 cells: centred on a cell across, on a line down
   await showPanel(master.page, 'tokens')
-  await expect(master.page.getByTestId('library-item')).toHaveCount(2, { timeout: 5000 })
+  await expect(master.page.getByTestId('library-item')).toHaveCount(3, { timeout: 5000 })
   const canvas = master.page.getByTestId('board-canvas')
   const s = await snap(master.page)
   const to = (x: number, y: number) => ({ x: x * s.camera.scale + s.camera.x, y: y * s.camera.scale + s.camera.y })
   await master.page.getByTestId('library-item').filter({ hasText: 'ogro' }).dragTo(canvas, { targetPosition: to(130, 170) })
   await master.page.getByTestId('library-item').filter({ hasText: 'gigante' }).dragTo(canvas, { targetPosition: to(430, 370) })
+  await master.page.getByTestId('library-item').filter({ hasText: 'torre' }).dragTo(canvas, { targetPosition: to(630, 170) })
   for (const page of [master.page, player.page]) {
     await expect.poll(() => centre(page, 'ogro')).toEqual([150, 150])
     await expect.poll(() => centre(page, 'gigante')).toEqual([400, 400])
+    await expect.poll(() => centre(page, 'torre')).toEqual([650, 200]) // by its real shape, not as a square
   }
 })
 
@@ -186,7 +189,7 @@ async function clickItem(page: Page, name: string, modifiers: Array<'Shift'> = [
   for (const m of modifiers) await page.keyboard.up(m)
 }
 /** Goblins at (150,150), (250,150), (150,250), a locked door at (250,250), Ana's Guerreira at (450,150), a "Só mestre" chest at (550,150), a hidden spy at (450,250). */
-async function crowd(): Promise<{ master: AppHandle; player: AppHandle }> {
+async function crowd(): Promise<{ master: AppHandle; player: AppHandle; square: string }> {
   const t = await table()
   const m = t.master.page
   for (const [name, x, y] of [['G1', 150, 150], ['G2', 250, 150], ['G3', 150, 250]] as const) await place(m, t.square, name, 1, x, y)
@@ -203,11 +206,14 @@ async function crowd(): Promise<{ master: AppHandle; player: AppHandle }> {
 }
 
 test('[C8] BRD-08 a box selects exactly the items whose centre is inside and that the person may move', async () => {
-  const { master, player } = await crowd()
-  // the master: the three goblins, not the locked door; the box edge cuts the chest's body but not its centre
-  await boxDrag(master.page, 90, 90, 300, 300)
+  const { master, player, square } = await crowd()
+  // a 2-cell giant at (400, 400): its body reaches 300..500, its centre is at 400
+  await place(master.page, square, 'Gigante', 2, 400, 400)
+  await item(master.page, 'Gigante')
+  // the master: the three goblins, not the locked door, and not the giant whose body the box cuts but whose centre is out
+  await boxDrag(master.page, 90, 90, 330, 330)
   await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'G1', 'G2', 'G3'))
-  await boxDrag(master.page, 400, 100, 590, 300)
+  await boxDrag(master.page, 400, 90, 590, 300)
   await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'Guerreira', 'Bau', 'Espiao'))
   // Ana: her character and the free goblins; not the master-only chest nor the spy she cannot see
   await boxDrag(player.page, 90, 90, 590, 300)
@@ -230,17 +236,21 @@ test('[C9] BRD-09 Shift+click adds an item the person may move, and takes it out
 })
 
 test('[C10] BRD-10 dragging one of several selected items moves them all by the same offset, in every window', async () => {
-  const { master, player } = await crowd()
+  const { master, player, square } = await crowd()
+  // a character put off the grid: it must move by the offset, not snap on its own
+  await act(master.page, { type: 'token/place', hash: square, name: 'Pedra', kind: 'character', x: 333, y: 377, width: 0.5, ring: null })
   await boxDrag(master.page, 90, 90, 300, 200) // G1, G2
   await clickItem(master.page, 'G3', ['Shift'])
   await clickItem(master.page, 'Guerreira', ['Shift'])
-  await expect.poll(async () => (await ids(master.page)).length).toBe(4)
+  await clickItem(master.page, 'Pedra', ['Shift'])
+  await expect.poll(async () => (await ids(master.page)).length).toBe(5)
   await dragItem(master.page, 'G1', 330, 370) // lands centred on (350, 350): +200, +200
   for (const page of [master.page, player.page]) {
     await expect.poll(() => centre(page, 'G1')).toEqual([350, 350])
     await expect.poll(() => centre(page, 'G2')).toEqual([450, 350])
     await expect.poll(() => centre(page, 'G3')).toEqual([350, 450])
     await expect.poll(() => centre(page, 'Guerreira')).toEqual([650, 350])
+    await expect.poll(() => centre(page, 'Pedra')).toEqual([533, 577]) // +200, +200 exactly
     expect(await centre(page, 'Porta')).toEqual([250, 250]) // not selected: stays
   }
 })
@@ -334,14 +344,18 @@ test('[C15] BRD-15 "Agrupar" (or Ctrl+G) groups the selected items, which leave 
   await player.page.getByTestId('group').click()
   await expect.poll(async () => { const g = await groups(master); return !!g.Guerreira && g.Guerreira === g.Cavalo }).toBe(true)
   expect((await groups(master)).Bau).toBeNull()
-  // the master regroups with Ctrl+G: G1+G2, then G2+G3 takes G2 out of the first group, which ends
+  // the master groups G1+G2 with Ctrl+G; a box over G2 and G3 takes G2's whole group (BRD-17), and Ctrl+G makes one
+  // new group of the three: they leave the old group, which ends
   await boxDrag(master.page, 90, 390, 300, 510)
   await master.page.keyboard.press('Control+g')
   await expect.poll(async () => { const g = await groups(master); return !!g.G1 && g.G1 === g.G2 }).toBe(true)
+  const old = (await groups(master)).G1
   await master.page.keyboard.press('Escape')
   await boxDrag(master.page, 190, 390, 410, 510)
+  await expect.poll(async () => (await ids(master.page)).length).toBe(3)
   await master.page.keyboard.press('Control+g')
-  await expect.poll(async () => { const g = await groups(master); return [!!g.G2 && g.G2 === g.G3, g.G1] }).toEqual([true, null])
+  await expect.poll(async () => { const g = await groups(master); return !!g.G3 && g.G1 === g.G3 && g.G2 === g.G3 && g.G3 !== old }).toBe(true)
+  expect(Object.values(await groups(master)).filter((g) => g === old)).toEqual([]) // nobody is left in the old group
 })
 
 test('[C16] BRD-16 grouping an item the person may not move is refused with "Sem permissão" and changes nothing', async () => {
@@ -354,7 +368,7 @@ test('[C16] BRD-16 grouping an item the person may not move is refused with "Sem
   expect(Object.values(await groups(master)).every((g) => g === null)).toBe(true)
 })
 
-test('[C17] BRD-17 a click on a grouped item selects the whole group, and dragging it moves the group in every window', async () => {
+test('[C17] BRD-17 a click, a box or Shift+click on a grouped item selects the whole group, and dragging it moves the group in every window', async () => {
   const { master, player } = await stable()
   await boxDrag(player.page, 90, 90, 300, 200)
   await player.page.getByTestId('group').click()
@@ -368,6 +382,21 @@ test('[C17] BRD-17 a click on a grouped item selects the whole group, and draggi
     await expect.poll(() => centre(page, 'Cavalo')).toEqual([250, 350])
     await expect.poll(() => centre(page, 'Guerreira')).toEqual([150, 350])
   }
+  // a box around the horse alone takes the whole group, and the master drags it
+  await boxDrag(master.page, 195, 290, 305, 410) // starts off every token
+  await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'Guerreira', 'Cavalo'))
+  await dragItem(master.page, 'Cavalo', 350, 350)
+  for (const page of [master.page, player.page]) {
+    await expect.poll(() => centre(page, 'Cavalo')).toEqual([350, 350])
+    await expect.poll(() => centre(page, 'Guerreira')).toEqual([250, 350])
+  }
+  // Shift+click on a member adds the whole group, and takes it out again
+  await master.page.keyboard.press('Escape')
+  await clickItem(master.page, 'G1')
+  await clickItem(master.page, 'Cavalo', ['Shift'])
+  await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'G1', 'Guerreira', 'Cavalo'))
+  await clickItem(master.page, 'Guerreira', ['Shift'])
+  await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'G1'))
 })
 
 test('[C18] BRD-18 a group with an item the person may not move does not move for them and shows "Sem permissão"', async () => {
@@ -389,6 +418,19 @@ test('[C18] BRD-18 a group with an item the person may not move does not move fo
     await expect.poll(() => centre(page, 'Bau')).toEqual([450, 350])
     await expect.poll(() => centre(page, 'Guerreira')).toEqual([150, 350])
   }
+})
+
+test('BRD-18 a group with a member hidden from the player does not move for her either, and says why', async () => {
+  const { master, player } = await stable()
+  const m = master.page
+  await act(m, { type: 'token/group', ids: await idsOf(m, 'Cavalo', 'G3') })
+  await act(m, { type: 'token/hide', id: await idOf(m, 'G3') })
+  await expect.poll(async () => (await snap(player.page)).tokens.some((t) => t.name === 'G3')).toBe(false)
+  await dragItem(player.page, 'Cavalo', 250, 350)
+  await expect(player.page.getByTestId('group-message')).toHaveText('Sem permissão')
+  await player.page.waitForTimeout(300)
+  expect(await centre(m, 'Cavalo')).toEqual([250, 150])
+  expect(await centre(player.page, 'Cavalo')).toEqual([250, 150])
 })
 
 test('[C19] BRD-19 "Desagrupar" (or Ctrl+Shift+G) ungroups a group the person may move whole; otherwise "Sem permissão"', async () => {

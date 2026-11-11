@@ -17,11 +17,12 @@ export function libraryPanel(client: TableClient, board: Board, dropZone: HTMLEl
     const raw = e.dataTransfer?.getData(DRAG_TYPE)
     if (!raw || !client.view?.map) return
     e.preventDefault()
-    const item = JSON.parse(raw) as LibraryItem
+    const item = JSON.parse(raw) as LibraryItem & { aspect?: number }
     const r = board.app.canvas.getBoundingClientRect()
     const w = board.toWorld(e.clientX - r.left, e.clientY - r.top)
-    const at = board.dropAt(item.kind, item.hash, item.width, w.x, w.y, e.shiftKey) // ITEM-10: centred under the cursor
-    const res = await client.send({ type: 'token/place', hash: item.hash, name: item.name, kind: item.kind, width: item.width, ring: item.ring, ...at })
+    const aspect = typeof item.aspect === 'number' && item.aspect > 0 ? item.aspect : undefined
+    const at = board.dropAt(item.kind, item.hash, item.width, w.x, w.y, e.shiftKey, 0, aspect) // ITEM-10, BRD-02: centred, by its real shape
+    const res = await client.send({ type: 'token/place', hash: item.hash, name: item.name, kind: item.kind, width: item.width, ring: item.ring ?? null, ...at })
     message.textContent = res.ok ? '' : res.reason
   }
   const dropListener = (e: DragEvent): void => void onDrop(e)

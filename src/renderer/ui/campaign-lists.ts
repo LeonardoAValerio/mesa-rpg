@@ -42,7 +42,8 @@ export function campaignSection(section: Section, onMap?: (e: CampaignEntry) => 
     }
     const li = h('div', { class: 'campaign-row', testid: 'library-item', draggable: 'true', title: e.path, 'data-path': e.path, 'data-kind': e.kind }, thumbnail(e.hash), h('span', { testid: 'library-name' }, e.name))
     li.addEventListener('dragstart', (ev) => {
-      const item: LibraryItem = { hash: e.hash, name: e.name, kind: e.kind, width: e.width, ring: e.ring }
+      // the image's own aspect goes along: the board may not have the image yet to measure it (BRD-02)
+      const item: LibraryItem & { aspect: number } = { hash: e.hash, name: e.name, kind: e.kind, width: e.width, ring: e.ring, aspect: e.h / e.w }
       ev.dataTransfer?.setData(DRAG_TYPE, JSON.stringify(item))
       if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'copy'
     })

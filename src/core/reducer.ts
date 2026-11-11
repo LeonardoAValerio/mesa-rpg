@@ -163,7 +163,12 @@ export function applyAction(scene: Scene, actor: Actor, action: Action, ctx: Red
       return { ok: true, scene: { ...scene, tokens } }
     }
     case 'token/moveMany': {
-      // BRD-10, BRD-17, BRD-18: all or nothing
+      // BRD-10, BRD-17, BRD-18: all or nothing; a group moves whole, so every member must be in the move
+      const moving = new Set(action.moves.map((m) => m.id))
+      for (const m of action.moves) {
+        const g = scene.tokens[m.id]?.group
+        if (g && Object.values(scene.tokens).some((t) => t.group === g && !moving.has(t.id))) return refuse(NO_PERMISSION)
+      }
       const tokens = { ...scene.tokens }
       for (const m of action.moves) {
         const t = scene.tokens[m.id]

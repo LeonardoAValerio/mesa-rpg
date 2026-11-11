@@ -142,12 +142,13 @@ T1 → T2 → T3 → T4 → T5
 
 **Done when**:
 
-- [ ] e2e: Ana groups her character and a free horse and dragging the horse moves both in both windows; grouping a locked item shows "Sem permissão"; a group with a "Só mestre" item does not move for Ana and shows "Sem permissão"; "Desagrupar" and the shortcuts; groups back after saving and loading a scene; removing an item of a pair ends the group
-- [ ] Task e2e gate passes
+- [x] e2e: Ana groups her character and a free horse and dragging the horse moves both in both windows; grouping a locked item shows "Sem permissão"; a group with a "Só mestre" item does not move for Ana and shows "Sem permissão"; "Desagrupar" and the shortcuts; groups back after saving and loading a scene; removing an item of a pair ends the group
+- [x] Task e2e gate passes
 
 **Tests**: e2e
 **Gate**: task e2e
 **Commit**: `feat(ui): group tokens so they move together`
+**Done**: yes
 
 ---
 
@@ -245,7 +246,7 @@ Proof: run e2e | ✓ [C23] BRD-23
 
 ## Handoff
 
-**Settled mid-build:** T1 changed the expected snap positions of the old ITEM-08 tests (unit and e2e `[C8]`) to BRD-01, which the user's answer replaced ("Centro no centro da célula"); the phase gate's only failure was that e2e, green after the update.
+**Settled mid-build:** T1 changed the expected snap positions of the old ITEM-08 tests (unit and e2e `[C8]`) to BRD-01, which the user's answer replaced ("Centro no centro da célula"); the phase gate's only failure was that e2e, green after the update. T4 added a table rule: a move of several items must hold every member of their groups (a player does not see a hidden member, so could otherwise split the group); C16's refusal is reached with the action itself, since the box and Shift+click never offer an item the person may not move.
 **Dispatched:** none
 **Walked:** none
 

@@ -124,3 +124,7 @@ button.campaign-row { cursor: pointer; width: 100%; }
 .sound-playing .error:empty { display: none; }
 label.check { flex-direction: row; align-items: center; gap: 8px; }
 label.check input { width: auto; }
+.group-bar { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; z-index: 5; }
+.group-bar[hidden], .group-bar button[hidden] { display: none; }
+.group-message { color: var(--danger); font-size: 13px; }
+.group-message:empty { display: none; }

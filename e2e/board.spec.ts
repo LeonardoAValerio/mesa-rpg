@@ -205,12 +205,12 @@ async function crowd(): Promise<{ master: AppHandle; player: AppHandle }> {
 test('[C8] BRD-08 a box selects exactly the items whose centre is inside and that the person may move', async () => {
   const { master, player } = await crowd()
   // the master: the three goblins, not the locked door; the box edge cuts the chest's body but not its centre
-  await boxDrag(master.page, 100, 100, 300, 300)
+  await boxDrag(master.page, 90, 90, 300, 300)
   await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'G1', 'G2', 'G3'))
   await boxDrag(master.page, 400, 100, 590, 300)
   await expect.poll(() => ids(master.page)).toEqual(await idsOf(master.page, 'Guerreira', 'Bau', 'Espiao'))
   // Ana: her character and the free goblins; not the master-only chest nor the spy she cannot see
-  await boxDrag(player.page, 100, 100, 590, 300)
+  await boxDrag(player.page, 90, 90, 590, 300)
   await expect.poll(() => ids(player.page)).toEqual(await idsOf(player.page, 'G1', 'G2', 'G3', 'Guerreira'))
   expect(await ids(master.page)).toEqual(await idsOf(master.page, 'Guerreira', 'Bau', 'Espiao')) // each window its own
 })
@@ -231,7 +231,7 @@ test('[C9] BRD-09 Shift+click adds an item the person may move, and takes it out
 
 test('[C10] BRD-10 dragging one of several selected items moves them all by the same offset, in every window', async () => {
   const { master, player } = await crowd()
-  await boxDrag(master.page, 100, 100, 300, 200) // G1, G2
+  await boxDrag(master.page, 90, 90, 300, 200) // G1, G2
   await clickItem(master.page, 'G3', ['Shift'])
   await clickItem(master.page, 'Guerreira', ['Shift'])
   await expect.poll(async () => (await ids(master.page)).length).toBe(4)
@@ -247,7 +247,7 @@ test('[C10] BRD-10 dragging one of several selected items moves them all by the 
 
 test('[C11] BRD-11 Q and E turn each selected item 15° about its own centre, in every window', async () => {
   const { master, player } = await crowd()
-  await boxDrag(master.page, 100, 100, 300, 200) // G1, G2
+  await boxDrag(master.page, 90, 90, 300, 200) // G1, G2
   await expect.poll(async () => (await ids(master.page)).length).toBe(2)
   await master.page.keyboard.press('e')
   for (const page of [master.page, player.page]) for (const n of ['G1', 'G2']) await expect.poll(async () => (await item(page, n)).rotation).toBe(15)
@@ -262,12 +262,12 @@ test('[C11] BRD-11 Q and E turn each selected item 15° about its own centre, in
 
 test('[C12] BRD-12 the master\'s Delete removes the selected items in every window; a player\'s removes nothing', async () => {
   const { master, player } = await crowd()
-  await boxDrag(player.page, 100, 100, 300, 200) // G1, G2 for Ana
+  await boxDrag(player.page, 90, 90, 300, 200) // G1, G2 for Ana
   await expect.poll(async () => (await ids(player.page)).length).toBe(2)
   await player.page.keyboard.press('Delete')
   await player.page.waitForTimeout(400)
   expect((await snap(master.page)).tokens.map((t) => t.name)).toContain('G1')
-  await boxDrag(master.page, 100, 100, 300, 200)
+  await boxDrag(master.page, 90, 90, 300, 200)
   await expect.poll(async () => (await ids(master.page)).length).toBe(2)
   await master.page.keyboard.press('Delete')
   for (const page of [master.page, player.page]) {
@@ -278,12 +278,12 @@ test('[C12] BRD-12 the master\'s Delete removes the selected items in every wind
 
 test('[C13] BRD-13 a click on the empty map or Esc clears the selection', async () => {
   const { master } = await crowd()
-  await boxDrag(master.page, 100, 100, 300, 300)
+  await boxDrag(master.page, 90, 90, 300, 300)
   await expect.poll(async () => (await ids(master.page)).length).toBe(3)
   const empty = await at(master.page, 650, 450)
   await master.page.mouse.click(empty.x, empty.y)
   await expect.poll(() => ids(master.page)).toEqual([])
-  await boxDrag(master.page, 100, 100, 300, 300)
+  await boxDrag(master.page, 90, 90, 300, 300)
   await expect.poll(async () => (await ids(master.page)).length).toBe(3)
   await master.page.keyboard.press('Escape')
   await expect.poll(() => ids(master.page)).toEqual([])
@@ -295,11 +295,137 @@ test('[C14] BRD-14 each selected item is outlined, and the master\'s editor hide
   await clickItem(master.page, 'G1')
   await expect(master.page.getByTestId('token-editor')).toBeVisible()
   await expect.poll(async () => (await snap(master.page)).selection.outlines).toBe(1)
-  await boxDrag(master.page, 100, 100, 300, 300)
+  await boxDrag(master.page, 90, 90, 300, 300)
   await expect.poll(async () => (await snap(master.page)).selection.outlines).toBe(3)
   await expect(master.page.getByTestId('token-editor')).toBeHidden()
   expect((await snap(master.page)).selection.handle).toBeNull() // no resize handle with several
   await clickItem(master.page, 'G2') // a click on one of them: just it
   await expect.poll(() => ids(master.page)).toEqual([await idOf(master.page, 'G2')])
   await expect(master.page.getByTestId('token-editor')).toBeVisible()
+})
+
+/** The groups on the table, read from the master's server: name → group (null when alone). */
+async function groups(master: AppHandle): Promise<Record<string, string | null>> {
+  return master.app.evaluate(() => {
+    const scene = (globalThis as { __mesaServer?: { getScene(): { tokens: Record<string, { name: string; group?: string | null }> } } }).__mesaServer!.getScene()
+    return Object.fromEntries(Object.values(scene.tokens).map((t) => [t.name, t.group ?? null]))
+  })
+}
+/** Ana's Guerreira and a free Cavalo; a "Só mestre" Bau; two free goblins. */
+async function stable(): Promise<{ master: AppHandle; player: AppHandle }> {
+  const t = await table()
+  const m = t.master.page
+  await place(m, t.square, 'Guerreira', 1, 150, 150)
+  await act(m, { type: 'token/owner', id: await idOf(m, 'Guerreira'), owner: 'Ana' })
+  await place(m, t.square, 'Cavalo', 1, 250, 150)
+  await act(m, { type: 'token/place', hash: t.square, name: 'Bau', kind: 'object', x: 450, y: 150, width: 1, ring: null })
+  await act(m, { type: 'token/update', id: await idOf(m, 'Bau'), movement: 'master' })
+  await place(m, t.square, 'G1', 1, 150, 450)
+  await place(m, t.square, 'G2', 1, 250, 450)
+  await place(m, t.square, 'G3', 1, 350, 450)
+  await item(t.player.page, 'G3')
+  return t
+}
+
+test('[C15] BRD-15 "Agrupar" (or Ctrl+G) groups the selected items, which leave any group they were in', async () => {
+  const { master, player } = await stable()
+  await boxDrag(player.page, 90, 90, 300, 200) // Guerreira and Cavalo, for Ana
+  await expect(player.page.getByTestId('group')).toBeVisible()
+  await player.page.getByTestId('group').click()
+  await expect.poll(async () => { const g = await groups(master); return !!g.Guerreira && g.Guerreira === g.Cavalo }).toBe(true)
+  expect((await groups(master)).Bau).toBeNull()
+  // the master regroups with Ctrl+G: G1+G2, then G2+G3 takes G2 out of the first group, which ends
+  await boxDrag(master.page, 90, 390, 300, 510)
+  await master.page.keyboard.press('Control+g')
+  await expect.poll(async () => { const g = await groups(master); return !!g.G1 && g.G1 === g.G2 }).toBe(true)
+  await master.page.keyboard.press('Escape')
+  await boxDrag(master.page, 190, 390, 410, 510)
+  await master.page.keyboard.press('Control+g')
+  await expect.poll(async () => { const g = await groups(master); return [!!g.G2 && g.G2 === g.G3, g.G1] }).toEqual([true, null])
+})
+
+test('[C16] BRD-16 grouping an item the person may not move is refused with "Sem permissão" and changes nothing', async () => {
+  const { master, player } = await stable()
+  // the box and Shift+click leave out what Ana may not move, so "Agrupar" never offers it; the table refuses it too
+  const ids2 = await idsOf(player.page, 'Guerreira', 'Bau')
+  expect(await player.page.evaluate((ids) => window.__mesaTest!.send({ type: 'token/group', ids }), ids2)).toEqual({ ok: false, reason: 'Sem permissão' })
+  await boxDrag(player.page, 90, 90, 500, 200)
+  await expect.poll(() => ids(player.page)).toEqual(await idsOf(player.page, 'Guerreira', 'Cavalo')) // the chest is not taken
+  expect(Object.values(await groups(master)).every((g) => g === null)).toBe(true)
+})
+
+test('[C17] BRD-17 a click on a grouped item selects the whole group, and dragging it moves the group in every window', async () => {
+  const { master, player } = await stable()
+  await boxDrag(player.page, 90, 90, 300, 200)
+  await player.page.getByTestId('group').click()
+  await expect.poll(async () => !!(await groups(master)).Cavalo).toBe(true)
+  await player.page.keyboard.press('Escape')
+  await clickItem(player.page, 'Cavalo')
+  await expect.poll(() => ids(player.page)).toEqual(await idsOf(player.page, 'Guerreira', 'Cavalo'))
+  await player.page.keyboard.press('Escape')
+  await dragItem(player.page, 'Cavalo', 260, 330) // grabbed with nothing selected: +0, +200
+  for (const page of [master.page, player.page]) {
+    await expect.poll(() => centre(page, 'Cavalo')).toEqual([250, 350])
+    await expect.poll(() => centre(page, 'Guerreira')).toEqual([150, 350])
+  }
+})
+
+test('[C18] BRD-18 a group with an item the person may not move does not move for them and shows "Sem permissão"', async () => {
+  const { master, player } = await stable()
+  await clickItem(master.page, 'Guerreira')
+  await clickItem(master.page, 'Bau', ['Shift'])
+  await master.page.getByTestId('group').click()
+  await expect.poll(async () => { const g = await groups(master); return !!g.Bau && g.Bau === g.Guerreira }).toBe(true)
+  await dragItem(player.page, 'Guerreira', 150, 350)
+  await expect(player.page.getByTestId('group-message')).toHaveText('Sem permissão')
+  await player.page.waitForTimeout(300)
+  for (const page of [master.page, player.page]) {
+    expect(await centre(page, 'Guerreira')).toEqual([150, 150])
+    expect(await centre(page, 'Bau')).toEqual([450, 150])
+  }
+  // the master moves it whole
+  await dragItem(master.page, 'Bau', 450, 350)
+  for (const page of [master.page, player.page]) {
+    await expect.poll(() => centre(page, 'Bau')).toEqual([450, 350])
+    await expect.poll(() => centre(page, 'Guerreira')).toEqual([150, 350])
+  }
+})
+
+test('[C19] BRD-19 "Desagrupar" (or Ctrl+Shift+G) ungroups a group the person may move whole; otherwise "Sem permissão"', async () => {
+  const { master, player } = await stable()
+  await boxDrag(player.page, 90, 90, 300, 200)
+  await player.page.keyboard.press('Control+g')
+  await expect.poll(async () => !!(await groups(master)).Cavalo).toBe(true)
+  await player.page.keyboard.press('Escape')
+  await clickItem(player.page, 'Guerreira') // selects the group
+  await expect(player.page.getByTestId('ungroup')).toBeVisible()
+  await expect(player.page.getByTestId('group')).toBeHidden()
+  await player.page.getByTestId('ungroup').click()
+  await expect.poll(async () => { const g = await groups(master); return [g.Guerreira, g.Cavalo] }).toEqual([null, null])
+  // a group holding the master-only chest: Ana's ungroup is refused, the master's Ctrl+Shift+G works
+  await boxDrag(master.page, 90, 90, 500, 200)
+  await master.page.keyboard.press('Control+g')
+  await expect.poll(async () => !!(await groups(master)).Bau).toBe(true)
+  await clickItem(player.page, 'Guerreira')
+  await expect.poll(async () => (await ids(player.page)).length).toBe(3)
+  await player.page.getByTestId('ungroup').click()
+  await expect(player.page.getByTestId('group-message')).toHaveText('Sem permissão')
+  expect(!!(await groups(master)).Bau).toBe(true)
+  await master.page.keyboard.press('Control+Shift+g')
+  await expect.poll(async () => Object.values(await groups(master)).every((g) => g === null)).toBe(true)
+})
+
+test('[C20] BRD-20 groups come back as saved when a scene is loaded', async () => {
+  const { master } = await stable()
+  await boxDrag(master.page, 90, 90, 300, 200)
+  await master.page.getByTestId('group').click()
+  await expect.poll(async () => !!(await groups(master)).Cavalo).toBe(true)
+  const saved = await groups(master)
+  await saveScene(master.page, 'Estábulo')
+  await clickItem(master.page, 'Cavalo')
+  await master.page.getByTestId('ungroup').click()
+  await expect.poll(async () => (await groups(master)).Cavalo).toBeNull()
+  await master.page.getByTestId('scene-item').filter({ hasText: 'Estábulo' }).click()
+  await master.page.getByTestId('confirm-yes').click()
+  await expect.poll(() => groups(master)).toEqual(saved)
 })

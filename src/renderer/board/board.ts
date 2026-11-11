@@ -1,3 +1,4 @@
+import { NO_PERMISSION } from '../../core/reducer'
 import 'pixi.js/unsafe-eval' // keeps the CSP free of 'unsafe-eval'
 import { Application, Container, Graphics, Sprite, type FederatedPointerEvent, type Texture } from 'pixi.js'
 import { canMove, dropPosition, rotatedExtent } from '../../core/items'
@@ -95,6 +96,8 @@ export class Board {
   private readonly boxGraphic = new Graphics()
   /** BRD-18: a refused move of several items tells why. */
   readonly moveRefused = new Set<(reason: string) => void>()
+  /** A press on a group's item the person may not move: dragging it only tells why. */
+  private blocked: { x: number; y: number } | null = null
   private panning: { x: number; y: number } | null = null
   private space = false
   private fittedFor: string | null = null
@@ -175,9 +178,11 @@ export class Board {
     this.opts.onSelect?.(null)
   }
 
-  /** What a click on an item selects: the item alone (T4 adds its group). */
+  /** BRD-17: what a click on an item selects: the item, or its whole group. */
   clickSelection(id: string): string[] {
-    return [id]
+    const tokens = this.client.view?.tokens ?? {}
+    const g = tokens[id]?.group
+    return g ? Object.values(tokens).filter((t) => t.group === g).map((t) => t.id) : [id]
   }
 
   /** Makes these items the selection; the master's editor follows only one item (BRD-14). */
@@ -227,6 +232,12 @@ export class Board {
     stage.hitArea = this.app.screen
     stage.on('pointermove', (e: FederatedPointerEvent) => {
       if (this.box) return this.moveBox(e)
+      if (this.blocked) {
+        if (Math.hypot(e.global.x - this.blocked.x, e.global.y - this.blocked.y) < 4) return
+        this.blocked = null
+        for (const fn of this.moveRefused) fn(NO_PERMISSION)
+        return
+      }
       if (!this.drag) return
       if (!this.drag.moved && Math.hypot(e.global.x - this.drag.from.x, e.global.y - this.drag.from.y) < 4) return // a click selects, it does not move
       this.drag.moved = true
@@ -243,10 +254,12 @@ export class Board {
       }
     })
     stage.on('pointerup', (e: FederatedPointerEvent) => {
+      this.blocked = null
       if (this.box) return this.endBox()
       void this.endDrag(e.shiftKey)
     })
     stage.on('pointerupoutside', (e: FederatedPointerEvent) => {
+      this.blocked = null
       if (this.box) return this.endBox()
       void this.endDrag(e.shiftKey)
     })
@@ -289,11 +302,16 @@ export class Board {
     }
     // a press on one of several selected items keeps them all; otherwise it becomes the selection
     if (!(this.selection.has(t.id) && this.selection.ids.length > 1)) this.selectIds(this.clickSelection(t.id))
-    if (!this.canDrag(t)) return // ITEM-14..16
+    if (!this.canDrag(t)) {
+      // BRD-18: a group with an item this person may not move does not move, and says why when dragged
+      if (t.group && this.selection.ids.length > 1) this.blocked = { x: e.global.x, y: e.global.y }
+      return // ITEM-14..16
+    }
     const w = this.toWorld(e.global.x, e.global.y)
     const view = this.client.view
+    // every other selected item follows; one the person may not move makes the server refuse the whole move (BRD-18)
     const followers = this.selection.ids
-      .filter((id) => id !== t.id && view?.tokens[id] && this.sprites.has(id) && this.canDrag(view.tokens[id]))
+      .filter((id) => id !== t.id && view?.tokens[id] && this.sprites.has(id))
       .map((id) => ({ id, container: this.sprites.get(id)!.root, x: this.sprites.get(id)!.root.x, y: this.sprites.get(id)!.root.y }))
     this.drag = { id: t.id, dx: w.x - sprite.root.x, dy: w.y - sprite.root.y, container: sprite.root, from: { x: e.global.x, y: e.global.y }, moved: false, followers, start: { x: sprite.root.x, y: sprite.root.y } }
     sprite.root.parent?.addChild(sprite.root) // on top of its layer while dragging

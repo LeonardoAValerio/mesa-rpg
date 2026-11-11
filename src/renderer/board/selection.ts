@@ -28,6 +28,8 @@ export interface SelectionSnapshot {
  */
 export class Selection {
   private list: string[] = []
+  /** Called whenever the selected items change (the group bar follows it). */
+  readonly changed = new Set<() => void>()
   private outlineCount = 0
   private readonly outline = new Graphics()
   private readonly handle = new Graphics()
@@ -81,6 +83,7 @@ export class Selection {
     this.list = [...new Set(ids)]
     this.resize = null
     this.draw()
+    for (const fn of this.changed) fn()
   }
 
   /** BRD-09: Shift+click adds an item, or takes it out. */
@@ -114,7 +117,10 @@ export class Selection {
     this.handle.clear()
     this.outlineCount = 0
     const items = this.items()
-    if (items.length !== this.list.length) this.list = items.map((t) => t.id) // gone from this view
+    if (items.length !== this.list.length) {
+      this.list = items.map((t) => t.id) // gone from this view
+      for (const fn of this.changed) fn()
+    }
     if (!items.length) return
     const line = 2 / this.board.camera.scale
     for (const t of items) {

@@ -17,6 +17,7 @@ import { tokenEditor } from './ui/token-editor'
 import { campaignHeader } from './ui/campaign-header'
 import { campaignSection } from './ui/campaign-lists'
 import { mapToolbar } from './ui/map-toolbar'
+import { groupBar } from './ui/group-bar'
 import { mountUpdateBar } from './ui/update-bar'
 import { masterSoundControls, personalControls } from './ui/sound-panel'
 import { SoundEngine, type SoundSnapshot } from './sound/engine'
@@ -82,6 +83,7 @@ onSession(async ({ client, screen }) => {
   const soundControls = master ? masterSoundControls(client) : null // SOM-19: a player has no play controls
   if (soundControls) screen.panels.sons.append(soundControls.root)
   const overlays = new Overlays(board, client)
+  const groups = groupBar(screen.board, board, client) // BRD-15..19
   const fog = master ? new FogTools(board, client) : null
   const tools = mapToolbar(screen.board, board, fog?.modes ?? null)
   if (fog) screen.panels.mapas.append(fog.panel)
@@ -115,6 +117,7 @@ onSession(async ({ client, screen }) => {
     soundControls?.destroy()
     tools.destroy()
     overlays.destroy()
+    groups.destroy()
     fog?.destroy()
     dice.destroy()
     chat.destroy()

@@ -219,6 +219,13 @@ describe('board selection rules (BRD)', () => {
     expect(run(s, master, { type: 'token/moveMany', moves: [{ id: 'a', x: 150, y: 350 }, { id: 'b', x: 250, y: 650 }] })).toEqual({ ok: false, reason: 'Fora do mapa' })
   })
 
+  it('BRD-18 a group moves whole: a move that leaves out a member (one a player cannot see) is refused', () => {
+    const s = ok(run(base(item('rider', { owner: 'Ana' }), item('horse'), item('ghost', { hidden: true })), master, { type: 'token/group', ids: ['rider', 'horse', 'ghost'] }))
+    expect(run(s, ana, { type: 'token/moveMany', moves: [{ id: 'rider', x: 150, y: 350 }, { id: 'horse', x: 150, y: 350 }] })).toEqual({ ok: false, reason: 'Sem permissão' })
+    expect(run(s, master, { type: 'token/moveMany', moves: [{ id: 'rider', x: 150, y: 350 }, { id: 'horse', x: 150, y: 350 }] })).toEqual({ ok: false, reason: 'Sem permissão' })
+    expect(ok(run(s, master, { type: 'token/moveMany', moves: ['rider', 'horse', 'ghost'].map((id) => ({ id, x: 150, y: 350 })) })).tokens.ghost.y).toBe(350)
+  })
+
   it('[C21] BRD-21 removing an item keeps the rest of its group, and a group left with one item ends', () => {
     let s = ok(run(base(item('a'), item('b'), item('c'), item('d'), item('e')), master, { type: 'token/group', ids: ['a', 'b', 'c'] }))
     s = ok(run(s, master, { type: 'token/group', ids: ['d', 'e'] }))
